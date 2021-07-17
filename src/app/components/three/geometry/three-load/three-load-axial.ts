@@ -5,9 +5,6 @@ import { Line2 } from '../../libs/Line2.js';
 import { LineMaterial } from '../../libs/LineMaterial.js';
 import { LineGeometry } from '../../libs/LineGeometry.js';
 
-import { ThreeLoadDimension } from './three-load-dimension';
-import { ThreeLoadText } from "./three-load-text";
-
 @Injectable({
   providedIn: 'root'
 })
@@ -218,7 +215,7 @@ export class ThreeLoadAxial {
   }
 
   // ハイライトを反映させる
-  public setColor(group: any, text, dim, status: string): void {
+  public setColor(group: any, status: string): void {
 
     const group0 = group.getObjectByName('group');
     

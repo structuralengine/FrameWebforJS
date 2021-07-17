@@ -323,14 +323,14 @@ export class ThreeLoadMemberPoint {
   }
 
   // ハイライトを反映させる
-  public setColor(group: any, text, dim, status: string) {
+  public setColor(group: any, status: string) {
 
     const group0 = group.getObjectByName('group');
     const child = group0.getObjectByName('child');
 
     for (let target of child.children) {
       if ( target.name.includes('PointLoad')){
-        this.point.setColor(target, text, dim, status);
+        this.point.setColor(target, status);
       } else if(target.name === 'Dimension'){
         if (status === 'clear') {
           target.visible = false;

@@ -195,7 +195,7 @@ export class ThreeLoadMoment {
   }
 
   // ハイライトを反映させる
-  public setColor(group: any, text, dim, status: string): void {
+  public setColor(group: any, status: string): void {
 
     //置き換えるマテリアルを生成 -> colorを設定し，対象オブジェクトのcolorを変える
     const arrow_mat_Pick = new THREE.MeshBasicMaterial({ color: 0xafeeee });

@@ -3,8 +3,6 @@ import * as THREE from "three";
 import { Vector2 } from "three";
 
 import { Text } from 'troika-three-text'
-import { ThreeLoadText } from "./three-load-text";
-import { ThreeLoadDimension } from "./three-load-dimension";
 
 @Injectable({
   providedIn: "root",
@@ -321,7 +319,7 @@ export class ThreeLoadDistribute {
   }
 
   // ハイライトを反映させる
-  public setColor(group: any, text: Text[], dim, status: string): void {
+  public setColor(group: any, status: string): void {
 
     const group0 = group.getObjectByName('group');
     const child = group0.getObjectByName('child');
@@ -339,9 +337,6 @@ export class ThreeLoadDistribute {
         face_color = this.face_mat_Blue;
         line_color = this.line_mat_Blue;
       }
-    } else {
-      // 文字を表示
-      this.setText(group, text);
     }
 
     // カラーの適用

@@ -31,14 +31,12 @@ export class ThreeLoadService {
 
   // 全ケースの荷重を保存
   private AllCaseLoadList: {};
-  private currentIndex: string;
-  private currentIndex_child1: string;
-  private currentIndex_child2: string;
+  private currentIndex: string; // 現在 表示中のケース番号
+  private currentRow: number;   // 現在 選択中の行番号
+  private currentCol: number;   // 現在 選択中の列番号
 
   // 荷重のテンプレート
   private loadEditor: {};
-  private text: ThreeLoadText;
-  private dim: ThreeLoadDimension; //寸法戦を扱うモジュール
 
   // 大きさを調整するためのスケール
   private LoadScale: number;
@@ -51,9 +49,8 @@ export class ThreeLoadService {
   private newNodeData: any;    // 変更された 節点データ
   private newMemberData: any;  // 変更された 要素データ
 
-  // 選択中のアイテム
-  private valueText: Text[]; // 荷重値
-  private dimension: THREE.Group[];  // 寸法線
+  // 選択中のアイテムに表示するテキストのシーン
+  private ThreeTextObject: THREE.Object3D;
 
   // 初期化
   constructor(
@@ -67,12 +64,6 @@ export class ThreeLoadService {
   ) {
 
     // 荷重の雛形をあらかじめ生成する
-    this.text = new ThreeLoadText();
-    this.dim = new ThreeLoadDimension(); //寸法戦を扱うモジュール
-
-    this.valueText = new Array(); // 荷重値
-    this.dimension = new Array(); // 寸法線
-
     this.loadEditor = {};
     this.loadEditor[ThreeLoadAxial.id]        = new ThreeLoadAxial();         // 軸方向荷重のテンプレート
     this.loadEditor[ThreeLoadDistribute.id]   = new ThreeLoadDistribute();    // 分布荷重のテンプレート
@@ -83,11 +74,15 @@ export class ThreeLoadService {
     this.loadEditor[ThreeLoadTemperature.id]  = new ThreeLoadTemperature();   // 温度荷重のテンプレート
     this.loadEditor[ThreeLoadTorsion.id]      = new ThreeLoadTorsion();       // ねじり分布荷重のテンプレート
 
+    // 荷重値のテキストと寸法線は、this.ThreeTextObject で別に管理する
+    this.ThreeTextObject = new THREE.Object3D;
+    this.scene.add(this.ThreeTextObject); // シーンに追加
 
+    // 全てのケースの荷重情報
     this.AllCaseLoadList = {};
     this.currentIndex = null;
-    this.currentIndex_child1 = null;
-    this.currentIndex_child2 = null;
+    this.currentRow = null;
+    this.currentCol = null;
 
     // 節点、部材データ
     this.nodeData = null;
@@ -105,13 +100,12 @@ export class ThreeLoadService {
   
   // three.component から終了時に呼ばれる メモリリークの解消処理
   private dispose(): void {
-    for( const t of this.valueText){
-      this.scene.remove(t);
-      this.text.dispose(t);
-    }
-    for( const d of this.dimension){
-      this.scene.remove(d);
-      this.dim.dispose(d);
+    for( const item of this.ThreeTextObject.children){
+      this.ThreeTextObject.remove(item);
+      if(item.name === 'text'){
+        const text: Text = item;
+        text.dispose();
+      }
     }
   }
 
@@ -270,75 +264,39 @@ export class ThreeLoadService {
   }
 
   //シートの選択行が指すオブジェクトをハイライトする
-  public selectChange(index_row, index_column): void {
+  public selectChange(index_row: number, index_column: number): void {
     const id: string = this.currentIndex;
 
-    if (this.currentIndex_child1 === index_row) {
-      if (this.currentIndex_child2 === index_column) {
+    if (this.currentRow === index_row) {
+      if (this.currentCol === index_column) {
         //選択行の変更がないとき，何もしない
         return
       }
     }
 
+    const ThreeObject: THREE.Object3D = this.AllCaseLoadList[id].ThreeObject;
+    // 一旦全てのテキストを削除
+    this.dispose();
 
-    let column = '-';
-    if( index_column < 8){ // 節点荷重ではない
-      for (let item of this.AllCaseLoadList[id].ThreeObject.children) {
-        const editor = item.editor;
-        if (item.name.indexOf(ThreeLoadPoint.id) !== -1 ||
-            item.name.indexOf(ThreeLoadMoment.id) !== -1) {
-          editor.setColor(item, this.valueText, this.dimension, "clear");
-        }
+    for (let item of ThreeObject.children) {
+
+      if(!('editor' in item)) continue;
+
+      const editor = item['editor'];
+      const column = ( index_column > 8) ?
+        ['tx', 'ty', 'tz', 'rx', 'ry', 'rz'][index_column - 9] : '';
+
+      const key = editor.id + '-' + index_row.toString() + '-' + column;
+
+      if(item.name.indexOf(key) !== -1){
+        editor.setColor(item, "select");
+      } else {
+        editor.setColor(item, "clear");
       }
-    } else {
-      if(index_column===9){
-        column += 'tx';
-      }else if(index_column===10){
-        column += 'ty';
-      }else if(index_column===11){
-        column += 'tz';
-      }else if(index_column===12){
-        column += 'rx';
-      }else if(index_column===13){
-        column += 'ry';
-      }else if(index_column===14){
-        column += 'rz';
-      } 
     }
 
-    // 全てのハイライトを元に戻し，選択行のオブジェクトのみハイライトを適応する
-    for (let item of this.AllCaseLoadList[id].ThreeObject.children) {
-      const editor = item.editor;
-
-      //カレント行のオブジェクトをハイライトする
-      for(const k of Object.keys(this.loadEditor)){
-
-        if (item.name.indexOf(k) !== -1){
-          const editor: any = this.loadEditor[k]
-          
-          if( index_column < 8){ // 節点荷重ではない
-            if (item.name.indexOf(ThreeLoadPoint.id) !== -1 ||
-                item.name.indexOf(ThreeLoadMoment.id) !== -1) {
-              editor.setColor(item, this.valueText, this.dimension, "clear");
-              // break;
-            }
-          }
-
-          const key = k + '-' + index_row.toString() + column;
-          if (item.name.indexOf(key) !== -1) {
-            editor.setColor(item, this.valueText, this.dimension, "select");
-          } else {
-            editor.setColor(item, this.valueText, this.dimension, "clear");
-          }
-
-          break;
-        } 
-      }
-
-    }
-    
-    this.currentIndex_child1 = index_row;
-    this.currentIndex_child2 = index_column;
+    this.currentRow = index_row;
+    this.currentCol = index_column;
 
     setTimeout(() => {
       this.scene.render();
@@ -1383,12 +1341,12 @@ export class ThreeLoadService {
     // 全てのハイライトを元に戻す
     for (let _item of this.AllCaseLoadList[this.currentIndex].ThreeObject.children) {
       const editor = _item.editor;
-      editor.setColor(_item, this.valueText, this.dimension, "clear");
+      editor.setColor(_item, "clear");
     }
 
     //全てのオブジェクトをデフォルトの状態にする
     const editor = item.editor;
-    editor.setColor(item, this.valueText, this.dimension, action);
+    editor.setColor(item, action);
 
     this.scene.render();
   }

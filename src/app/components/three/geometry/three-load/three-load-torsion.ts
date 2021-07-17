@@ -17,6 +17,8 @@ export class ThreeLoadTorsion {
 
   private cylinder_Red: THREE.MeshBasicMaterial;
   private cylinder_Blue: THREE.MeshBasicMaterial;
+  private cylinder_Pick: THREE.MeshBasicMaterial;
+
 
   constructor() {
     this.moment = new ThreeLoadMoment();
@@ -30,6 +32,12 @@ export class ThreeLoadTorsion {
       transparent: true,
       side: THREE.DoubleSide,
       color: 0x0000ff,
+      opacity: 0.3,
+    });
+    this.cylinder_Pick = new THREE.MeshBasicMaterial({
+      transparent: true,
+      side: THREE.DoubleSide,
+      color: 0xff00ff,
       opacity: 0.3,
     });
 
@@ -319,16 +327,7 @@ export class ThreeLoadTorsion {
   }
 
   // ハイライトを反映させる
-  public setColor(group: any, text, dim, status: string) {
-    
-    //置き換えるマテリアルを生成 -> colorを設定し，対象オブジェクトのcolorを変える
-    const cylinder_Pick = new THREE.MeshBasicMaterial({
-      transparent: true,
-      side: THREE.DoubleSide,
-      color: 0xff00ff,
-      opacity: 0.3,
-    });
-    const line_mat_Pick = new THREE.LineBasicMaterial({ color: 0xff00ff, vertexColors: true});
+  public setColor(group: any, status: string) {
 
     for (let target of group.children[0].children) {
       if (status === "clear") {
@@ -343,9 +342,9 @@ export class ThreeLoadTorsion {
         }
       } else if (status == "select") {
         if (target.name.slice(-3) === 'red') {
-          target.material = cylinder_Pick; //ハイライト用のカラー
+          target.material = this.cylinder_Pick; //ハイライト用のカラー
         } else if (target.name.slice(-4) === 'blue') {
-          target.material = cylinder_Pick; //ハイライト用のカラー
+          target.material = this.cylinder_Pick; //ハイライト用のカラー
         } else if (target.name.slice(-2) === 'rx') {
           //何もしない
         }
