@@ -12,18 +12,15 @@ import { ThreeLoadText } from "./three-load-text";
   providedIn: 'root'
 })
 export class ThreeLoadTemperature {
-
-  private text: ThreeLoadText;
-  private dim: ThreeLoadDimension;
+  
+  static id = 'TemperatureLoad';
 
   private colors: number[];
   private arrow_mat: THREE.MeshBasicMaterial;
 
   private matLine: LineMaterial;
 
-  constructor(text: ThreeLoadText, dim: ThreeLoadDimension) {
-    this.text = text;
-    this.dim = dim;
+  constructor() {
 
     // 線の色を決める
     const line_color = 0xff0000;
@@ -99,12 +96,6 @@ export class ThreeLoadTemperature {
     child.add(arrow);
     child.name = "child";
 
-    /*/ 寸法線
-    const dim = this.getDim(L, offset);
-    dim.visible = false;
-    child.add(dim);
-    */
-
     // 全体
     child.name = "child";
     child.position.y = offset;
@@ -113,15 +104,14 @@ export class ThreeLoadTemperature {
     group0.add(child);
     group0.name = "group";
 
-    /*/ 文字を追加する
-    const text = this.getText(P1, L, offset);
-    text.visible = false;
-    group0.add(text);
-    */
-
     // 全体の位置を修正する
     const group = new THREE.Group();
     group.add(group0);
+    group["P1"] = P1;
+    group["nodei"] = nodei;
+    group["nodej"] = nodej;
+    group["localAxis"] = localAxis;
+    group["editor"] = this;
     group['value'] = Math.abs(P1); // 大きい方の値を保存　
 
     group.position.set(nodei.x, nodei.y, nodei.z);
@@ -134,7 +124,7 @@ export class ThreeLoadTemperature {
     const XZ = new Vector2(lenXY, localAxis.x.z).normalize();
     group.rotateY(-Math.asin(XZ.y));
 
-    group.name = "TemperatureLoad-" + row.toString();
+    group.name = ThreeLoadTemperature.id + "-" + row.toString();
     return group;
   }
 
@@ -192,7 +182,7 @@ export class ThreeLoadTemperature {
   }
 
   // ハイライトを反映させる
-  public setColor(group: any, n: string): void {
+  public setColor(group: any, status: string): void {
 
     //置き換えるマテリアルを生成 -> colorを設定し，対象オブジェクトのcolorを変える
     const matLine_Pick = new LineMaterial({
@@ -204,13 +194,13 @@ export class ThreeLoadTemperature {
     const arrow_mat_Pick = new THREE.MeshBasicMaterial({ color: 0x00ffff });
 
     for (let target of group.children[0].children[0].children) {
-      if (n === 'clear') {
+      if (status === 'clear') {
         if (target.name === 'line2') {
           target.material = this.matLine; //デフォルトのカラー
         } else if (target.name === 'arrow') {
           target.material = this.arrow_mat //デフォルトのカラー
         }
-      } else if (n === "select") {
+      } else if (status === "select") {
         if (target.name === 'line2') {
           target.material = matLine_Pick; //ハイライト用のカラー
         } else if (target.name === 'arrow') {

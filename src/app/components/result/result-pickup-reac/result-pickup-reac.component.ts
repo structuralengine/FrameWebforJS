@@ -13,7 +13,7 @@ import { DataHelperModule } from "src/app/providers/data-helper.module";
   selector: "app-result-pickup-reac",
   templateUrl: "./result-pickup-reac.component.html",
   styleUrls: [
-    "./result-pickup-reac.component.scss",
+    "../result-combine-reac/result-combine-reac.component.scss",
     "../../../app.component.scss",
     "../../../floater.component.scss",
   ],
@@ -79,18 +79,4 @@ export class ResultPickupReacComponent implements OnInit {
     this.three.ChangePage(currentPage);
   }
 
-   /* To copy Text from Textbox */
- copyInputMessage($tbody) {
-  const selBox = document.createElement("textarea");
-  selBox.style.position = "fixed";
-  selBox.style.left = "0";
-  selBox.style.top = "0";
-  selBox.style.opacity = "0";
-  selBox.value = this.helper.table_To_text($tbody);
-  document.body.appendChild(selBox);
-  selBox.focus();
-  selBox.select();
-  document.execCommand("copy");
-  document.body.removeChild(selBox);
-}
 }

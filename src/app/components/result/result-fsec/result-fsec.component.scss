@@ -1,46 +1,4 @@
-// .btn-group {
-//     display: flex;
-//     padding: 0 16px;
-//     margin-right: auto;
-//     margin-top: 16px !important;
-// }
-
-// .pager {
-//     margin-left: 0.5px;
-//     margin-right: 0.5px;
-//     .pager-title{
-//         float:left;
-//     }
-//     // .ngb-pagination{
-//     //     float:left;
-//     // }
-// }
-
-// .datasheet{
-//     padding-left: 5px;
-//     padding-right: 5px;
-//     padding-bottom: 10px;
-//   z-index: 1;
-// }
-
-.copy{
-    font-size: 20px;
-    color: #555555;
-    opacity: 0.3;
-    &:hover{
-        opacity:  1;
-        cursor: pointer;
-    }
+tbody {
+    max-height: calc(100vh - 450px);
 }
 
-.helper{
-    padding: 0 16px;
-    ul{
-        display: flex;
-        justify-content: flex-end;
-        align-items: center;
-        li{
-            margin-left: 8px;
-        }
-    }
-}

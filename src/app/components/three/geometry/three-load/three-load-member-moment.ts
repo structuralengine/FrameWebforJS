@@ -11,18 +11,13 @@ import { RouterLinkWithHref } from '@angular/router';
   providedIn: 'root'
 })
 export class ThreeLoadMemberMoment {
+  
+  static id = 'MomentMemberLoad';
 
-  private text: ThreeLoadText;
-  private dim: ThreeLoadDimension;
   private moment: ThreeLoadMoment;
 
-  constructor(
-    text: ThreeLoadText,
-    dim: ThreeLoadDimension,
-    moment: ThreeLoadMoment) {
-    this.text = text;
-    this.dim = dim;
-    this.moment = moment;
+  constructor() {
+    this.moment = new ThreeLoadMoment();
   }
 
   /// 部材途中集中荷重を編集する
@@ -58,7 +53,6 @@ export class ThreeLoadMemberMoment {
     const p = this.getPoints(
       nodei, nodej, direction, pL1, pL2, P1, P2, height);
 
-    const points: THREE.Vector3[] = p.points;
     const L1 = p.L1;
     const L2 = p.L2;
 
@@ -66,12 +60,6 @@ export class ThreeLoadMemberMoment {
     for (const arrow of this.getArrow(direction, [P1, P2], [L1, L2])) {
       child.add(arrow);
     }
-
-    /*/ 寸法線
-    const dim = this.getDim(points, L1, L2);
-    dim.visible = false;
-    child.add(dim);
-    */
 
     // 全体
     child.name = "child";
@@ -84,6 +72,17 @@ export class ThreeLoadMemberMoment {
     // 全体の位置を修正する
     const group = new THREE.Group();
     group.add(group0);
+    group["points"] = p.points;
+    group["L1"] = p.L1;
+    group["L"] = p.L;
+    group["L2"] = p.L2;
+    group["P1"] = P1;
+    group["P2"] = P2;
+    group["nodei"] = nodei;
+    group["nodej"] = nodej;
+    group["direction"] = direction;
+    group["localAxis"] = localAxis;
+    group["editor"] = this;
     group['value'] = p.Pmax; // 大きい方の値を保存　
 
     group.position.set(nodei.x, nodei.y, nodei.z);
@@ -104,13 +103,6 @@ export class ThreeLoadMemberMoment {
       group.rotateY(-Math.asin(XZ.y));
 
 
-      //個別の集中モーメント荷重の向きを修正する
-      /*if (direction === "z") {
-        group.rotateX(-Math.PI / 2);
-      } else if (direction === "y") {
-        group.rotateX(Math.PI);
-      }*/
-
     } else if (direction === "gx") {
       group.rotation.z = Math.asin(-Math.PI / 2);
 
@@ -118,7 +110,7 @@ export class ThreeLoadMemberMoment {
       group.rotation.x = Math.asin(-Math.PI / 2);
 
     }
-    group.name = "MemberMomentLoad-" + row.toString() + '-' + direction.toString();
+    group.name = ThreeLoadMemberMoment.id + "-" + row.toString() + '-' + direction.toString();
 
     return group;
   }
@@ -327,7 +319,7 @@ export class ThreeLoadMemberMoment {
   }
 
   // ハイライトを反映させる
-  public setColor(group: any, n: string) {
+  public setColor(group: any, status: string) {
 
     //置き換えるマテリアルを生成 -> colorを設定し，対象オブジェクトのcolorを変える
     const arrow_mat_Red = new THREE.MeshBasicMaterial({ color: 0xff0000 });
@@ -341,7 +333,7 @@ export class ThreeLoadMemberMoment {
 
     for (let target1 of group.children[0].children[0].children) {
       for (let target2 of target1.children[0].children[1].children) {  //children: (2) [Mesh(arrow), Line(line)]
-        if (n === 'clear') {
+        if (status === 'clear') {
           if (target2.name === 'arrow' && group.name.slice(-1) === 'x') {
             target2.material = arrow_mat_Red; //デフォルトのカラー
           } else if (target2.name === 'arrow' && group.name.slice(-1) === 'y') {
@@ -369,7 +361,7 @@ export class ThreeLoadMemberMoment {
           } else if (target2.name === 'line' && group.name.slice(-1) === 'z') {
             target2.material = line_mat_Pick; //ハイライト用のカラー
           }*/
-        } else if (n === 'select') {
+        } else if (status === 'select') {
           if (target2.name === 'arrow') {
             target2.material = arrow_mat_Pick; //ハイライト用のカラー
           } else if (target2.name === 'line') {

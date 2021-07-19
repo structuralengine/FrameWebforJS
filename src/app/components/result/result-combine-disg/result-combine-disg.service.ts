@@ -67,8 +67,6 @@ export class ResultCombineDisgService {
     this.isCalculated = false;
     this.worker1 = new Worker('./result-combine-disg1.worker', { name: 'combine-disg1', type: 'module' });
     this.worker2 = new Worker('./result-combine-disg2.worker', { name: 'combine-disg2', type: 'module' });
-    this.disgKeys = (this.helper.dimension === 3) ? this.disgKeys3D : this.disgKeys2D ;
-    this.titles = (this.helper.dimension === 3) ? this.titles3D : this.titles2D ;
   }
 
   public clear(): void {
@@ -86,11 +84,8 @@ export class ResultCombineDisgService {
 
   public setDisgCombineJson(disg: any, defList: any, combList: any, pickList: any): void {
 
-    const postData = {
-      defList,
-      combList,
-      disg
-    };
+    this.disgKeys = (this.helper.dimension === 3) ? this.disgKeys3D : this.disgKeys2D ;
+    this.titles = (this.helper.dimension === 3) ? this.titles3D : this.titles2D ;
 
     const startTime = performance.now(); // 開始時間
     if (typeof Worker !== 'undefined') {
@@ -200,6 +195,8 @@ export class ResultCombineDisgService {
         }
   
         const disgs = disgDefine[defNo];
+        if(Object.keys(disgs).length < 1) continue;
+
         // カレントケースを集計する
         const c2 = Math.abs(caseNo).toString().trim();
         for (const key of disgKeys){

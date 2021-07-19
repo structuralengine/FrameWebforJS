@@ -2,15 +2,14 @@ import { Injectable } from "@angular/core";
 import * as THREE from "three";
 import { Vector2 } from "three";
 
-import { ThreeLoadText } from "./three-load-text";
-import { ThreeLoadDimension } from "./three-load-dimension";
+import { Text } from 'troika-three-text'
 
 @Injectable({
   providedIn: "root",
 })
 export class ThreeLoadDistribute {
-  private text: ThreeLoadText;
-  private dim: ThreeLoadDimension;
+  static id = 'DistributeLoad';
+
   private face_mat_Red: THREE.MeshBasicMaterial;
   private face_mat_Green: THREE.MeshBasicMaterial;
   private face_mat_Blue: THREE.MeshBasicMaterial;
@@ -18,10 +17,10 @@ export class ThreeLoadDistribute {
   private line_mat_Red: THREE.LineBasicMaterial;
   private line_mat_Green: THREE.LineBasicMaterial;
   private line_mat_Blue: THREE.LineBasicMaterial;
+  private face_mat_Pick: THREE.MeshBasicMaterial
+  private line_mat_Pick: THREE.LineBasicMaterial;
 
-  constructor(text: ThreeLoadText, dim: ThreeLoadDimension) {
-    this.text = text;
-    this.dim = dim;
+  constructor() {
     this.face_mat_Red = new THREE.MeshBasicMaterial({
       transparent: true,
       side: THREE.DoubleSide,
@@ -40,11 +39,14 @@ export class ThreeLoadDistribute {
       color: 0x0000ff,
       opacity: 0.3,
     });
-
-    this.line_mat_Red = new THREE.LineBasicMaterial({ color: 0xff0000, vertexColors: true});
+    this.line_mat_Red = new THREE.LineBasicMaterial({ color: 0xff0000, vertexColors: true });
     this.line_mat_Green = new THREE.LineBasicMaterial({ color: 0x00ff00, vertexColors: true });
     this.line_mat_Blue = new THREE.LineBasicMaterial({ color: 0x0000ff, vertexColors: true });
+    this.line_mat_Pick = new THREE.LineBasicMaterial({ color: 0xff0000, vertexColors: true });
+    this.face_mat_Pick = new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, side: THREE.DoubleSide, opacity: 0.3 });
   }
+
+
 
   /// 等分布荷重を編集する
   // target: 編集対象の荷重,
@@ -59,17 +61,10 @@ export class ThreeLoadDistribute {
   // row: 対象荷重が記述されている行数
   // offset: 配置位置（その他の荷重とぶつからない位置）
   // scale: スケール
-  public create(
-    nodei: THREE.Vector3,
-    nodej: THREE.Vector3,
-    localAxis: any,
-    direction: string,
-    pL1: number,
-    pL2: number,
-    P1: number,
-    P2: number, 
-    row: number
-  ): THREE.Group {
+  public create(nodei: THREE.Vector3, nodej: THREE.Vector3, localAxis: any,
+    direction: string, pL1: number, pL2: number, P1: number, P2: number,
+    row: number): THREE.Group {
+
     const offset: number = 0;
     const height: number = 1;
 
@@ -80,11 +75,7 @@ export class ThreeLoadDistribute {
 
     // 長さを決める
     const p = this.getPoints(nodei, nodej, direction, pL1, pL2, P1, P2, height);
-
     const points: THREE.Vector3[] = p.points;
-    const L1 = p.L1;
-    const L = p.L;
-    const L2 = p.L2;
 
     // 面
     child.add(this.getFace(my_color, points));
@@ -92,11 +83,6 @@ export class ThreeLoadDistribute {
     // 線
     child.add(this.getLine(my_color, points));
 
-    /*/ 寸法線
-    const dim = this.getDim(points, L1, L, L2);
-    dim.visible = false;
-    child.add(dim);
-    */
     // 全体
     child.name = "child";
     child.position.y = offset;
@@ -105,27 +91,29 @@ export class ThreeLoadDistribute {
     group0.add(child);
     group0.name = "group";
 
-    /*/ 文字を追加する
-    for(const text of this.getText(points, P1, P2)){
-      text.visible = false;
-      group0.add(text);
-    }
-    */
-    // 全体の位置を修正する
     const group = new THREE.Group();
     group.add(group0);
+    group["points"] = p.points;
+    group["L1"] = p.L1;
+    group["L"] = p.L;
+    group["L2"] = p.L2;
+    group["P1"] = P1;
+    group["P2"] = P2;
+    group["nodei"] = nodei;
+    group["nodej"] = nodej;
+    group["direction"] = direction;
+    group["localAxis"] = localAxis;
+    group["editor"] = this;
     group["value"] = p.Pmax; // 大きい方の値を保存
 
-  
     // 全体の向きを修正する
-
     if (!direction.includes("g")) {
-    
-      const XY = new Vector2(localAxis.x.x, localAxis.x.y).normalize();
-      let A = Math.asin(XY.y) 
 
-      if( XY.x < 0){
-       A = Math.PI - A;
+      const XY = new Vector2(localAxis.x.x, localAxis.x.y).normalize();
+      let A = Math.asin(XY.y)
+
+      if (XY.x < 0) {
+        A = Math.PI - A;
       }
       group.rotateZ(A);
 
@@ -149,16 +137,18 @@ export class ThreeLoadDistribute {
           group.rotateX(Math.PI);
         }
       }
-    
+
     } else if (direction === "gx") {
       group.rotation.z = Math.asin(-Math.PI / 2);
     } else if (direction === "gz") {
       group.rotation.x = Math.asin(-Math.PI / 2);
     }
 
+    // 全体の位置を修正する
     group.position.set(nodei.x, nodei.y, nodei.z);
 
-    group.name = "DistributeLoad-" + row.toString() + '-' +direction.toString();  //例：DistributeLoad-3-y
+    // 例：DistributeLoad-3-y
+    group.name = ThreeLoadDistribute.id + "-" + row.toString() + '-' + direction.toString(); 
 
     return group;
   }
@@ -267,15 +257,6 @@ export class ThreeLoadDistribute {
     } else {
       face_mat = this.face_mat_Blue;
     }
-    /*
-    const face_mat = new THREE.MeshBasicMaterial({
-      transparent: true,
-      side: THREE.DoubleSide,
-      color: my_color,
-      opacity: 0.3,
-    });
-    */
-
     const face_geo = new THREE.Geometry();
     face_geo.vertices = points;
 
@@ -306,6 +287,192 @@ export class ThreeLoadDistribute {
 
     return line;
   }
+
+  // 大きさを反映する
+  public setSize(group: any, scale: number): void {
+    for (const item of group.children) {
+      item.scale.set(1, scale, scale);
+    }
+  }
+
+  // オフセットを反映する
+  public setOffset(group: THREE.Group, offset: number): void {
+    for (const item of group.children) {
+      item.position.y = offset;
+    }
+  }
+
+  public setGlobalOffset(
+    group: THREE.Group,
+    offset: number,
+    key: string
+  ): void {
+    const k = key.replace("wg", "");
+    for (const item of group.children) {
+      item.position[k] = offset;
+    }
+  }
+
+  // 大きさを反映する
+  public setScale(group: any, scale: number): void {
+    group.scale.set(1, scale, scale);
+  }
+
+  // ハイライトを反映させる
+  public setColor(group: any, status: string): void {
+
+    const group0 = group.getObjectByName('group');
+    const child = group0.getObjectByName('child');
+
+    let face_color = this.face_mat_Pick; //ハイライト用のカラー
+    let line_color = this.line_mat_Pick;
+
+    if (status !== "select") {
+      //デフォルトのカラーに戻す
+      const direction: string = group.name.slice(-1);
+      if (direction === 'y') {
+        face_color = this.face_mat_Green;
+        line_color = this.line_mat_Green;
+      } else if (direction === 'z') {
+        face_color = this.face_mat_Blue;
+        line_color = this.line_mat_Blue;
+      }
+    }
+
+    // カラーの適用
+    for (const target of child.children) {
+      if (target.name === 'face') {
+        target.material = face_color;
+      } else if (target.name === 'line') {
+        target.material = line_color;
+      }
+    }
+
+  }
+
+  // 文字
+  private setText(group: any, text: Text[]): void {
+
+    const direction = group.direction;
+    const localAxis = group.localAxis;
+    const scale1 = group.scale.y;
+    const scale2 = group.children[0].scale.y;
+    const points = group.points;
+
+    const nodei = group.nodei
+    const L1 = new THREE.Vector3(localAxis.x.x * group.L1, localAxis.x.y * group.L1, localAxis.x.z * group.L1)
+
+    const nodej = group.nodej
+    const L2 = new THREE.Vector3(localAxis.x.x * group.L2, localAxis.x.y * group.L2, localAxis.x.z * group.L2)
+
+    const list = [{
+      text: text[0],
+      position: new THREE.Vector3(nodei.x + L1.x, nodei.y + L1.y, nodei.z + L1.z),
+      value: group.P1,
+      volume: points[1].y,
+      anchorY: 'top'
+    }, {
+      text: text[1],
+      position: new THREE.Vector3(nodej.x - L2.x, nodej.y - L2.y, nodej.z - L2.z),
+      value: group.P2,
+      volume: points[3].y,
+      anchorY: 'bottom'
+    }];
+
+    for (const target of list) {
+
+      const text = target.text;
+      if (target.value === 0) {
+        text.visible = false;
+        continue;
+      }
+
+      text.visible = true;
+      text.text = target.value.toFixed(2) + ' kN/m';
+
+      // 向きを修正する
+      text.rotation.set(0, 0, 0);
+      const XY = new Vector2(localAxis.x.x, localAxis.x.y).normalize();
+      let A = Math.asin(XY.y);
+      if (XY.x < 0) {
+        A = Math.PI - A;
+      }
+      text.rotateZ(A);
+
+      const lenXY = Math.sqrt(
+        Math.pow(localAxis.x.x, 2) + Math.pow(localAxis.x.y, 2)
+      );
+      const XZ = new Vector2(lenXY, localAxis.x.z).normalize();
+      text.rotateY(-Math.asin(XZ.y));
+
+      // 位置を修正する
+      const position = new THREE.Vector3(target.position.x, target.position.y, target.position.z);
+
+      const V1 = new THREE.Vector3(localAxis[direction].x * target.volume, localAxis[direction].y * target.volume, localAxis[direction].z * target.volume);
+      V1.multiplyScalar(scale1).multiplyScalar(scale2);
+
+      if (localAxis.x.x === 0 && localAxis.x.y === 0) {
+        // 鉛直の部材
+
+        if (direction === "z") {
+          if (Math.sign(target.value) < 0) {
+            position.add(V1);
+            text.anchorX = 'left';
+          } else {
+            position.sub(V1);
+            text.anchorX = 'right';
+          }
+          text.rotateZ(Math.PI / 2);
+          text.rotateY(Math.PI);
+
+        } else if (direction === "y") {
+          if (Math.sign(target.value) > 0) {
+            position.add(V1);
+            text.anchorX = 'left';
+          } else {
+            position.sub(V1);
+            text.anchorX = 'right';
+          }
+          text.rotateZ(Math.PI / 2);
+          text.rotateY(-Math.PI / 2);
+
+        }
+
+      } else {
+        // 鉛直以外の部材
+
+        if (direction === "z") {
+          if (Math.sign(target.value) < 0) {
+            position.add(V1);
+            text.anchorX = 'left';
+          } else {
+            position.sub(V1);
+            text.anchorX = 'right';
+          }
+          text.rotateZ(Math.PI / 2);
+          text.rotateY(-Math.PI / 2);
+
+        } else if (direction === "y") {
+          if (Math.sign(target.value) > 0) {
+            position.add(V1);
+            text.anchorX = 'left';
+          } else {
+            position.sub(V1);
+            text.anchorX = 'right';
+          }
+          text.rotateZ(Math.PI / 2);
+
+        }
+      }
+      text.anchorY = target.anchorY;
+
+      text.position.set(position.x, position.y, position.z);
+      text.sync();
+    }
+
+
+  }
+
 
   /*/ 寸法線
   private getDim(points: THREE.Vector3[],
@@ -370,127 +537,6 @@ export class ThreeLoadDistribute {
     return dim;
   }
   */
-  /*/ 文字
-  private getText(points: THREE.Vector3[], P1: number, P2: number): THREE.Group[] {
 
-    const result = [];
-
-    const size: number = 0.1; // 文字サイズ
-
-    const pos = new THREE.Vector2(0, 0);
-    if(P1 !== 0) {
-      let text: THREE.Group;
-      if (P1 > 0){
-        text = this.text.create(P1.toFixed(2), pos, size, 'left', 'bottom');
-        text.rotateZ(Math.PI/2);
-        text.position.x = points[1].x;
-        text.position.y = points[1].y;
-      } else {
-        text = this.text.create(P1.toFixed(2), pos, size, 'right', 'bottom');
-        text.rotateZ(-Math.PI/2);
-        text.position.x = points[1].x;
-        text.position.y = points[1].y;
-      }
-      text.name = "text";
-      result.push(text);
-    }
-
-    if(P2 !== 0) {
-      let text: THREE.Group;
-      if (P2 > 0){
-        text = this.text.create(P2.toFixed(2), pos, size, 'left', 'top');
-        text.rotateZ(Math.PI/2);
-        text.position.x = points[3].x;
-        text.position.y = points[3].y;
-      } else {
-        text = this.text.create(P2.toFixed(2), pos, size, 'right', 'top');
-        text.rotateZ(-Math.PI/2);
-        text.position.x = points[3].x;
-        text.position.y = points[3].y;
-      }
-      text.name = "text";
-      result.push(text);
-    }
-
-    return result;
-  }
-  */
-
-  // 大きさを反映する
-  public setSize(group: any, scale: number): void {
-    for (const item of group.children) {
-      item.scale.set(1, scale, scale);
-    }
-  }
-
-  // オフセットを反映する
-  public setOffset(group: THREE.Group, offset: number): void {
-    for (const item of group.children) {
-      item.position.y = offset;
-    }
-  }
-
-  public setGlobalOffset(
-    group: THREE.Group,
-    offset: number,
-    key: string
-  ): void {
-    const k = key.replace("wg", "");
-    for (const item of group.children) {
-      item.position[k] = offset;
-    }
-  }
-
-  // 大きさを反映する
-  public setScale(group: any, scale: number): void {
-    group.scale.set(1, scale, scale);
-  }
-
-  // ハイライトを反映させる
-  public setColor(group: any, status: string): void{
-
-    //置き換えるマテリアルを生成 -> colorを設定し，対象オブジェクトのcolorを変える
-    const face_mat_Pick = new THREE.MeshBasicMaterial({
-      transparent: true,
-      side: THREE.DoubleSide,
-      color: 0xff0000,
-      opacity: 0.3,
-    });
-    const line_mat_Pick = new THREE.LineBasicMaterial({ color: 0xff0000, vertexColors: true});
-    
-    for(let target of group.children[0].children[0].children) {
-      if (status === "clear"){
-        if (group.name.slice(-1) === 'y'){
-          if (target.name === 'face'){
-            target.material = this.face_mat_Green; //デフォルトのカラー
-          } else if (target.name === 'line'){
-            target.material = this.line_mat_Green; //デフォルトのカラー
-          }
-        } else if (group.name.slice(-1) === 'z') {
-          if (target.name === 'face'){
-            target.material = this.face_mat_Blue; //デフォルトのカラー
-          } else if (target.name === 'line'){
-            target.material = this.line_mat_Blue; //デフォルトのカラー
-          }
-        }
-      } else if (status === "select"){
-        if (group.name.slice(-1) === 'y'){
-          if (target.name === 'face'){
-            target.material = face_mat_Pick; //ハイライト用のカラー
-          } else if (target.name === 'line'){
-            //target.material = this.line_mat_Green; //デフォルトのカラー
-            target.material = line_mat_Pick; //デフォルトのカラー
-          }
-        } else if (group.name.slice(-1) === 'z') {
-          if (target.name === 'face'){
-            target.material = face_mat_Pick; //ハイライト用のカラー
-          } else if (target.name === 'line'){
-            //target.material = this.line_mat_Blue; //デフォルトのカラー
-            target.material = line_mat_Pick; //デフォルトのカラー
-          }
-        }
-      }
-    }
-  }
 
 }

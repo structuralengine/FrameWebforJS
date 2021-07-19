@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, ViewChild, HostListener, NgZone } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, ViewChild, HostListener, NgZone, OnDestroy } from '@angular/core';
 import * as THREE from 'three';
 
 import { SceneService } from './scene.service';
@@ -10,10 +10,11 @@ import html2canvas from 'html2canvas';
   templateUrl: './three.component.html',
   styleUrls: ['./three.component.scss'],
 })
-export class ThreeComponent implements AfterViewInit {
+export class ThreeComponent implements AfterViewInit, OnDestroy {
 
   @ViewChild('myCanvas', { static: true }) private canvasRef: ElementRef;
-  @ViewChild('canvas') img: ElementRef;
+  @ViewChild('img') img: ElementRef;
+  @ViewChild('screen') screen: ElementRef;
   @ViewChild('downloadLink') downloadLink: ElementRef;
 
   private get canvas(): HTMLCanvasElement {
@@ -44,6 +45,9 @@ export class ThreeComponent implements AfterViewInit {
     div.parentNode.insertBefore(element, div.nextSibling);  // ボタンを置きたい場所にaタグを追加
     // レンダリングする
     this.animate();
+  }
+
+  ngOnDestroy() {
   }
 
   animate(): void {
@@ -104,18 +108,18 @@ export class ThreeComponent implements AfterViewInit {
 
 
   public downloadImage(){
+    // html2canvas(this.screen.nativeElement).then(canvas => {
     html2canvas(this.canvasRef.nativeElement).then(canvas => {
       // this.scene.render();
       this.img.nativeElement.src = canvas.toDataURL();
       this.downloadLink.nativeElement.href = canvas.toDataURL('image/png');
+
       const date = new Date();
-      const dateFormat = date.getFullYear()  + "_" +
-				(date.getMonth() + 1)  + "_" +
-				 date.getDate() + "_" +
-				 date.getHours() + "_"+
-				 date.getMinutes()  + "_" +
-				 date.getSeconds()  ;
-      this.downloadLink.nativeElement.download = dateFormat;
+      const filename = date.getFullYear()  + "_" +
+				(date.getMonth() + 1)  + "_" +  date.getDate() + "_" +
+        date.getHours() + date.getMinutes() + date.getSeconds()  + ".png";
+
+        this.downloadLink.nativeElement.download = filename;
       this.downloadLink.nativeElement.click();
     });
   }

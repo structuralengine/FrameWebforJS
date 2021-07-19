@@ -10,7 +10,7 @@ import { DataHelperModule } from "src/app/providers/data-helper.module";
   selector: "app-result-pickup-fsec",
   templateUrl: "./result-pickup-fsec.component.html",
   styleUrls: [
-    "./result-pickup-fsec.component.scss",
+    "../result-combine-fsec/result-combine-fsec.component.scss",
     "../../../app.component.scss",
     "../../../floater.component.scss",
   ],
@@ -73,18 +73,4 @@ export class ResultPickupFsecComponent implements OnInit {
     this.three.ChangePage(currentPage);
   }
 
-   /* To copy Text from Textbox */
- copyInputMessage($tbody) {
-  const selBox = document.createElement("textarea");
-  selBox.style.position = "fixed";
-  selBox.style.left = "0";
-  selBox.style.top = "0";
-  selBox.style.opacity = "0";
-  selBox.value = this.helper.table_To_text($tbody);
-  document.body.appendChild(selBox);
-  selBox.focus();
-  selBox.select();
-  document.execCommand("copy");
-  document.body.removeChild(selBox);
-}
 }

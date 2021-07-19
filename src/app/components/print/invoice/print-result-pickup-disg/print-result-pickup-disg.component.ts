@@ -4,6 +4,8 @@ import { ResultDataService } from "../../../../providers/result-data.service";
 import { AfterViewInit } from "@angular/core";
 import { JsonpClientBackend } from "@angular/common/http";
 import { DataCountService } from "../dataCount.service";
+import { ResultCombineDisgService } from "src/app/components/result/result-combine-disg/result-combine-disg.service";
+import { DataHelperModule } from "src/app/providers/data-helper.module";
 
 @Component({
   selector: "app-print-result-pickup-disg",
@@ -15,6 +17,7 @@ import { DataCountService } from "../dataCount.service";
   ],
 })
 export class PrintResultPickupDisgComponent implements OnInit, AfterViewInit {
+  isEnable = true;
   page: number;
   load_name: string;
   btnPickup: string;
@@ -22,7 +25,7 @@ export class PrintResultPickupDisgComponent implements OnInit, AfterViewInit {
   invoiceIds: string[];
   invoiceDetails: Promise<any>[];
   row: number = 0;
-  key: string;
+  dimension: number;
 
   public pickDisg_dataset = [];
   public pickDisg_title = [];
@@ -34,8 +37,10 @@ export class PrintResultPickupDisgComponent implements OnInit, AfterViewInit {
   constructor(
     private InputData: InputDataService,
     private ResultData: ResultDataService,
-    private countArea: DataCountService
-  ) {
+    private countArea: DataCountService,
+    private combDisg: ResultCombineDisgService,
+    private helper: DataHelperModule ) {
+    this.dimension = this.helper.dimension;
     this.clear();
   }
 
@@ -57,7 +62,7 @@ export class PrintResultPickupDisgComponent implements OnInit, AfterViewInit {
       this.pickDisg_type_break = tables.break_after_type;
       this.judge = this.countArea.setCurrentY(tables.this, tables.last);
     } else {
-      this.countArea.setData(14);
+      this.isEnable = false;
     }
   }
 
@@ -69,20 +74,22 @@ export class PrintResultPickupDisgComponent implements OnInit, AfterViewInit {
     let body: any[] = new Array();
     const typeSum: any[] = new Array();
 
-    const KEYS = [
-      "dx_max",
-      "dx_min",
-      "dy_max",
-      "dy_min",
-      "dz_max",
-      "dz_min",
-      "rx_max",
-      "rx_min",
-      "ry_max",
-      "ry_min",
-      "rz_max",
-      "rz_min",
-    ];
+    const KEYS = this.combDisg.disgKeys;
+    const TITLES = this.combDisg.titles; 
+    // [
+    //   "dx_max",
+    //   "dx_min",
+    //   "dy_max",
+    //   "dy_min",
+    //   "dz_max",
+    //   "dz_min",
+    //   "rx_max",
+    //   "rx_min",
+    //   "ry_max",
+    //   "ry_min",
+    //   "rz_max",
+    //   "rz_min",
+    // ];
 
     const keys: string[] = Object.keys(json);
 
@@ -113,11 +120,14 @@ export class PrintResultPickupDisgComponent implements OnInit, AfterViewInit {
       let table: any[] = new Array();
       let type: any[] = new Array();
       for (let i = 0; i < KEYS.length; i++) {
-        this.key = KEYS[i];
-        typeName.push(this.key);
-
+        const key = KEYS[i];
+        const title2 = TITLES[i];
         const elieli = json[index]; // 1行分のnodeデータを取り出す
-        const elist = elieli[this.key]; // 1行分のnodeデータを取り出す.
+        if(!(key in elieli)) continue;
+
+        typeName.push(title2);
+
+        const elist = elieli[key]; // 1行分のnodeデータを取り出す.
         let body: any[] = new Array();
         if (i === 0) {
           this.row = 10;
@@ -129,7 +139,7 @@ export class PrintResultPickupDisgComponent implements OnInit, AfterViewInit {
           const item = elist[k];
           // 印刷する1行分のリストを作る
           const line = ["", "", "", "", "", "", "", ""];
-          line[0] = item.id.toString();
+          line[0] = k.toString();
           line[1] = item.dx.toFixed(4);
           line[2] = item.dy.toFixed(4);
           line[3] = item.dz.toFixed(4);
@@ -173,9 +183,11 @@ export class PrintResultPickupDisgComponent implements OnInit, AfterViewInit {
     for (const index of keys) {
       const elist = json[index]; // 1テーブル分のデータを取り出す
       for (let i = 0; i < KEYS.length; i++) {
-        this.key = KEYS[i];
+        const key = KEYS[i];
         const elieli = json[index]; // 1行分のnodeデータを取り出す
-        const elist = elieli[this.key]; // 1行分のnodeデータを取り出す.
+        if(!(key in elieli)) continue;
+
+        const elist = elieli[key]; // 1行分のnodeデータを取り出す.
         for (const k of Object.keys(elist)) {
           countCell += Object.keys(elist).length;
         }
@@ -197,6 +209,8 @@ export class PrintResultPickupDisgComponent implements OnInit, AfterViewInit {
       const elieli = json[index]; // 1行分のnodeデータを取り出す
       for (let i = 0; i < KEYS.length; i++) {
         const key: string = KEYS[i];
+        if(!(key in elieli)) continue;
+
         const elist = elieli[key]; // 1行分のnodeデータを取り出す.
 
         // x方向Max,minなどのタイプでの分割

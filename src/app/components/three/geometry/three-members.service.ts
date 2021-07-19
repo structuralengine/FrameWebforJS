@@ -87,13 +87,12 @@ export class ThreeMembersService {
     // メンバーデータを入手
     const jsonData = this.member.getMemberJson(0);
     const jsonKeys = Object.keys(jsonData);
-    if (jsonKeys.length <= 0) {
-      this.ClearData();
-      return null;
-    }
 
     // 要素を排除する
     this.ClearData();
+    if (jsonKeys.length <= 0) {
+      return null;
+    }
 
     // 新しい入力を適用する
     for (const key of jsonKeys) {
@@ -125,6 +124,7 @@ export class ThreeMembersService {
         new THREE.MeshBasicMaterial({ color: 0x000000 })
       );
       mesh.name = "member" + key;
+      mesh['element'] = 'element' + member.e;
       mesh.rotation.z = Math.acos(v.y / len);
       mesh.rotation.y = 0.5 * Math.PI + Math.atan2(v.x, v.z);
       mesh.position.set(x, y, z);
@@ -176,7 +176,7 @@ export class ThreeMembersService {
   }
 
   //シートの選択行が指すオブジェクトをハイライトする
-  public selectChange(index): void{
+  public selectChange(index, mode = "members"): void{
 
     if (this.currentIndex === index){
       //選択行の変更がないとき，何もしない
@@ -185,12 +185,15 @@ export class ThreeMembersService {
 
     //全てのハイライトを元に戻し，選択行のオブジェクトのみハイライトを適応する
     for (let item of this.memberList.children){
-
       item['material']['color'].setHex(0X000000);
-
-      if (item.name === 'member' + index.toString()){
-
-        item['material']['color'].setHex(0X00A5FF);
+      if( mode === "elements"){
+        if (item['element'] === 'element' + index.toString()){
+          item['material']['color'].setHex(0XFF0000);
+        }
+      } else {
+        if (item.name === 'member' + index.toString()){
+          item['material']['color'].setHex(0XFF0000);
+        }
       }
     }
 
@@ -303,18 +306,43 @@ export class ThreeMembersService {
   }
 
   // 部材座標軸を
-  public localAxis(
-    xi: number,
-    yi: number,
-    zi: number,
-    xj: number,
-    yj: number,
-    zj: number,
-    theta: number
-  ): any {
+  public localAxis( xi: number, yi: number, zi: number,
+                    xj: number, yj: number, zj: number,
+                    theta: number ): any {
     const xM: number[] = [1, 0, 0]; // x だけ1の行列
     const yM: number[] = [0, 1, 0]; // y だけ1の行列
     const zM: number[] = [0, 0, 1]; // z だけ1の行列
+
+    // 座標変換ベクトル × 荷重ベクトル
+    const t3 = this.tMatrix(xi, yi, zi, xj, yj, zj, theta);
+    const tt = this.getInverse(t3);
+
+    const X = new Vector3(
+      tt[0][0] * xM[0] + tt[0][1] * xM[1] + tt[0][2] * xM[2],
+      tt[1][0] * xM[0] + tt[1][1] * xM[1] + tt[1][2] * xM[2],
+      tt[2][0] * xM[0] + tt[2][1] * xM[1] + tt[2][2] * xM[2],
+    );
+    const Y = new Vector3(
+      tt[0][0] * yM[0] + tt[0][1] * yM[1] + tt[0][2] * yM[2],
+      tt[1][0] * yM[0] + tt[1][1] * yM[1] + tt[1][2] * yM[2],
+      tt[2][0] * yM[0] + tt[2][1] * yM[1] + tt[2][2] * yM[2],
+    );
+    const Z = new Vector3(
+      tt[0][0] * zM[0] + tt[0][1] * zM[1] + tt[0][2] * zM[2],
+      tt[1][0] * zM[0] + tt[1][1] * zM[1] + tt[1][2] * zM[2],
+      tt[2][0] * zM[0] + tt[2][1] * zM[1] + tt[2][2] * zM[2],
+    );
+    const result = {
+      x: X,
+      y: Y,
+      z: Z,
+    };
+    return result;
+  }
+
+  public tMatrix( xi: number, yi: number, zi: number,
+                  xj: number, yj: number, zj: number,
+                  theta: number ): any {
 
     const DX: number = xj - xi;
     const DY: number = yj - yi;
@@ -364,32 +392,11 @@ export class ThreeMembersService {
 
     // 座標変換ベクトル × 荷重ベクトル
     const t3 = this.dot(t1, t2);
-    const tt = this.getInverse(t3);
 
-    const X = new Vector3(
-      tt[0][0] * xM[0] + tt[0][1] * xM[1] + tt[0][2] * xM[2],
-      tt[1][0] * xM[0] + tt[1][1] * xM[1] + tt[1][2] * xM[2],
-      tt[2][0] * xM[0] + tt[2][1] * xM[1] + tt[2][2] * xM[2],
-    );
-    const Y = new Vector3(
-      tt[0][0] * yM[0] + tt[0][1] * yM[1] + tt[0][2] * yM[2],
-      tt[1][0] * yM[0] + tt[1][1] * yM[1] + tt[1][2] * yM[2],
-      tt[2][0] * yM[0] + tt[2][1] * yM[1] + tt[2][2] * yM[2],
-    );
-    const Z = new Vector3(
-      tt[0][0] * zM[0] + tt[0][1] * zM[1] + tt[0][2] * zM[2],
-      tt[1][0] * zM[0] + tt[1][1] * zM[1] + tt[1][2] * zM[2],
-      tt[2][0] * zM[0] + tt[2][1] * zM[1] + tt[2][2] * zM[2],
-    );
-    const result = {
-      x: X,
-      y: Y,
-      z: Z,
-    };
-    return result;
+    return t3;
   }
 
-  private dot(a: number[][], B: number[][]): number[][] {
+  public dot(a: number[][], B: number[][]): number[][] {
     const u: number = a.length;
 
     const AB = Array(u)

@@ -18,42 +18,91 @@ export class InputLoadComponent implements OnInit {
   private dataset = [];
   private columnHeaders3D = [
     { title: '要素荷重', align: 'center', colModel: [
-      { title: "部材1", dataType: "string", dataIndx: "m1", sortable: false, width: 30, },
-      { title: "部材2", dataType: "string", dataIndx: "m2", sortable: false, width: 30, },
-      { title: "方向",  dataType: "string", dataIndx: "direction",  sortable: false, width: 30, },
-      { title: "マーク", dataType: "integer", dataIndx: "mark", sortable: false, width: 60, },
-      { title: "L1", dataType: "float", format: "#.000", dataIndx: "L1", sortable: false, width: 70, },
-      { title: "L2", dataType: "float", format: "#.000", dataIndx: "L2", sortable: false, width: 70, },
-      { title: "P1", dataType: "float", format: "#.00", dataIndx: "P1", sortable: false, width: 70, },
-      { title: "P2", dataType: "float", format: "#.00", dataIndx: "P2", sortable: false, width: 70, },
+      { title: '部材No', align: 'center', colModel: [
+        { title: "1", align: 'center', dataType: "string", dataIndx: "m1", sortable: false, width: 30, },
+        { title: "2", align: 'center', dataType: "string", dataIndx: "m2", sortable: false, width: 30, }
+      ]},
+      { title: '方向', align: 'center', colModel: [
+        { title: "(x,y,z)",  dataType: "string", dataIndx: "direction",  sortable: false, width: 30, }]},
+      { title: 'マーク', align: 'center', colModel: [
+        { title: "(1,2,9)", dataType: "integer", dataIndx: "mark", sortable: false, width: 60, }]},
+      { title: 'L1', align: 'center', colModel: [
+        { title: "(m)", dataType: "string", align: 'right', dataIndx: "L1", sortable: false, width: 70, 
+          format: (val) => {
+            const num = this.helper.toNumber(val);
+            if(num === null) return null
+            const str = val.toString();
+            if(num===0 && str.charAt(0) === '-'){
+              return '-0.000'
+            } else {
+              return num.toFixed(3);
+            }
+          }}
+      ]},
+      { title: 'L2', align: 'center', colModel: [
+        { title: "(m)", dataType: "float", format: "#.000", dataIndx: "L2", sortable: false, width: 70, }]},
+      { title: 'P1', align: 'center', colModel: [
+        { title: "(kN/m)", dataType: "float", format: "#.00", dataIndx: "P1", sortable: false, width: 70, }]},
+      { title: 'P2', align: 'center', colModel: [
+        { title: "(kN/m)", dataType: "float", format: "#.00", dataIndx: "P2", sortable: false, width: 70, }]}
     ]},
     { title: '節点荷重', align: 'center', colModel: [
-      { title: "節点No", dataType: "string", dataIndx: "n", sortable: false, width: 30,},
-      { title: "X", dataType: "float", format: "#.00", dataIndx: "tx", sortable: false, width: 70, },
-      { title: "Y", dataType: "float", format: "#.00", dataIndx: "ty", sortable: false, width: 70, },
-      { title: "Z", dataType: "float", format: "#.00", dataIndx: "tz", sortable: false, width: 70, },
-      { title: "RX", dataType: "float", format: "#.00", dataIndx: "rx", sortable: false, width: 70, },
-      { title: "RY", dataType: "float", format: "#.00", dataIndx: "ry", sortable: false, width: 70, },
-      { title: "RZ", dataType: "float", format: "#.00", dataIndx: "rz", sortable: false, width: 70, },
+      { title: '節点', align: 'center', colModel: [
+        { title: "No", align: 'center', dataType: "string", dataIndx: "n", sortable: false, width: 30,}]},
+      { title: 'X', align: 'center', colModel: [
+        { title: "(kN)", dataType: "float", format: "#.00", dataIndx: "tx", sortable: false, width: 70, }]},
+      { title: 'Y', align: 'center', colModel: [
+        { title: "(kN)", dataType: "float", format: "#.00", dataIndx: "ty", sortable: false, width: 70, }]},
+      { title: 'Z', align: 'center', colModel: [
+        { title: "(kN)", dataType: "float", format: "#.00", dataIndx: "tz", sortable: false, width: 70, }]},
+      { title: 'RX', align: 'center', colModel: [
+        { title: "(kN m)", dataType: "float", format: "#.00", dataIndx: "rx", sortable: false, width: 70, }]},
+      { title: 'RY', align: 'center', colModel: [
+        { title: "(kN m)", dataType: "float", format: "#.00", dataIndx: "ry", sortable: false, width: 70, }]},
+      { title: 'RZ', align: 'center', colModel: [
+        { title: "(kN m)", dataType: "float", format: "#.00", dataIndx: "rz", sortable: false, width: 70, }]}
     ]},
   ];
   private columnHeaders2D = [
     { title: '要素荷重', align: 'center', colModel: [
-      {title: "部材1", dataType: "string", dataIndx: "m1", sortable: false, width: 30 },
-      {title: "部材2", dataType: "string", dataIndx: "m2", sortable: false, width: 30 },
-      {title: "方向", dataType: "string", dataIndx: "direction", sortable: false, width: 30 },
-      {title: "マーク", dataType: "integer", dataIndx: "mark", sortable: false, width: 60 },
-      {title: "L1", dataType: "float", format: "#.000", dataIndx: "L1", sortable: false, width: 70 },
-      {title: "L2", dataType: "float", format: "#.000", dataIndx: "L2", sortable: false, width: 70 },
-      {title: "P1", dataType: "float", format: "#.00", dataIndx: "P1", sortable: false, width: 70 },
-      {title: "P2", dataType: "float", format: "#.00", dataIndx: "P2", sortable: false, width: 70 },
+      { title: '部材No', colModel: [
+        { title: "1", align: 'center', dataType: "string", dataIndx: "m1", sortable: false, width: 30, },
+        { title: "2", align: 'center', dataType: "string", dataIndx: "m2", sortable: false, width: 30, }
+      ]},
+      { title: '方向', align: 'center', colModel: [
+        { title: "(x,y,z)",  dataType: "string", dataIndx: "direction",  sortable: false, width: 30, }]},
+      { title: 'マーク', align: 'center', colModel: [
+        { title: "(1,2,9)", dataType: "integer", dataIndx: "mark", sortable: false, width: 60, }]},
+      { title: 'L1', align: 'center', colModel: [
+        { title: "(m)", dataType: "string", align: 'right', dataIndx: "L1", sortable: false, width: 70, 
+          format: (val) => {
+            const num = this.helper.toNumber(val);
+            if(num === null) return null
+            const str = val.toString();
+            if(num===0 && str.charAt(0) === '-'){
+              return '-0.000'
+            } else {
+              return num.toFixed(3);
+            }
+          }}
+      ]},
+      { title: 'L2', align: 'center', colModel: [
+        { title: "(m)", dataType: "float", format: "#.000", dataIndx: "L2", sortable: false, width: 70, }]},
+      { title: 'P1', align: 'center', colModel: [
+        { title: "(kN/m)", dataType: "float", format: "#.00", dataIndx: "P1", sortable: false, width: 70, }]},
+      { title: 'P2', align: 'center', colModel: [
+        { title: "(kN/m)", dataType: "float", format: "#.00", dataIndx: "P2", sortable: false, width: 70, }]}
     ]},
     { title: '節点荷重', align: 'center', colModel: [
-      {title: "節点No", dataType: "string", dataIndx: "n", sortable: false, width: 30 },
-      {title: "X", dataType: "float", format: "#.00", dataIndx: "tx", sortable: false, width: 70 },
-      {title: "Y", dataType: "float", format: "#.00", dataIndx: "ty", sortable: false, width: 70 },
-      {title: "RZ", dataType: "float", format: "#.00", dataIndx: "rz", sortable: false, width: 70 },
-    ]},
+      { title: '節点', align: 'center', colModel: [
+        { title: "No", align: 'center', dataType: "string", dataIndx: "n", sortable: false, width: 30,}]},
+      { title: 'X', align: 'center', colModel: [
+        { title: "(kN)", dataType: "float", format: "#.00", dataIndx: "tx", sortable: false, width: 70, }]},
+      { title: 'Y', align: 'center', colModel: [
+        { title: "(kN)", dataType: "float", format: "#.00", dataIndx: "ty", sortable: false, width: 70, }]},
+      { title: 'M', align: 'center', colModel: [
+        { title: "(kN m)", dataType: "float", format: "#.00", dataIndx: "rz", sortable: false, width: 70, }]}
+      ]},
   ];
 
   private ROWS_COUNT = 15;
@@ -141,8 +190,12 @@ export class InputLoadComponent implements OnInit {
       this.three.selectChange("load_values", row, column);
     },
     change: (evt, ui) => {
-
       for (const range of ui.updateList){
+        // L1行に 数字ではない入力がされていたら削除する
+        const L1 = this.helper.toNumber(range.rowData["L1"]);
+        if ( L1 === null) {
+          range.rowData["L1"] = null;
+        }
         const row = range.rowIndx + 1;
         this.three.changeData("load_values", row);
       }
@@ -151,4 +204,14 @@ export class InputLoadComponent implements OnInit {
 
   width = (this.helper.dimension === 3) ? 1020 : 810 ;
 
+  private formatL1  (val): string {
+    const num = this.helper.toNumber(val);
+    if(num === null) return null
+    const str = val.toString();
+    if(num===0 && str.charAt(0) === '-'){
+      return '-0.000'
+    } else {
+      return num.toFixed(3);
+    }
+  }
 }

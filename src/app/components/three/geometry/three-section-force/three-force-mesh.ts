@@ -1,7 +1,9 @@
-import { Injectable } from '@angular/core';
+import { Inject, Injectable } from '@angular/core';
 import * as THREE from "three";
+import { Text } from 'troika-three-text'
 import { Vector2 } from 'three';
 import { ThreeLoadText } from '../three-load/three-load-text';
+import { noUndefined } from '@angular/compiler/src/util';
 
 
 @Injectable({
@@ -11,13 +13,13 @@ export class ThreeSectionForceMeshService {
 
   private font: THREE.Font;
   private text: ThreeLoadText;
+  public dimension: number
 
   private face_mat: THREE.MeshBasicMaterial;
   private line_mat: THREE.LineBasicMaterial;
 
-
   constructor(font: THREE.Font) {
-    this.text = new ThreeLoadText(font);
+    this.text = new ThreeLoadText();
     this.font = font;
 
     this.face_mat = new THREE.MeshBasicMaterial({
@@ -75,18 +77,23 @@ export class ThreeSectionForceMeshService {
     group0.add(child);
     group0.name = "group";
 
-    /*/ 文字を追加する
-    for(const text of this.getText(points, P1, P2)){
-      text.visible = false;
-      group0.add(text);
-    }
-    */
 
      // 全体の位置を修正する
     const group = new THREE.Group();
     group.add(group0);
-    group['value'] = p.Pmax; // 大きい方の値を保存　
 
+    // 文字を追加する
+    // const text = this.getText(points, P1, P2);
+    // const ppp = [null, new THREE.Vector3(nodei.x, nodei.y, nodei.z)]
+    const ppp = [null, new THREE.Vector3(0, points[1].y, 0)]
+    const text = this.getText(ppp, P1, P2);
+    if(text !== null){
+      text.visible = true;
+      group.add(text);
+    }
+    
+
+    group['value'] = p.Pmax; // 大きい方の値を保存　
     group.position.set(nodei.x, nodei.y, nodei.z);
 
     /* change() 関数で向きを修正するからここでは、必要ない */
@@ -99,14 +106,8 @@ export class ThreeSectionForceMeshService {
 
   // 座標
   private getPoints(
-    nodei: THREE.Vector3,
-    nodej: THREE.Vector3,
-    direction: string,
-    pL1: number,
-    pL2: number,
-    P1: number,
-    P2: number
-  ): any {
+    nodei: THREE.Vector3, nodej: THREE.Vector3, direction: string,
+    pL1: number, pL2: number, P1: number, P2: number ): any {
 
     const len = nodei.distanceTo(nodej);
 
@@ -178,11 +179,34 @@ export class ThreeSectionForceMeshService {
   }
 
   // 文字
-  private getText(points: THREE.Vector3[], P1: number, P2: number): THREE.Group[] {
+  private getText(points: THREE.Vector3[], P1: number, P2: number): Text {
+    
+    return null; // 重なる問題
 
-    const result = [];
+    if(this.dimension===3) {
+      return null;  // 3次元モードの時は、重くなりすぎるので、文字は表示しない
+    }
 
-    const size: number = 0.1; // 文字サイズ
+    // Create:
+    const result = new Text();
+    result.name = 'text';
+    // Set properties to configure:
+    result.text = P1.toFixed(2);
+    result.fontSize = 0.2;
+    result.rotateZ(-Math.PI/2);
+    result.rotateX(Math.PI);
+    result.position.x = points[1].x;
+    result.position.y = points[1].y;
+    result.position.z = 0.01;
+    result.color = 0x000000;
+    result['position_y'] = points[1].y;
+    // Update the rendering:
+    result.sync();
+
+    return result;
+
+
+    const size: number = 50; // 文字サイズ
 
     const pos = new THREE.Vector2(0, 0);
     if(P1 !== 0) {
@@ -198,8 +222,8 @@ export class ThreeSectionForceMeshService {
         text.position.x = points[1].x;
         text.position.y = points[1].y;
       }
-      text.name = "text";
-      result.push(text);
+      text.name = "text1";
+      result.add(text);
     }
 
     if(P2 !== 0) {
@@ -215,38 +239,51 @@ export class ThreeSectionForceMeshService {
         text.position.x = points[3].x;
         text.position.y = points[3].y;
       }
-      text.name = "text";
-      result.push(text);
+      text.name = "text2";
+      result.add(text);
     }
 
+    result.name = "text";
     return result;
   }
 
 
 
   // 大きさを反映する
-  public setScale(group: any, scale: number): void {
+  public setScale(target: any, scale: number): void {
+
+    const group: THREE.Group = target.getObjectByName("group");
+    if(group === undefined){
+      return
+    }
+
     group.scale.set(1, scale, scale);
+
+    const text: any = target.getObjectByName("text");
+    if(text === undefined){
+      return
+    }
+    if(!('position_y' in text)){
+      return
+    }
+    text.position.y = text['position_y'] * scale;
+
   }
 
   public change(
-    target: any,
-    nodei: THREE.Vector3,
-    nodej: THREE.Vector3,
-    localAxis: any,
-    direction: string,
-    pL1: number,
-    pL2: number,
-    P1: number,
-    P2: number
-  ): THREE.Group {
+    target: any, nodei: THREE.Vector3, nodej: THREE.Vector3, localAxis: any,
+    direction: string, L1: number, L2: number, P1: number, P2: number ): THREE.Group {
 
     // 長さを決める
     const p  = this.getPoints(
-      nodei, nodej, direction, pL1, pL2, P1, P2);
+      nodei, nodej, direction, L1, L2, P1, P2);
     const points: THREE.Vector3[] = p.points;
 
     const group: THREE.Group = target.getObjectByName("group");
+    if(group === undefined){
+      return target
+    }
+
     const child = group.getObjectByName("child");
 
     // 面
@@ -260,7 +297,6 @@ export class ThreeSectionForceMeshService {
     geo.verticesNeedUpdate = true;
 
      // 線
-    //child.add(this.getLine(my_color, points));
     const line: any = child.getObjectByName("line");
     const positions = line.geometry.attributes.position.array;
     let index = 0;
@@ -271,6 +307,20 @@ export class ThreeSectionForceMeshService {
     }
     line.geometry.attributes.position.needsUpdate = true;
 
+
+    // 文字を一旦消して 追加する
+    // let text = target.getObjectByName("text");
+    // while(text !== undefined){
+    //   target.remove(text);
+    //   text.dispose();
+    //   text = target.getObjectByName("text");
+    // }
+    // text = this.getText(points, P1, P2)
+    // if(text !== null){
+    //   text.visible = true;
+    //   target.add(text);
+    // }
+
     target.position.set(nodei.x, nodei.y, nodei.z);
 
     // 全体の向きを修正する
@@ -280,7 +330,7 @@ export class ThreeSectionForceMeshService {
     let A = Math.asin(XY.y) 
 
     if( XY.x < 0){
-     A = Math.PI - A;
+      A = Math.PI - A;
     }
     target.rotateZ(A);
 

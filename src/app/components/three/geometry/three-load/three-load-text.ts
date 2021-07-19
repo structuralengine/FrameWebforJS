@@ -1,65 +1,74 @@
 import { Injectable } from '@angular/core';
 import * as THREE from "three";
+import { Text } from 'troika-three-text'
 
 @Injectable({
   providedIn: 'root'
 })
-export class ThreeLoadText { 
+export class ThreeLoadText {
 
-  private font: THREE.Font;
-
-  constructor(font: THREE.Font) {
-    this.font = font;
+  constructor() {
   }
 
+  public init(): Text {
+    const temp = this.create('', new THREE.Vector2(0, 0), 0.1, 'left', 'bottom');
+    temp.visible = true;
+    return temp
+  }s
   // 文字を描く
   public create(
     textString: string,
     position: THREE.Vector2,
     size: number,
     horizontal = 'center',
-    vartical = 'bottom'): THREE.Group {
+    vartical = 'bottom'): Text {
 
-    const text_geo = new THREE.TextGeometry(textString, {
-      font: this.font,
-      size: size,
-      height: 0.001,
-      curveSegments: 4,
-      bevelEnabled: false,
-    });
+    // Create:
+    const text = new Text();
+    text.name = 'text';
+    // Set properties to configure:
+    text.text = textString;
+    text.fontSize = size;
 
-    const text_mat = [
-      new THREE.MeshBasicMaterial({ color: 0x000000 }),
-      new THREE.MeshBasicMaterial({ color: 0x000000 }),
-    ];
-
-    text_geo.center();
-
-    const text = new THREE.Mesh(text_geo, text_mat);
+    text.anchorY = vartical;
+    text.anchorX = horizontal;
 
     text.position.set(position.x, position.y, 0);
 
-    const height = Math.abs(text.geometry.boundingBox.max.y - text.geometry.boundingBox.min.y);
-    const width = Math.abs(text.geometry.boundingBox.max.x - text.geometry.boundingBox.min.x);
+    text.color = 0x000000;
+    // Update the rendering:
+    text.sync();
 
-    if (vartical === 'bottom') {
-      text.position.y += 0.5 * height;
-    } else if (vartical === 'top') {
-      text.position.y -= 0.5 * height;
-    }
-    if (horizontal === 'left') {
-      text.position.x += 0.5 * width;
-    } else if (horizontal === 'right') {
-      text.position.x -= 0.5 * width;
-    }
-    text.rotateZ(Math.PI);
-    text.rotateY(Math.PI);
-
-    const group = new THREE.Group();
-    group.add(text);
-    group.name = "text";
-
-    return group;
+    return text;
   }
+
+    // 文字を変更する
+    public change(
+      text: Text,
+      textString: string,
+      position: THREE.Vector2,
+      size: number,
+      horizontal = 'center',
+      vartical = 'bottom'): void {
+  
+      // Create:
+      text.name = 'text';
+      // Set properties to configure:
+      text.text = textString;
+      text.fontSize = size;
+  
+      text.anchorY = vartical;
+      text.anchorX = horizontal;
+  
+      // Update the rendering:
+      text.sync();
+  
+    }
+
+
+  public dispose(text: Text) {
+    text.dispose();
+  } 
+
 
 }

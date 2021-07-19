@@ -55,12 +55,79 @@ export class ResultPickupFsecService {
 
       };
       this.worker1.postMessage({ pickList, fsecCombine });
+      // this.worker1_test({ pickList, fsecCombine });
     } else {
       // Web workers are not supported in this environment.
       // You should add a fallback so that your program still executes correctly.
     }
 
   }
+
+  private worker1_test( data ) {
+
+    const pickList = data.pickList;
+    const fsecCombine = data.fsecCombine;
+    const fsecPickup = {};
+    const max_values = {};
+  
+    // pickupのループ
+    for (const pickNo of Object.keys(pickList)) {
+      const max_value = {
+        fx: 0, fy: 0, fz: 0,
+        mx: 0, my: 0, mz: 0
+      }
+  
+      const combines: any[] = pickList[pickNo];
+      let tmp: {} = null;
+      for (const combNo of combines) {
+        const com = fsecCombine[combNo];
+        if (tmp == null) {
+          tmp = com;
+  
+          continue;
+        }
+        for (const k of Object.keys(com)) {
+          if(k ==='mz_min'){
+            console.log()
+          }
+          const key = k.split('_');
+          const target = com[k];
+          const comparison = tmp[k];
+          for (const id of Object.keys(comparison)) {
+            const a = comparison[id];
+            if (!(id in target)) {
+              continue;
+            }
+            const b = target[id];
+            if (key[1] === 'max') {
+              if (b[key[0]] > a[key[0]]) {
+                tmp[k][id] = com[k][id];
+              }
+            } else {
+              if (b[key[0]] < a[key[0]]) {
+                tmp[k][id] = com[k][id];
+              }
+            }
+          }
+  
+          // 最大値を 集計する
+          for (const value of tmp[k]) {
+            max_value.fx = Math.max(Math.abs(value.fx), max_value.fx);
+            max_value.fy = Math.max(Math.abs(value.fy), max_value.fy);
+            max_value.fz = Math.max(Math.abs(value.fz), max_value.fz);
+            max_value.mx = Math.max(Math.abs(value.mx), max_value.mx);
+            max_value.my = Math.max(Math.abs(value.my), max_value.my);
+            max_value.mz = Math.max(Math.abs(value.mz), max_value.mz);
+          }  
+        }
+      }
+      fsecPickup[pickNo] = tmp;
+      max_values[pickNo] = max_value;
+    }
+    return this.worker2_test({ fsecPickup, max_values });
+  }
+
+
 
   private worker2_test(fsecPickup: any) {
 
@@ -96,15 +163,15 @@ export class ResultPickupFsecService {
           mx: target3['mx'].toFixed(2),
           my: target3['my'].toFixed(2),
           mz: target3['mz'].toFixed(2),
-          case: target3['case']
+          case: target3['comb'] + ':' + target3['case']
         };
         // 同一要素内の着目点で、直前の断面力と同じ断面力だったら 読み飛ばす
-        if (old['n'] !== item['n'] || old['fx'] !== item['fx'] || old['fy'] !== item['fy'] || old['fz'] !== item['fz']
-            || old['mx'] !== item['mx'] || old['my'] !== item['my'] || old['mz'] !== item['mz']) {
+        // if (old['n'] !== item['n'] || old['fx'] !== item['fx'] || old['fy'] !== item['fy'] || old['fz'] !== item['fz']
+        //     || old['mx'] !== item['mx'] || old['my'] !== item['my'] || old['mz'] !== item['mz']) {
           result3.push(item);
           m = target3['m'];
           Object.assign(old, item);
-        }
+        // }
       }
       result2[mode] = result3;
     }

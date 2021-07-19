@@ -10,21 +10,18 @@ import { ThreeLoadMoment } from './three-load-moment';
   providedIn: 'root'
 })
 export class ThreeLoadTorsion {
+  
+  static id = 'TorsionLoad';
 
-  private text: ThreeLoadText;
-  private dim: ThreeLoadDimension;
   private moment: ThreeLoadMoment;
 
   private cylinder_Red: THREE.MeshBasicMaterial;
   private cylinder_Blue: THREE.MeshBasicMaterial;
+  private cylinder_Pick: THREE.MeshBasicMaterial;
 
-  constructor(
-    text: ThreeLoadText,
-    dim: ThreeLoadDimension,
-    moment: ThreeLoadMoment) {
-    this.text = text;
-    this.dim = dim;
-    this.moment = moment;
+
+  constructor() {
+    this.moment = new ThreeLoadMoment();
     this.cylinder_Red = new THREE.MeshBasicMaterial({
       transparent: true,
       side: THREE.DoubleSide,
@@ -35,6 +32,12 @@ export class ThreeLoadTorsion {
       transparent: true,
       side: THREE.DoubleSide,
       color: 0x0000ff,
+      opacity: 0.3,
+    });
+    this.cylinder_Pick = new THREE.MeshBasicMaterial({
+      transparent: true,
+      side: THREE.DoubleSide,
+      color: 0xff00ff,
       opacity: 0.3,
     });
 
@@ -78,21 +81,26 @@ export class ThreeLoadTorsion {
       child.add(arrow);
     }
 
-    /*/ 寸法線
-    const dim = this.getDim(points, L1, L, L2);
-    dim.visible = false;
-    child.add(dim);
-    */
-
     // 全体
     child.name = "child";
 
     const group = new THREE.Group();
     group.add(child);
-    group.name = "TorsionLoad";
+    group["points"] = p.points;
+    group["L1"] = p.L1;
+    group["L"] = p.L;
+    group["L2"] = p.L2;
+    group["P1"] = P1;
+    group["P2"] = P2;
+    group["nodei"] = nodei;
+    group["nodej"] = nodej;
+    group["direction"] = direction;
+    group["localAxis"] = localAxis;
+    group["editor"] = this;
+    group['value'] = p.Pmax; // 大きい方の値を保存　
+    group.name = ThreeLoadTorsion.id;
 
     // 全体の位置を修正する
-    group['value'] = p.Pmax; // 大きい方の値を保存　
 
     group.position.set(nodei.x, nodei.y, nodei.z);
 
@@ -104,7 +112,7 @@ export class ThreeLoadTorsion {
     const XZ = new Vector2(lenXY, localAxis.x.z).normalize();
     group.rotateY(-Math.asin(XZ.y));
 
-    group.name = "TorsionLoad-" + row.toString();
+    group.name = ThreeLoadTorsion.id + "-" + row.toString();
 
     return group;
   }
@@ -319,19 +327,10 @@ export class ThreeLoadTorsion {
   }
 
   // ハイライトを反映させる
-  public setColor(group: any, n: string) {
-    
-    //置き換えるマテリアルを生成 -> colorを設定し，対象オブジェクトのcolorを変える
-    const cylinder_Pick = new THREE.MeshBasicMaterial({
-      transparent: true,
-      side: THREE.DoubleSide,
-      color: 0xff00ff,
-      opacity: 0.3,
-    });
-    const line_mat_Pick = new THREE.LineBasicMaterial({ color: 0xff00ff, vertexColors: true});
+  public setColor(group: any, status: string) {
 
     for (let target of group.children[0].children) {
-      if (n === "clear") {
+      if (status === "clear") {
         if (target.name.slice(-3) === 'red') {
           //target.material.color.setHex(0XFF0000); //デフォルトのカラー
           target.material = this.cylinder_Red;
@@ -341,11 +340,11 @@ export class ThreeLoadTorsion {
         } else if (target.name.slice(-2) === 'rx') {
           //何もしない
         }
-      } else if (n == "select") {
+      } else if (status == "select") {
         if (target.name.slice(-3) === 'red') {
-          target.material = cylinder_Pick; //ハイライト用のカラー
+          target.material = this.cylinder_Pick; //ハイライト用のカラー
         } else if (target.name.slice(-4) === 'blue') {
-          target.material = cylinder_Pick; //ハイライト用のカラー
+          target.material = this.cylinder_Pick; //ハイライト用のカラー
         } else if (target.name.slice(-2) === 'rx') {
           //何もしない
         }

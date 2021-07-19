@@ -6,6 +6,8 @@ import { JsonpClientBackend } from "@angular/common/http";
 import { DataCountService } from "../dataCount.service";
 import { newArray } from "@angular/compiler/src/util";
 import { ArrayCamera } from "three";
+import { ResultCombineFsecService } from "src/app/components/result/result-combine-fsec/result-combine-fsec.service";
+import { DataHelperModule } from "src/app/providers/data-helper.module";
 
 @Component({
   selector: "app-print-result-pickup-fsec",
@@ -17,6 +19,7 @@ import { ArrayCamera } from "three";
   ],
 })
 export class PrintResultPickupFsecComponent implements OnInit, AfterViewInit {
+  isEnable = true;
   page: number;
   load_name: string;
   btnPickup: string;
@@ -24,7 +27,7 @@ export class PrintResultPickupFsecComponent implements OnInit, AfterViewInit {
   invoiceIds: string[];
   invoiceDetails: Promise<any>[];
   row: number = 0;
-  key: string;
+  dimension: number;
 
   public pickFsec_dataset = [];
   public pickFsec_title = [];
@@ -36,8 +39,10 @@ export class PrintResultPickupFsecComponent implements OnInit, AfterViewInit {
   constructor(
     private InputData: InputDataService,
     private ResultData: ResultDataService,
-    private countArea: DataCountService
-  ) {
+    private countArea: DataCountService,
+    private combFsec: ResultCombineFsecService,
+    private helper: DataHelperModule ) {
+      this.dimension = this.helper.dimension;
     this.judge = false;
     this.clear();
   }
@@ -60,7 +65,7 @@ export class PrintResultPickupFsecComponent implements OnInit, AfterViewInit {
       this.pickFsec_type_break = tables.break_after_type;
       this.judge = this.countArea.setCurrentY(tables.this, tables.last);
     } else {
-      this.countArea.setData(20);
+      this.isEnable = false;
     }
   }
 
@@ -71,20 +76,23 @@ export class PrintResultPickupFsecComponent implements OnInit, AfterViewInit {
     const body: any[] = new Array();
     const typeSum: any = [];
 
-    const KEYS = [
-      "fx_max",
-      "fx_min",
-      "fy_max",
-      "fy_min",
-      "fz_max",
-      "fz_min",
-      "mx_max",
-      "mx_min",
-      "my_max",
-      "my_min",
-      "mz_max",
-      "mz_min",
-    ];
+    const KEYS = this.combFsec.fsecKeys; 
+    const TITLES = this.combFsec.titles; 
+    
+    // [
+    //   "fx_max",
+    //   "fx_min",
+    //   "fy_max",
+    //   "fy_min",
+    //   "fz_max",
+    //   "fz_min",
+    //   "mx_max",
+    //   "mx_min",
+    //   "my_max",
+    //   "my_min",
+    //   "mz_max",
+    //   "mz_min",
+    // ];
     //const TITLES = ['軸方向力 最大', '軸方向力 最小', 'y方向のせん断力 最大', 'y方向のせん断力 最小', 'z方向のせん断力 最大', 'z方向のせん断力 最小',
     //  'ねじりモーメント 最大', 'ねじりモーメント 最小', 'y軸回りの曲げモーメント 最大', 'y軸回りの曲げモーメント力 最小', 'z軸回りの曲げモーメント 最大', 'z軸回りの曲げモーメント 最小'];
 
@@ -118,11 +126,15 @@ export class PrintResultPickupFsecComponent implements OnInit, AfterViewInit {
       let table: any = [];
       let type: any = [];
       for (let i = 0; i < KEYS.length; i++) {
-        this.key = KEYS[i];
-        typeName.push(this.key);
-
+        const key = KEYS[i];
+        const title2 = TITLES[i];
         const elieli = json[index]; // 1行分のnodeデータを取り出す
-        const elist = elieli[this.key]; // 1行分のnodeデータを取り出す.
+        if(!(key in elieli)) continue;
+
+
+        typeName.push(title2);
+
+        const elist = elieli[key]; // 1行分のnodeデータを取り出す.
         let body: any[] = new Array();
         if (i === 0) {
           this.row = 10;
@@ -143,7 +155,7 @@ export class PrintResultPickupFsecComponent implements OnInit, AfterViewInit {
           line[6] = item.mx.toFixed(2);
           line[7] = item.my.toFixed(2);
           line[8] = item.mz.toFixed(2);
-          line[9] = item.case;
+          line[9] = item.comb + ':' + item.case;
 
           body.push(line);
           this.row++;
@@ -180,9 +192,11 @@ export class PrintResultPickupFsecComponent implements OnInit, AfterViewInit {
     for (const index of keys) {
       const elist = json[index]; // 1テーブル分のデータを取り出す
       for (let i = 0; i < KEYS.length; i++) {
-        this.key = KEYS[i];
+        const key = KEYS[i];
         const elieli = json[index]; // 1行分のnodeデータを取り出す
-        const elist = elieli[this.key]; // 1行分のnodeデータを取り出す.
+        if(!(key in elieli)) continue;
+
+        const elist = elieli[key]; // 1行分のnodeデータを取り出す.
         for (const k of Object.keys(elist)) {
           countCell += Object.keys(elist).length;
         }
@@ -204,6 +218,8 @@ export class PrintResultPickupFsecComponent implements OnInit, AfterViewInit {
       const elieli = json[index]; // 1行分のnodeデータを取り出す
       for (let i = 0; i < KEYS.length; i++) {
         const key: string = KEYS[i];
+        if(!(key in elieli)) continue;
+
         const elist = elieli[key]; // 1行分のnodeデータを取り出す.
 
         // x方向Max,minなどのタイプでの分割

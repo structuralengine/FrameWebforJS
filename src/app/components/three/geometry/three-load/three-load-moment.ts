@@ -7,8 +7,9 @@ import { ThreeLoadText } from "./three-load-text";
   providedIn: 'root'
 })
 export class ThreeLoadMoment {
+  
+  static id = 'MomentLoad';
 
-  private text: ThreeLoadText;
   private arrow_mat_Red: THREE.MeshBasicMaterial;
   private arrow_mat_Green: THREE.MeshBasicMaterial;
   private arrow_mat_Blue: THREE.MeshBasicMaterial;
@@ -19,8 +20,7 @@ export class ThreeLoadMoment {
 
   private point_mat: THREE.PointsMaterial;
 
-  constructor(text: ThreeLoadText) {
-    this.text = text;
+  constructor() {
     this.arrow_mat_Red = new THREE.MeshBasicMaterial({ color: 0xff0000 });
     this.arrow_mat_Green = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
     this.arrow_mat_Blue = new THREE.MeshBasicMaterial({ color: 0x0000ff });
@@ -164,12 +164,14 @@ export class ThreeLoadMoment {
 
     const group = new THREE.Group();
     group.add(group0);
+    group["direction"] = direction;
+    group["editor"] = this;
+    group['value'] = Math.abs(value); //値を保存
+
+    group.name = ThreeLoadMoment.id + "-" + row.toString() + '-' + direction.toString();
 
     // 位置を修正する
     group.position.set(node.x, node.y, node.z);
-
-    group.name = "MomentLoad-" + row.toString() + '-' + direction.toString();
-    group['value'] = Math.abs(value); //値を保存
 
     return group;
   }
@@ -193,14 +195,14 @@ export class ThreeLoadMoment {
   }
 
   // ハイライトを反映させる
-  public setColor(group: any, n: string): void {
+  public setColor(group: any, status: string): void {
 
     //置き換えるマテリアルを生成 -> colorを設定し，対象オブジェクトのcolorを変える
     const arrow_mat_Pick = new THREE.MeshBasicMaterial({ color: 0xafeeee });
     const line_mat_Pick = new THREE.LineBasicMaterial({ color: 0xafeeee });
 
     for (let target of group.children[0].children[1].children) {
-      if (n === "clear") {
+      if (status === "clear") {
         if (target.name === 'arrow' && group.name.slice(-1) === 'x') {
           target.material = this.arrow_mat_Red; //デフォルトのカラー
         } else if (target.name === 'arrow' && group.name.slice(-1) === 'y') {
@@ -215,7 +217,7 @@ export class ThreeLoadMoment {
           target.material = this.line_mat_Blue; //デフォルトのカラー
         }
 
-      } else if (n === "select") {
+      } else if (status === "select") {
         if (target.name === 'arrow' && group.name.slice(-1) === 'x') {
           target.material = arrow_mat_Pick; //ハイライト用のカラー
         } else if (target.name === 'arrow' && group.name.slice(-1) === 'y') {

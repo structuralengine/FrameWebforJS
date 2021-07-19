@@ -12,17 +12,30 @@ import { RouterLinkWithHref } from '@angular/router';
 })
 export class ThreeLoadMemberPoint {
 
-  private text: ThreeLoadText;
-  private dim: ThreeLoadDimension;
-  private point: ThreeLoadPoint;
+  static id = 'PointMemberLoad';
 
-  constructor(
-    text: ThreeLoadText,
-    dim: ThreeLoadDimension,
-    point: ThreeLoadPoint) {
-    this.text = text;
-    this.dim = dim;
-    this.point = point;
+  private point: ThreeLoadPoint;
+  
+  private arrow_mat_Red: THREE.MeshBasicMaterial;
+  private arrow_mat_Green: THREE.MeshBasicMaterial;
+  private arrow_mat_Blue: THREE.MeshBasicMaterial;
+  private arrow_mat_Pick: THREE.MeshBasicMaterial;  //ハイライト用のカラー
+  private line_mat_Red: THREE.LineBasicMaterial;
+  private line_mat_Green: THREE.LineBasicMaterial;
+  private line_mat_Blue: THREE.LineBasicMaterial;
+  private line_mat_Pick: THREE.LineBasicMaterial; //ハイライト用のカラー
+
+
+  constructor() {
+    this.point = new ThreeLoadPoint();
+    this.arrow_mat_Red = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+    this.arrow_mat_Green = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+    this.arrow_mat_Blue = new THREE.MeshBasicMaterial({ color: 0x0000ff });
+    this.arrow_mat_Pick = new THREE.MeshBasicMaterial({ color: 0xafeeee });  //ハイライト用のカラー
+    this.line_mat_Red = new THREE.LineBasicMaterial({ color: 0xff0000 });
+    this.line_mat_Green = new THREE.LineBasicMaterial({ color: 0x00ff00 });
+    this.line_mat_Blue = new THREE.LineBasicMaterial({ color: 0x0000ff });
+    this.line_mat_Pick = new THREE.LineBasicMaterial({ color: 0xafeeee }); //ハイライト用のカラー
   }
 
   /// 部材途中集中荷重を編集する
@@ -67,11 +80,10 @@ export class ThreeLoadMemberPoint {
       child.add(arrow);
     }
 
-    /*/ 寸法線
-    const dim = this.getDim(points, L1, L2);
-    dim.visible = false;
-    child.add(dim);
-    */
+    // 寸法線
+    // const dim = this.getDim(points, L1, L2);
+    // dim.visible = false;
+    // child.add(dim);
 
     // 全体
     child.name = "child";
@@ -84,12 +96,22 @@ export class ThreeLoadMemberPoint {
     // 全体の位置を修正する
     const group = new THREE.Group();
     group.add(group0);
+    group["points"] = p.points;
+    group["L1"] = p.L1;
+    group["L"] = p.L;
+    group["L2"] = p.L2;
+    group["P1"] = P1;
+    group["P2"] = P2;
+    group["nodei"] = nodei;
+    group["nodej"] = nodej;
+    group["direction"] = direction;
+    group["localAxis"] = localAxis;
+    group["editor"] = this;
     group['value'] = p.Pmax; // 大きい方の値を保存　
 
     group.position.set(nodei.x, nodei.y, nodei.z);
 
     // 全体の向きを修正する
-
     if (!direction.includes('g')) {
       const XY = new Vector2(localAxis.x.x, localAxis.x.y).normalize();
       let A = Math.asin(XY.y);
@@ -125,7 +147,7 @@ export class ThreeLoadMemberPoint {
       group.rotation.x = Math.asin(-Math.PI / 2);
 
     }
-    group.name = "MemberPointLoad-" + row.toString() + '-' + direction.toString();
+    group.name = ThreeLoadMemberPoint.id + "-" + row.toString() + '-' + direction.toString();
 
     return group;
   }
@@ -224,7 +246,7 @@ export class ThreeLoadMemberPoint {
 
   }
 
-  // 寸法線
+  /*/ 寸法線
   private getDim(points: THREE.Vector3[],
                 L1: number, L2: number): THREE.Group {
 
@@ -272,7 +294,7 @@ export class ThreeLoadMemberPoint {
 
     return dim;
   }
-
+  */
 
   // 大きさを反映する
   public setSize(group: any, scale: number): void {
@@ -301,42 +323,22 @@ export class ThreeLoadMemberPoint {
   }
 
   // ハイライトを反映させる
-  public setColor(group: any, n: string) {
+  public setColor(group: any, status: string) {
 
-    //置き換えるマテリアルを生成 -> colorを設定し，対象オブジェクトのcolorを変える
-    const arrow_mat_Red = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-    const arrow_mat_Green = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-    const arrow_mat_Blue = new THREE.MeshBasicMaterial({ color: 0x0000ff });
-    const arrow_mat_Pick = new THREE.MeshBasicMaterial({ color: 0xafeeee });  //ハイライト用のカラー
-    const line_mat_Red = new THREE.LineBasicMaterial({ color: 0xff0000 });
-    const line_mat_Green = new THREE.LineBasicMaterial({ color: 0x00ff00 });
-    const line_mat_Blue = new THREE.LineBasicMaterial({ color: 0x0000ff });
-    const line_mat_Pick = new THREE.LineBasicMaterial({ color: 0xafeeee }); //ハイライト用のカラー
+    const group0 = group.getObjectByName('group');
+    const child = group0.getObjectByName('child');
 
-    for (let target1 of group.children[0].children[0].children) {
-      for (let target2 of target1.children[0].children[0].children[0].children) {  //children: (2) [Line, Mesh]
-        if (n === 'clear') {
-          if (target2.type === 'Line' && group.name.slice(-1) === 'x') {
-            target2.material = line_mat_Red; //デフォルトのカラー
-          } else if (target2.type === 'Line' && group.name.slice(-1) === 'y') {
-            target2.material = line_mat_Green; //デフォルトのカラー
-          } else if (target2.type === 'Line' && group.name.slice(-1) === 'z') {
-            target2.material = line_mat_Blue; //デフォルトのカラー
-          } else if (target2.type === 'Mesh' && group.name.slice(-1) === 'x') {
-            target2.material = arrow_mat_Red; //デフォルトのカラー
-          } else if (target2.type === 'Mesh' && group.name.slice(-1) === 'y') {
-            target2.material = arrow_mat_Green; //デフォルトのカラー
-          } else if (target2.type === 'Mesh' && group.name.slice(-1) === 'z') {
-            target2.material = arrow_mat_Blue; //デフォルトのカラー
-          }
-        } else if (n === 'select') {
-          if (target2.type === 'Line') {
-            target2.material = line_mat_Pick; //ハイライト用のカラー
-          } else if (target2.type === 'Mesh') {
-            target2.material = arrow_mat_Pick; //ハイライト用のカラー
-          }
+    for (let target of child.children) {
+      if ( target.name.includes('PointLoad')){
+        this.point.setColor(target, status);
+      } else if(target.name === 'Dimension'){
+        if (status === 'clear') {
+          target.visible = false;
+        } else if (status === 'select') {
+          target.visible = true;
         }
       }
     }
+
   }
 }

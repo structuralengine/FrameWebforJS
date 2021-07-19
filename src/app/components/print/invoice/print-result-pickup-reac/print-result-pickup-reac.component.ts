@@ -4,6 +4,8 @@ import { ResultDataService } from "../../../../providers/result-data.service";
 import { AfterViewInit } from "@angular/core";
 import { JsonpClientBackend } from "@angular/common/http";
 import { DataCountService } from "../dataCount.service";
+import { ResultCombineReacService } from "src/app/components/result/result-combine-reac/result-combine-reac.service";
+import { DataHelperModule } from "src/app/providers/data-helper.module";
 
 @Component({
   selector: "app-print-result-pickup-reac",
@@ -15,6 +17,7 @@ import { DataCountService } from "../dataCount.service";
   ],
 })
 export class PrintResultPickupReacComponent implements OnInit {
+  isEnable = true;
   page: number;
   load_name: string;
   btnPickup: string;
@@ -22,7 +25,7 @@ export class PrintResultPickupReacComponent implements OnInit {
   invoiceIds: string[];
   invoiceDetails: Promise<any>[];
   row: number = 0;
-  key: string;
+  dimension: number;
 
   public pickReac_datase = [];
   public pickReac_dataset = [];
@@ -37,8 +40,10 @@ export class PrintResultPickupReacComponent implements OnInit {
   constructor(
     private InputData: InputDataService,
     private ResultData: ResultDataService,
-    private countArea: DataCountService
-  ) {
+    private countArea: DataCountService,
+    private combReac: ResultCombineReacService,
+    private helper: DataHelperModule ) {
+      this.dimension = this.helper.dimension;
     this.judge = false;
   }
 
@@ -53,7 +58,7 @@ export class PrintResultPickupReacComponent implements OnInit {
       this.pickReac_type_break = tables.break_after_type;
       this.judge = this.countArea.setCurrentY(tables.this, tables.last);
     } else {
-      this.countArea.setData(17);
+      this.isEnable = false;
     }
   }
 
@@ -64,20 +69,22 @@ export class PrintResultPickupReacComponent implements OnInit {
     const body: any[] = new Array();
     const typeSum: any = [];
 
-    const KEYS = [
-      "tx_max",
-      "tx_min",
-      "ty_max",
-      "ty_min",
-      "tz_max",
-      "tz_min",
-      "mx_max",
-      "mx_min",
-      "my_max",
-      "my_min",
-      "mz_max",
-      "mz_min",
-    ];
+    const KEYS = this.combReac.reacKeys;
+    const TITLES = this.combReac.titles; 
+    // [
+    //   "tx_max",
+    //   "tx_min",
+    //   "ty_max",
+    //   "ty_min",
+    //   "tz_max",
+    //   "tz_min",
+    //   "mx_max",
+    //   "mx_min",
+    //   "my_max",
+    //   "my_min",
+    //   "mz_max",
+    //   "mz_min",
+    // ];
     // const TITLES = ['x方向の支点反力 最大', 'x方向の支点反力 最小', 'y方向の支点反力 最大', 'y方向の支点反力 最小', 'z方向の支点反力 最大', 'Z方向の支点反力 最小',
     //   'x軸回りの回転反力 最大', 'x軸回りの回転反力 最小', 'y軸回りの回転反力 最大', 'y軸回りの回転反力 最小', 'z軸回りの回転反力 最大', 'Z軸回りの回転反力 最小'];
 
@@ -110,11 +117,14 @@ export class PrintResultPickupReacComponent implements OnInit {
       let table: any = [];
       let type: any = [];
       for (let i = 0; i < KEYS.length; i++) {
-        this.key = KEYS[i];
-        typeName.push(this.key);
-
+        const key = KEYS[i];
+        const title2 = TITLES[i];
         const elieli = json[index]; // 1行分のnodeデータを取り出す
-        const elist = elieli[this.key]; // 1行分のnodeデータを取り出す.
+        if(!(key in elieli)) continue;
+
+        typeName.push(title2);
+
+        const elist = elieli[key]; // 1行分のnodeデータを取り出す.
         let body: any = [];
         if (i === 0) {
           this.row = 9;
@@ -126,7 +136,7 @@ export class PrintResultPickupReacComponent implements OnInit {
           const item = elist[k];
           // 印刷する1行分のリストを作る
           const line = ["", "", "", "", "", "", "", ""];
-          line[0] = item.id.toString();
+          line[0] = k.toString();
           line[1] = item.tx.toFixed(2);
           line[2] = item.ty.toFixed(2);
           line[3] = item.tz.toFixed(2);
@@ -171,9 +181,11 @@ export class PrintResultPickupReacComponent implements OnInit {
     for (const index of keys) {
       const elist = json[index]; // 1テーブル分のデータを取り出す
       for (let i = 0; i < KEYS.length; i++) {
-        this.key = KEYS[i];
+        const key = KEYS[i];
         const elieli = json[index]; // 1行分のnodeデータを取り出す
-        const elist = elieli[this.key]; // 1行分のnodeデータを取り出す.
+        if(!(key in elieli)) continue;
+
+        const elist = elieli[key]; // 1行分のnodeデータを取り出す.
         for (const k of Object.keys(elist)) {
           countCell += Object.keys(elist).length;
         }
@@ -195,6 +207,8 @@ export class PrintResultPickupReacComponent implements OnInit {
       const elieli = json[index]; // 1行分のnodeデータを取り出す
       for (let i = 0; i < KEYS.length; i++) {
         const key: string = KEYS[i];
+        if(!(key in elieli)) continue;
+
         const elist = elieli[key]; // 1行分のnodeデータを取り出す.
 
         // x方向Max,minなどのタイプでの分割

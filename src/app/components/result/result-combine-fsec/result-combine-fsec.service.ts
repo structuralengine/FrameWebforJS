@@ -72,8 +72,6 @@ export class ResultCombineFsecService {
     this.isCalculated = false;
     this.worker1 = new Worker('./result-combine-fsec1.worker', { name: 'combine-fsec1', type: 'module' });
     this.worker2 = new Worker('./result-combine-fsec2.worker', { name: 'combine-fsec2', type: 'module' });
-    this.fsecKeys = (this.helper.dimension === 3) ? this.fsecKeys3D : this.fsecKeys2D ;
-    this.titles = (this.helper.dimension === 3) ? this.titles3D : this.titles2D ;
   }
 
   public clear(): void {
@@ -90,6 +88,9 @@ export class ResultCombineFsecService {
   }
 
   public setFsecCombineJson(fsec: any, defList: any, combList: any, pickList: any): void {
+
+    this.fsecKeys = (this.helper.dimension === 3) ? this.fsecKeys3D : this.fsecKeys2D ;
+    this.titles = (this.helper.dimension === 3) ? this.titles3D : this.titles2D ;
 
     this.isCalculated = false;
     const startTime = performance.now(); // 開始時間
@@ -113,7 +114,7 @@ export class ResultCombineFsecService {
         this.three.setCombResultData(this.fsecCombine, max_values);
 
       };
-      //this.fsecCombine = this.worker1_test({ defList, combList, fsec, fsecKeys: this.fsecKeys});
+      // this.fsecCombine = this.worker1_test({ defList, combList, fsec, fsecKeys: this.fsecKeys});
       this.worker1.postMessage({ defList, combList, fsec, fsecKeys: this.fsecKeys});
 
     } else {
@@ -244,6 +245,8 @@ export class ResultCombineFsecService {
         }
   
         const fsecs = fsecDefine[defNo];
+        if(Object.keys(fsecs).length < 1) continue;
+
         // カレントケースを集計する
         const c2 = Math.abs(caseNo).toString().trim();
         for (const key of fsecKeys) {
