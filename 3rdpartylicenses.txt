@@ -198,6 +198,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 
+@ngx-translate/core
+MIT
+
+@ngx-translate/http-loader
+MIT
+
 core-js
 MIT
 Copyright (c) 2014-2021 Denis Pushkarev
@@ -354,14 +360,14 @@ the terms above.
 
 
 jszip
-(MIT OR GPL-3.0-or-later)
+(MIT OR GPL-3.0)
 JSZip is dual licensed. You may use it under the MIT license *or* the GPLv3
 license.
 
 The MIT License
 ===============
 
-Copyright (c) 2009-2016 Stuart Knightley, David Duponchel, Franz Buchinger, António Afonso
+Copyright (c) 2009-2014 Stuart Knightley, David Duponchel, Franz Buchinger, António Afonso
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
