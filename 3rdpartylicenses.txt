@@ -30,7 +30,7 @@ MIT
 MIT
 The MIT License
 
-Copyright (c) 2020 Google LLC.
+Copyright (c) 2021 Google LLC.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -70,7 +70,7 @@ MIT
 MIT
 The MIT License
 
-Copyright (c) 2020 Google LLC.
+Copyright (c) 2021 Google LLC.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -360,7 +360,7 @@ the terms above.
 
 
 jszip
-(MIT OR GPL-3.0)
+MIT or GPLv3
 JSZip is dual licensed. You may use it under the MIT license *or* the GPLv3
 license.
 
@@ -1015,10 +1015,10 @@ copy of the Program in return for a fee.
 
 
 pako
-(MIT AND Zlib)
+MIT
 (The MIT License)
 
-Copyright (C) 2014-2017 by Vitaly Puzrin and Andrei Tuputcyn
+Copyright (C) 2014-2016 by Vitaly Puzrin
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
