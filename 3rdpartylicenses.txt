@@ -1014,6 +1014,9 @@ copy of the Program in return for a fee.
                      END OF TERMS AND CONDITIONS
 
 
+ngx-electron
+MIT
+
 pako
 (MIT AND Zlib)
 (The MIT License)
