@@ -19,39 +19,46 @@ export class InputJointComponent implements OnInit {
   private dataset = [];
   private columnKeys3D = ['m', 'xi', 'yi', 'zi', 'xj', 'yj', 'zj'];
   private columnKeys2D = ['m', 'zi', 'zj'];
-  private columnHeaders3D =[
-    { 
+  private columnHeaders3D = [
+    {
       title: this.translate.instant("input.input-joint.member"),
       align: 'center', colModel: [
-      { 
-        title: this.translate.instant("input.input-joint.No"),
-        dataType: "string", dataIndx: this.columnKeys3D[0], sortable: false },
-    ]},      
-    { 
+        {
+          title: this.translate.instant("input.input-joint.No"),
+          dataType: "string", dataIndx: this.columnKeys3D[0], sortable: false
+        },
+      ]
+    },
+    {
       title: this.translate.instant("input.input-joint.node_i"),
       align: 'center', colModel: [
-      { title: "x", dataType: "integer", dataIndx: this.columnKeys3D[1], sortable: false },
-      { title: "y", dataType: "integer", dataIndx: this.columnKeys3D[2], sortable: false },
-      { title: "z", dataType: "integer", dataIndx: this.columnKeys3D[3], sortable: false },
-    ]},      
-    { 
+        { title: "x", dataType: "integer", dataIndx: this.columnKeys3D[1], sortable: false },
+        { title: "y", dataType: "integer", dataIndx: this.columnKeys3D[2], sortable: false },
+        { title: "z", dataType: "integer", dataIndx: this.columnKeys3D[3], sortable: false },
+      ]
+    },
+    {
       title: this.translate.instant("input.input-joint.node_j"),
       align: 'center', colModel: [
-      { title: "x", dataType: "integer", dataIndx: this.columnKeys3D[4], sortable: false },
-      { title: "y", dataType: "integer", dataIndx: this.columnKeys3D[5], sortable: false },
-      { title: "z", dataType: "integer", dataIndx: this.columnKeys3D[6], sortable: false }
-    ]},      
+        { title: "x", dataType: "integer", dataIndx: this.columnKeys3D[4], sortable: false },
+        { title: "y", dataType: "integer", dataIndx: this.columnKeys3D[5], sortable: false },
+        { title: "z", dataType: "integer", dataIndx: this.columnKeys3D[6], sortable: false }
+      ]
+    },
   ];
-  private columnHeaders2D =[
-    { 
+  private columnHeaders2D = [
+    {
       title: this.translate.instant("input.input-joint.memberNo"),
-      dataType: "string", dataIndx: this.columnKeys2D[0], sortable: false },
-    { 
+      dataType: "string", dataIndx: this.columnKeys2D[0], sortable: false
+    },
+    {
       title: this.translate.instant("input.input-joint.node_i"),
-      dataType: "integer", dataIndx: this.columnKeys2D[1], sortable: false },
-    { 
+      dataType: "integer", dataIndx: this.columnKeys2D[1], sortable: false
+    },
+    {
       title: this.translate.instant("input.input-joint.node_j"),
-      dataType: "integer", dataIndx: this.columnKeys2D[2], sortable: false }
+      dataType: "integer", dataIndx: this.columnKeys2D[2], sortable: false
+    }
 
   ];
 
@@ -135,11 +142,12 @@ export class InputJointComponent implements OnInit {
       }
     },
     selectEnd: (evt, ui) => {
+      console.log('selectEnd');
       const range = ui.selection.iCells.ranges;
       const row = range[0].r1 + 1;
       const columnList = this.getColumnList(this.helper.dimension);
       const column = columnList[range[0].c1];
-      if (this.currentRow !== row && this.currentColumn !== column){
+      if (this.currentRow !== row && this.currentColumn !== column) {
         //選択行の変更があるとき，ハイライトを実行する
         this.three.selectChange("joints", row, column);
       }
@@ -179,7 +187,7 @@ export class InputJointComponent implements OnInit {
 
   width = this.helper.dimension === 3 ? 410 : 410;
 
-  private getColumnList (dimension): string[] {
+  private getColumnList(dimension): string[] {
     if (dimension === 3) {
       return this.columnKeys3D;
     } else {

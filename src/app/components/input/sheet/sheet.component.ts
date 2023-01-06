@@ -1,5 +1,6 @@
 import { AfterViewInit, Component, ElementRef, Input, OnChanges, OnInit, SimpleChanges, ViewChild, Renderer2 } from '@angular/core';
 import pq from 'pqgrid';
+import { DataHelperModule } from "src/app/providers/data-helper.module";
 
 //import few localization files for this demo.
 import 'pqgrid/localize/pq-localize-en.js';
@@ -13,31 +14,91 @@ import 'pqgrid/localize/pq-localize-ja.js';
 export class SheetComponent implements AfterViewInit, OnChanges {
 
   @ViewChild('pqgrid') div: ElementRef;
-  @Input() options:any;
+  @Input() options: any;
+  @Input() focusDirection: string; // 'nextFocus'|'downFocus'
+  @Input() columnKeys3D: any;
+  @Input() columnKeys2D: any;
+
   grid: pq.gridT.instance = null;
 
-  private createGrid(){
-      this.grid = pq.grid(this.div.nativeElement, this.options);
+  constructor(
+    public helper: DataHelperModule,
+  ) {
   }
 
-  ngOnChanges(obj: SimpleChanges){
-      //debugger;
-      if( !obj.options.firstChange ){//grid is destroyed and recreated only when whole options object is changed to new reference.
-          this.grid.destroy();
-          this.createGrid();
+  private createGrid() {
+    // this.options.cellBeforeSave = (evt, ui) => {
+    //   console.log('cellBeforeSave');
+    //   console.log(ui);
+    // };
+
+    this.options.beforeCellKeyDown = (evt, ui) => {
+      console.log(evt.key);
+      if (evt.key === 'Enter') {
+        // キーを押したあとの動作
+        console.log(this.focusDirection);
+        if (this.focusDirection === 'downFocus') {
+          // 下に移動
+          this.grid.setSelection({
+            rowIndx: ui.rowIndx + 1,
+            colIndx: ui.colIndx,
+            focus: true,
+          });
+        } else {
+          const columnKeyList = (this.helper.dimension === 2) ?
+            this.columnKeys2D : this.columnKeys3D;
+
+          if (columnKeyList.length > ui.colIndx + 1) {
+            // 右に移動
+            this.grid.setSelection({
+              rowIndx: ui.rowIndx,
+              colIndx: ui.colIndx + 1,
+              focus: true,
+            });
+          } else {
+            // 次の行の左端に移動
+            this.grid.setSelection({
+              rowIndx: ui.rowIndx + 1,
+              colIndx: 0,
+              focus: true,
+            });
+          }
+        }
+
+        return false;
       }
+
+      return true;
+    };
+
+    // セルの挙動
+    this.options.editModel = {
+      onSave: this.focusDirection,
+    };
+
+    this.grid = pq.grid(this.div.nativeElement, this.options);
   }
 
-  ngAfterViewInit(){
+  ngOnChanges(obj: SimpleChanges) {
+    //debugger;
+    if (!obj.options.firstChange) {//grid is destroyed and recreated only when whole options object is changed to new reference.
+      this.grid.destroy();
       this.createGrid();
+    }
   }
 
-  refreshDataAndView(){
-    if (this.grid === null ) {
+  ngAfterViewInit() {
+    this.createGrid();
+  }
+
+  refreshDataAndView() {
+    if (this.grid === null) {
       return;
     }
     this.grid.refreshDataAndView();
     console.log('refreshDataAndView');
 
   }
+
+
 }

@@ -468,7 +468,7 @@ export class InputDataService {
       const e = load.element.toString();
       if (!(e in elements)) {
         return (
-        + this.translate.instant("providers.input-data.loadNo")
+        this.translate.instant("providers.input-data.memberNo")
         + key 
         + "における" //翻訳保留
         + this.translate.instant("providers.input-data.sectionNo")
