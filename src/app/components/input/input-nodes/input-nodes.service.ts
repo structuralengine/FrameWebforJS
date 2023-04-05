@@ -12,7 +12,13 @@ export class InputNodesService {
     this.clear();
   }
 
+  //リセット
   public clear(): void {
+    this.node = new Array();
+  }
+
+  //テスト用
+  public cleartest(): void {
     this.node = new Array();
   }
 
