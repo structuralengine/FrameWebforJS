@@ -19,6 +19,7 @@ import { InputDataService } from "./providers/input-data.service";
 import { DataHelperModule } from "./providers/data-helper.module";
 import { ResultDataService } from "./providers/result-data.service";
 import { UserInfoService } from "./providers/user-info.service";
+import { UIStateService } from "./providers/ui-state.service";
 
 import { MenuComponent } from "./components/menu/menu.component";
 import { LoginDialogComponent } from "./components/login-dialog/login-dialog.component";
@@ -193,6 +194,7 @@ const httpLoaderFactory = (http: HttpClient): TranslateHttpLoader =>
     ResultCombineFsecService,
 
     UserInfoService,
+    UIStateService,
     SceneService,
 
     ElectronService

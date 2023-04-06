@@ -19,6 +19,7 @@ import { DataHelperModule } from "src/app/providers/data-helper.module";
 import { SceneService } from "../three/scene.service";
 import { AngularFireAuth } from "@angular/fire/auth";
 import { UserInfoService } from "src/app/providers/user-info.service";
+import { UIStateService } from "src/app/providers/ui-state.service";
 import { environment } from "src/environments/environment";
 import { PrintCustomFsecService } from "../print/custom/print-custom-fsec/print-custom-fsec.service";
 import { LanguagesService } from "src/app/providers/languages.service";
@@ -33,12 +34,12 @@ import packageJson from '../../../../package.json';
 })
 export class MenuComponent implements OnInit {
   loginUserName: string;
-  public fileName: string;
+
   public version: string;
 
   constructor(
     private modalService: NgbModal,
-    private app: AppComponent,
+    public app: AppComponent,
     private scene: SceneService,
     private helper: DataHelperModule,
     private InputData: InputDataService,
@@ -53,15 +54,16 @@ export class MenuComponent implements OnInit {
     public language: LanguagesService,
     public electronService: ElectronService,
     private translate: TranslateService,
+    private ui_state: UIStateService,
     public printCustomFsecService: PrintCustomFsecService,
   ) {
-    this.fileName = "";
+    this.ui_state.file_name = "";
     this.three.fileName = "";
     this.version = packageJson.version;
   }
 
   ngOnInit() {
-    this.fileName = "";
+    this.ui_state.file_name = "";
     this.three.fileName = "";
     this.helper.isContentsDailogShow = false;
     this.setDimension(2);
@@ -75,7 +77,7 @@ export class MenuComponent implements OnInit {
     this.PrintData.clear();
     this.CustomFsecData.clear();
     this.three.ClearData();
-    this.fileName = "";
+    this.ui_state.file_name = "";
     this.three.fileName = "";
     this.three.mode = "";
 
@@ -101,7 +103,7 @@ export class MenuComponent implements OnInit {
     // this.countArea.clear();
     const modalRef = this.modalService.open(WaitDialogComponent);
 
-    this.fileName = response.path;
+    this.ui_state.file_name = response.path;
     this.three.fileName = response.path;
 
     this.app.dialogClose(); // 現在表示中の画面を閉じる
@@ -140,7 +142,7 @@ export class MenuComponent implements OnInit {
     const modalRef = this.modalService.open(WaitDialogComponent);
 
     const file = evt.target.files[0];
-    this.fileName = file.name;
+    this.ui_state.file_name = file.name;
     this.three.fileName = file.name;
     evt.target.value = "";
     this.fileToText(file)
@@ -179,12 +181,13 @@ export class MenuComponent implements OnInit {
   // 上書き保存
   // 上書き保存のメニューが表示されるのは electron のときだけ
   public overWrite(): void {
-    if (this.fileName === "") {
+    if (this.ui_state.file_name === "") {
       this.save();
       return;
     }
     const inputJson: string = JSON.stringify(this.InputData.getInputJson());
-    this.fileName = this.electronService.ipcRenderer.sendSync('overWrite', this.fileName, inputJson);
+    this.ui_state.file_name =
+      this.electronService.ipcRenderer.sendSync('overWrite', this.ui_state.file_name, inputJson);
   }
 
   private fileToText(file): any {
@@ -202,20 +205,24 @@ export class MenuComponent implements OnInit {
 
   // ファイルを保存
   save(): void {
-    const inputJson: string = JSON.stringify(this.InputData.getInputJson());
-    if (this.fileName.length === 0) {
-      this.fileName = "frameWebForJS.json";
+
+    if (this.ui_state.file_name.length === 0) {
+      this.ui_state.file_name = "frameWebForJS.json";
       this.three.fileName = "frameWebForJS.json";
     }
-    if (this.helper.getExt(this.fileName) !== "json") {
-      this.fileName += ".json";
+    if (this.helper.getExt(this.ui_state.file_name) !== "json") {
+      this.ui_state.file_name += ".json";
     }
+
+    const inputJson: string = JSON.stringify(this.InputData.getInputJson());
+
     // 保存する
     if (this.electronService.isElectronApp) {
-      this.fileName = this.electronService.ipcRenderer.sendSync('saveFile', this.fileName, inputJson, "json");
+      this.ui_state.file_name =
+        this.electronService.ipcRenderer.sendSync('saveFile', this.ui_state.file_name, inputJson, "json");
     } else {
       const blob = new window.Blob([inputJson], { type: "text/plain" });
-      FileSaver.saveAs(blob, this.fileName);
+      FileSaver.saveAs(blob, this.ui_state.file_name);
     }
   }
 
@@ -349,8 +356,8 @@ export class MenuComponent implements OnInit {
     }
     const blob = new window.Blob([pickupJson], { type: "text/plain" });
     let filename: string = "frameWebForJS" + ext;
-    if (this.fileName.length > 0) {
-      filename = this.fileName.split(".").slice(0, -1).join(".");
+    if (this.ui_state.file_name.length > 0) {
+      filename = this.ui_state.file_name.split(".").slice(0, -1).join(".");
     }
     // 保存する
     if (this.electronService.isElectronApp) {
@@ -432,7 +439,7 @@ export class MenuComponent implements OnInit {
     const modalRef = this.modalService.open(WaitDialogComponent);
 
     const file = evt.target.files[0];
-    this.fileName = file.name;
+    this.ui_state.file_name = file.name;
     this.three.fileName = file.name;
     evt.target.value = "";
 

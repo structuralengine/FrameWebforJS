@@ -1,6 +1,6 @@
 import { Component, OnInit } from "@angular/core";
 import { Router } from "@angular/router";
-import { UserInfoService } from "./providers/user-info.service";
+import { UIStateService } from "./providers/ui-state.service";
 import { ResultDataService } from "./providers/result-data.service";
 import { PrintService } from "./components/print/print.service";
 
@@ -28,6 +28,7 @@ export class AppComponent implements OnInit {
     public disg: ResultDisgService,
     public reac: ResultReacService,
     public print: PrintService,
+    public ui_state: UIStateService,
     private translate: TranslateService,
   ) {
     this.translate.setDefaultLang("ja");
@@ -35,6 +36,10 @@ export class AppComponent implements OnInit {
 
   ngOnInit() {
     this.helper.isContentsDailogShow = false;
+
+    this.ui_state.init_ui_state("FrameWebforJS", () =>
+      {
+      });
   }
 
   // 計算結果表示ボタンを無効にする
