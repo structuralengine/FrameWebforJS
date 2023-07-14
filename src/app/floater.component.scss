@@ -115,6 +115,8 @@
 }
 
 .result_table {
+  width: auto;
+  overflow: auto;
   table {
     word-break: break-all;
     width: 100%;
@@ -170,6 +172,9 @@
           color: var(--text_main);
         }
       }
+    }
+    .body {
+      overflow-y: unset;
     }
     .result_detail {
       &:nth-child(2n + 1) {

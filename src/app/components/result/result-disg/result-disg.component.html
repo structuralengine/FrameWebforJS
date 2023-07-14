@@ -45,7 +45,7 @@
             </tr>
           </div>
         </thead>
-        <tbody>
+        <tbody class="body">
           <div [style.height.px]="height" *ngIf="dimension === 3">
             <tr *ngFor="let resultData of dataset; index as i">
               <td class="result-sm">{{ resultData.id }}</td>
@@ -149,7 +149,7 @@
                       </tr>
                     </div>
                   </thead>
-                  <tbody>
+                  <tbody class="body">
                     <div [style.height.px]="height" *ngIf="dimension === 3">
                       <tr *ngFor="let resultData of dataset[i]">
                         <td class="result-sm">{{ resultData.id }}</td>

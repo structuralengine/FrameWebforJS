@@ -57,7 +57,7 @@
             </tr>
           </div>
         </thead>
-        <tbody>
+        <tbody class="body">
           <div  [style.height.px]="height" *ngIf="dimension === 3">
             <!-- <cdk-virtual-scroll-viewport itemSize="25"> -->
               <tr *ngFor="let resultData of dataset; index as i">
@@ -182,7 +182,7 @@
                       </tr>
                     </div>
                   </thead>
-                  <tbody>
+                  <tbody class="body">
                     <div  [style.height.px]="height"  *ngIf="dimension === 3">
                       <tr *ngFor="let resultData of dataset[i]">
                         <td class="result-sm">{{ resultData.m }}</td>
