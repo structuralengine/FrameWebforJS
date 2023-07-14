@@ -13,7 +13,7 @@
         position: relative;
         height: 500px;
         width: 1062px;
-        overflow: scroll;
+        // overflow: scroll;
         border-radius: 4px;
     }
 
@@ -54,8 +54,10 @@
         .resultArea {
             position: relative;
             width: 80%;
-            height: 471px;
-            overflow: scroll;
+            // height: 471px;
+            height: 430px;
+            // overflow: scroll;
+            overflow: auto;
             padding-bottom: 48px;
             &::before {
                 position: absolute;
@@ -117,9 +119,11 @@
 
 .printdata-choice {
     font-size: 12px;
-    height: 471px;
+    // height: 471px;
+    height: 430px;
     width: auto;
-    overflow: scroll;
+    // overflow: scroll;
+    overflow: auto;
     .print-choice.result {
         padding: 0;
         &>ul {

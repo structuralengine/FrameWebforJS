@@ -92,7 +92,7 @@ export class InputNodesComponent implements OnInit {
   private loadData(row: number): void {
     for (let i = this.dataset.length + 1; i <= row; i++) {
       const node = this.data.getNodeColumns(i);
-      this.dataset.push(node);
+      this.dataset.push(node);   
     }
   }
 
@@ -124,13 +124,9 @@ export class InputNodesComponent implements OnInit {
       data: this.dataset,
     },
     beforeTableView: (evt, ui) => {
-      console.log('ui', ui);
-      console.log('evt', evt);
       const finalV = ui.finalV;
-      console.log('finalV', finalV);
-      console.log('this.dataset', this.dataset);
       const dataV = this.dataset.length;
-      console.log('dataV', dataV);
+     console.log(evt)
       if (ui.initV == null) {
         return;
       }
