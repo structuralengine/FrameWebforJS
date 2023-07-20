@@ -23,7 +23,8 @@ export class PrintComponent implements OnInit, OnDestroy {
   public combineJson: any;
   public pickupJson: any;
   public id;
-  private url =  "https://frameprint.azurewebsites.net/api/Function1?";
+  // private url =  "https://frameprint.azurewebsites.net/api/Function1?";
+  private url =  "http://localhost:7071/api/Function1?";
   //"http://localhost:7071/api/Function1";
   public PrintScreen: string;
 

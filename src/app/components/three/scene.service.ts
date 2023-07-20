@@ -26,7 +26,7 @@ export class SceneService {
   //private controlsGizmoParent: OrbitControlsGizmo;
 
   // カメラ
-  private camera: THREE.PerspectiveCamera | THREE.OrthographicCamera;
+  public camera: THREE.PerspectiveCamera | THREE.OrthographicCamera;
   private PerspectiveCamera: THREE.PerspectiveCamera;
   private OrthographicCamera: THREE.OrthographicCamera;
   private aspectRatio: number;

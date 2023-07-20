@@ -23,6 +23,8 @@ import { DataHelperModule } from "src/app/providers/data-helper.module";
 import { connectableObservableDescriptor } from "rxjs/internal/observable/ConnectableObservable";
 import { withLatestFrom } from "rxjs-compat/operator/withLatestFrom";
 import { forEach } from '@angular-devkit/schematics';
+import { loadFont } from 'load-bmfont';
+import { ThreeLoadTextBmf } from "./three-load-text-bmf";
 
 @Injectable({
   providedIn: "root",
@@ -53,7 +55,7 @@ export class ThreeLoadService {
 
   // アニメーションのオブジェクト
   private animationObject: any;
-
+  public font : any;
   // 初期化
   constructor(
     private scene: SceneService,
@@ -66,12 +68,23 @@ export class ThreeLoadService {
   ) {
     // 荷重の雛形をあらかじめ生成する
     this.loadEditor = {};
+
+    var loadFont = require('load-bmfont')
+    var self = this
+    loadFont('./assets/fonts/Arial.fnt', function (err, font) {
+      if (err)
+        throw err
+      self.font = font;
+      const text = new ThreeLoadText(font);
+      const textBmf = new ThreeLoadTextBmf();
+      self.loadEditor[ThreeLoadDistribute.id] = new ThreeLoadDistribute(text,textBmf, self); // 分布荷重のテンプレート
+    });
+
     // フォントをロード
     const loader = new THREE.FontLoader();
     loader.load("./assets/fonts/helvetiker_regular.typeface.json", (font) => {
       const text = new ThreeLoadText(font);
       this.loadEditor[ThreeLoadAxial.id] = new ThreeLoadAxial(text); // 軸方向荷重のテンプレート
-      this.loadEditor[ThreeLoadDistribute.id] = new ThreeLoadDistribute(text); // 分布荷重のテンプレート
       this.loadEditor[ThreeLoadMemberPoint.id] = new ThreeLoadMemberPoint(text); // 部材の途中にある節点荷重のテンプレート
       this.loadEditor[ThreeLoadPoint.id] = new ThreeLoadPoint(text); // 節点荷重のテンプレート
       this.loadEditor[ThreeLoadMoment.id] = new ThreeLoadMoment(text); // 節点モーメントのテンプレート

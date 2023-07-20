@@ -4,6 +4,8 @@ import { Vector2, Vector3 } from "three";
 
 import { ThreeLoadDimension } from "./three-load-dimension";
 import { ThreeLoadText } from "./three-load-text";
+import { ThreeLoadTextBmf } from "./three-load-text-bmf";
+import { ThreeLoadService } from "./three-load.service";
 
 @Injectable({
   providedIn: "root",
@@ -23,11 +25,15 @@ export class ThreeLoadDistribute {
   private line_mat_Pick: THREE.LineBasicMaterial;
   
   private text: ThreeLoadText;
+  private textBmf: ThreeLoadTextBmf;
   private dim: ThreeLoadDimension;
 
-  constructor(text: ThreeLoadText) {
-    
+  private _threeLoadService: ThreeLoadService;
+
+  constructor(text: ThreeLoadText, textBmf: ThreeLoadTextBmf, threeLoadService: ThreeLoadService) {
+    this._threeLoadService = threeLoadService;
     this.text = text;
+    this.textBmf = textBmf;
     this.dim = new ThreeLoadDimension(text);
     
     this.face_mat_Red = new THREE.MeshBasicMaterial({
@@ -467,7 +473,7 @@ export class ThreeLoadDistribute {
         continue;
       }
       const textString: string = value.toFixed(2) + " kN/m";
-      const text = this.text.create(textString, pos[i], 0.1, offset);
+      const text = this.textBmf.createBMF(textString, pos[i], 0.1, offset, this._threeLoadService.font);
       const height = Math.abs(text.geometry.boundingBox.max.y - text.geometry.boundingBox.min.y);
       const width = Math.abs(text.geometry.boundingBox.max.x - text.geometry.boundingBox.min.x);
       if (vartical[i] === 'bottom') {

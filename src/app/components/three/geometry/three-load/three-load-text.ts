@@ -6,7 +6,7 @@ import * as THREE from "three";
 })
 export class ThreeLoadText { 
 
-  private font: THREE.Font;
+  private font: any;
   private text_mat: THREE.MeshBasicMaterial[];
 
   constructor(font: THREE.Font) {
@@ -26,6 +26,30 @@ export class ThreeLoadText {
 
     const text_geo = new THREE.TextGeometry(textString, {
       font: this.font,
+      size: size,
+      height: 0.001,
+      curveSegments: 4,
+      bevelEnabled: false,
+    });
+
+    text_geo.center();
+
+    const text = new THREE.Mesh(text_geo, this.text_mat);
+
+    text.position.set(position.x, position.y + offset, 0);
+
+    return text;
+  }
+
+  public createBMF(
+    textString: string,
+    position: THREE.Vector2,
+    size: number,
+    offset: number = 0,
+    font: any): THREE.Mesh {
+
+    const text_geo = new THREE.TextGeometry(textString, {
+      font: font,
       size: size,
       height: 0.001,
       curveSegments: 4,
