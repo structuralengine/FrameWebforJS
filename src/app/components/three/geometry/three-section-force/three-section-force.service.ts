@@ -75,7 +75,7 @@ export class ThreeSectionForceService {
 
     // gui
     this.scale = 100;
-    this.textCount = 15; // 上位 15% の文字だけ出力する
+    this.textCount = 5; // 上位 15% の文字だけ出力する
     this.gui = null;
   }
 
@@ -357,6 +357,7 @@ export class ThreeSectionForceService {
     ];
 
     const textValues = [];
+    // let fsecDataSorts = fsecDatas[0].sort((a,b) => (a.l < b.l) ? 1 : -1);
     for (let i = 0; i < fsecDatas.length; i++) {
       const fsecData = fsecDatas[i];
       const ThreeObject = ThreeObjects[i];
@@ -377,6 +378,8 @@ export class ThreeSectionForceService {
       let counter = 0;
       for (const fsec of fsecData) {
         const id = fsec["m"].trim();
+        if(id === '6') 
+          var aaaa  = "aaaaaa";
         if (id.length > 0) {
           // 節点データを集計する
           const m = this.memberData[id];
