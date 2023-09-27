@@ -101,6 +101,7 @@ import { DocLayoutComponent } from "./components/doc-layout/doc-layout.component
 import { OptionalHeaderComponent } from "./components/optional-header/optional-header.component";
 import { ActivateSessionComponent } from './components/activate-session/activate-session.component';
 import { InputRigidZoneComponent } from "./components/input/input-rigid-zone/input-rigid-zone.component";
+import { HashLocationStrategy, LocationStrategy, PathLocationStrategy } from "@angular/common";
 
 const httpLoaderFactory = (http: HttpClient): TranslateHttpLoader =>
   new TranslateHttpLoader(http, "./assets/i18n/", ".json");
@@ -227,6 +228,7 @@ function initializeKeycloak(keycloak: KeycloakService) {
           multi: true,
           deps: [KeycloakService]
         },
+        {provide: LocationStrategy, useClass: PathLocationStrategy}
     ],
     bootstrap: [AppComponent]
 })
