@@ -228,7 +228,7 @@ function initializeKeycloak(keycloak: KeycloakService) {
           multi: true,
           deps: [KeycloakService]
         },
-        {provide: LocationStrategy, useClass: PathLocationStrategy}
+        {provide: LocationStrategy, useClass: HashLocationStrategy}
     ],
     bootstrap: [AppComponent]
 })
