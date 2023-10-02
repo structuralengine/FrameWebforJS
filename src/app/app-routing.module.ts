@@ -72,7 +72,7 @@ const routes: Routes = [
 
 @NgModule({
   //@ts-ignore
-  imports: [RouterModule.forRoot(routes, {useHash: false})],
+  imports: [RouterModule.forRoot(routes, {useHash: true})],
   // imports: [RouterModule.forRoot(routes, { })],
   exports: [RouterModule]
 })
