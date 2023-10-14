@@ -58,16 +58,16 @@ export class LoginDialogComponent implements OnInit {
       'password': password,
       'scope': 'openid profile email',
     });
-    
+
     let config = {
       method: 'post',
-      url: 'https://auth.structuralengine.com/realms/structural-engine/protocol/openid-connect/token',
-      headers: { 
+      url: 'https://auth.malme.app/realms/structural-engine/protocol/openid-connect/token',
+      headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
       },
       data : data
     };
-    
+
     axios.request(config)
       .then((response) => {
         const keycloakInstance = this.keycloak.getKeycloakInstance();
@@ -75,7 +75,7 @@ export class LoginDialogComponent implements OnInit {
         keycloakInstance.token = response.data.access_token;
         keycloakInstance.refreshToken = response.data.refresh_token;
         keycloakInstance.idToken = response.data.id_token;
-        axios.get('https://auth.structuralengine.com/realms/structural-engine/protocol/openid-connect/userinfo', {
+        axios.get('https://auth.malme.app/realms/structural-engine/protocol/openid-connect/userinfo', {
           headers: {
             Authorization: `Bearer ${keycloakInstance.token}`
           }
@@ -100,7 +100,7 @@ export class LoginDialogComponent implements OnInit {
         this.errorMessage = error;
         this.helper.alert(this.translate.instant("login-dialog.fail") + error);
       });
-    
+
     // signInWithEmailAndPassword(this.auth, email, password)
     //   .then(auth => {
     //     this.connecting = false;
