@@ -246,6 +246,34 @@ export class PrintService {
     this.newPrintJson();
   }
 
+  public checkAll(e){
+
+    // reset none select
+    this.printOption = new Array();
+    this.printCase = "";
+
+    this.arrFlg = new Array();
+    this.printCases=[]
+    for (const key of Object.keys(this.optionList))
+      this.optionList[key].value = false;
+
+    if(e.checked){
+      if(this.helper.dimension === 2)
+      {
+        for(let i = 0; i <=15; i++)
+        {
+          if(i === 10 || i === 14) continue;
+          this.selectCheckbox(i);
+        }
+      }
+      else
+      {
+        for(let i = 0; i <10; i++)
+          this.selectCheckbox(i);
+      }
+    }
+  }
+
   /*
   // 印刷ケース
   // ラジオボタン選択時に発動
