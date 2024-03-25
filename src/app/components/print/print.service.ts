@@ -276,6 +276,8 @@ export class PrintService {
         } else for (let i = 0; i < 10; i++) this.selectCheckbox(i);
       }
     }
+
+    this.newPrintJson();
   }
 
   /*
