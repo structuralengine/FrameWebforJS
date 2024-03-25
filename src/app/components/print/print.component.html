@@ -28,7 +28,7 @@
                   <!-- check all -->
                   <li>
                     <label style="width: 100%">
-                      <input type="checkbox" name="radio-print" class="radio-input" (click)="printService.checkAll($event.target)" />
+                      <input type="checkbox" name="radio-print" class="radio-input" (click)="printService.checkAll()" [checked]="printService.isCheckAll" />
                       <span class="radio-parts" translate>print.all</span>
                     </label>
                   </li>

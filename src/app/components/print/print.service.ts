@@ -28,6 +28,7 @@ export class PrintService {
 
   public flg: number = -1; // リファクタリング前の変数をズルズル使っている感じがするので直したほうがいいか？
   public arrFlg: any = [];
+  public isCheckAll = false;
 
   public print_target: any; // Three.js 印刷 の図のデータ
   public printOption = [];
@@ -246,30 +247,33 @@ export class PrintService {
     this.newPrintJson();
   }
 
-  public checkAll(e){
+  public checkAll(){
+    this.isCheckAll = !this.isCheckAll;
 
     // reset none select
     this.printOption = new Array();
     this.printCase = "";
 
     this.arrFlg = new Array();
-    this.printCases=[]
+    this.printCases = [];
     for (const key of Object.keys(this.optionList))
       this.optionList[key].value = false;
 
-    if(e.checked){
-      if(this.helper.dimension === 2)
-      {
-        for(let i = 0; i <=15; i++)
-        {
-          if(i === 10 || i === 14) continue;
-          this.selectCheckbox(i);
+    if (this.isCheckAll) {
+      if (this.helper.dimension === 2) {
+        if (!this.ResultData.isCalculated) {
+          this.selectCheckbox(0); //InputDate
+          this.selectCheckbox(15); //Load diagram
+        } else {
+          for (let i = 0; i <= 15; i++) {
+            if (i === 10 || i === 14) continue;
+            this.selectCheckbox(i);
+          }
         }
-      }
-      else
-      {
-        for(let i = 0; i <10; i++)
-          this.selectCheckbox(i);
+      } else {
+        if (!this.ResultData.isCalculated) {
+          this.selectCheckbox(0); //InputDate
+        } else for (let i = 0; i < 10; i++) this.selectCheckbox(i);
       }
     }
   }
