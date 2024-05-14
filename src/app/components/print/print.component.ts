@@ -478,7 +478,7 @@ export class PrintComponent implements OnInit, OnDestroy {
         }
         if (key === "PrintDiagram") {
           mode = "fsec";
-          this.printService.printTargetValues[6].value = true;
+          // this.printService.printTargetValues[6].value = true;
         }
         if (key === "disgDiagram") {
           mode = "disg"
@@ -534,6 +534,8 @@ export class PrintComponent implements OnInit, OnDestroy {
             Promise.all(capturePromises)
               .then(() => {
                 console.log(this.printService.print_target);
+                json["PrintScreenData"] = this.printService.print_target
+                console.log(json)
                 this.printService.printDocument("invoice", [""]);
               })
               .catch(error => {
