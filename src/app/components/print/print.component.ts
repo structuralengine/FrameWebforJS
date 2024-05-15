@@ -523,6 +523,7 @@ export class PrintComponent implements OnInit, OnDestroy {
           this.router.navigate(["/"]);
           if (modes.length !== 0) {
             const capturePromises = modes.map(mode => {
+              this.three.ChangeMode(mode);
               this.three.mode = mode
               return this.three.getCaptureImage().then((print_target) => {
                 console.log("getCaptureImage.then start: " + this.check_ts() + " msec");
