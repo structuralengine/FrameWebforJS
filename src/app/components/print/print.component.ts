@@ -390,12 +390,15 @@ export class PrintComponent implements OnInit, OnDestroy {
       const dataCheckPrintScreen = [10, 11, 12, 13, 14, 15, 16];
       const arrFlg = this.printService.arrFlg;
       const hasPrintCalculation = arrFlg.every(data => dataCheckCalculation.includes(data));
-      const hasBothPrint = arrFlg.some(data => dataCheckCalculation.includes(data)) && arrFlg.some(data => dataCheckPrintScreen.includes(data));
-      const json: any = this.printService.json;
-
-      if (arrFlg.includes(0))
+      const hasPrintScreen = arrFlg.every(data => dataCheckPrintScreen.includes(data));
+      let json: any = {}
+      
+      if (arrFlg.includes(0)) {
         json["hasPrintInputData"] = true;
-
+      }
+      this.printService.getPrintDatas();
+      json = {...json, ...this.printService.json};
+      
       if (Object.keys(json).length !== 0) {
         var checkSelectItem = false;
         switch (this.printService.flg) {
@@ -534,10 +537,16 @@ export class PrintComponent implements OnInit, OnDestroy {
             });
             Promise.all(capturePromises)
               .then(() => {
-                console.log(this.printService.print_target);
                 json["PrintScreenData"] = this.printService.print_target
-                console.log(json)
-                this.printService.printDocument("invoice", [""]);
+                if (hasPrintScreen) {
+                  this.printService.printDocument("invoice", [""])
+                } else {
+                  // loadingの表示
+                  this.loadind_enable();
+                  // PDFサーバーに送る
+                  this.pdfPreView(this.getPostJson(json));
+                  this.router.navigate(["/"]);
+                }
               })
               .catch(error => {
                 console.error("Error:", error);
@@ -548,16 +557,13 @@ export class PrintComponent implements OnInit, OnDestroy {
           return;
         }
       }
-
-      if(hasBothPrint || hasPrintCalculation) {
-        // loadingの表示
-        this.loadind_enable();
-        // PDFサーバーに送る
-        this.pdfPreView(this.getPostJson(json));
-        this.router.navigate(["/"]);
-      }
-      
-
+    if (hasPrintCalculation) {
+      // loadingの表示
+      this.loadind_enable();
+      // PDFサーバーに送る
+      this.pdfPreView(this.getPostJson(json));
+      this.router.navigate(["/"]);
+    }
     } else {
       let json: any = {};
       const dataCheck = [1, 2, 3, 4, 5, 6, 7, 8, 9];
