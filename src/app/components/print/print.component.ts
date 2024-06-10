@@ -707,43 +707,41 @@ export class PrintComponent implements OnInit, OnDestroy {
           json = { ...json, ...initData };
           for (let key of this.printService.printCases) {
             if (key === "PrintLoad") {
-              (json["load"] = this.printService.json["load"]),
-                (json["fix_node"] = this.printService.json["fix_node"]),
-                (json["element"] = this.printService.json["element"]),
-                (json["fix_member"] = this.printService.json["fix_member"]),
-                (json["PrintLoad"] = {
-                  diagramInput,
-                });
+              (json["load"] = this.printService.json["load"]  ?? {}),
+              (json["fix_node"] = this.printService.json["fix_node"] ?? {}),
+              (json["element"] = this.printService.json["element"] ?? {}),
+              (json["fix_member"] = this.printService.json["fix_member"] ?? {}),
+              (json["PrintLoad"] = {
+                diagramInput,
+              });
             }
             if (key === "PrintDiagram") {
               let diagramResultTemp = {
                 layout: "single",
                 output: ["mz", "fy", "fx", "disg"],
               };
-              (json["load"] = this.printService.json["load"]),
-                (json["fsec"] = this.printService.json["fsec"]),
-                (json["PrintDiagram"] = {
-                  disg: this.printService.json["disg"],
-                  disgName: this.printService.json["disgName"],
-                  diagramResult: diagramResultTemp,
-                 
-                });
+              (json["load"] = this.printService.json["load"] ?? {}),
+              (json["fsec"] = this.printService.json["fsec"] ?? {}),
+              (json["PrintDiagram"] = {
+                disg: this.printService.json["disg"] ?? {},
+                disgName: this.printService.json["disgName"]?? {},
+                diagramResult: diagramResultTemp,
+                
+              });
             }
             if (key === "CombPrintDiagram") {
-              (json["combine"] = this.printService.json["combine"]),
-                (json["fsecCombine"] = this.printService.json["fsecCombine"]),
-                (json["CombPrintDiagram"] = {
-                  diagramResult,
-                 
-                });
+              (json["combine"] = this.printService.json["combine"] ?? {}),
+              (json["fsecCombine"] = this.printService.json["fsecCombine"] ?? {}),
+              (json["CombPrintDiagram"] = {
+                diagramResult,
+              });
             }
             if (key === "PickPrintDiagram") {
-              (json["pickup"] = this.printService.json["pickup"]),
-                (json["fsecPickup"] = this.printService.json["fsecPickup"]),
-                (json["PickPrintDiagram"] = {
-                  diagramResult,
-                 
-                });
+              (json["pickup"] = this.printService.json["pickup"] ?? {}),
+              (json["fsecPickup"] = this.printService.json["fsecPickup"] ?? {}),
+              (json["PickPrintDiagram"] = {
+                diagramResult,
+              });
             }
           }
         } else {
@@ -759,26 +757,26 @@ export class PrintComponent implements OnInit, OnDestroy {
           for (let key of this.printService.printCases) {
             keyScreen = key;
             if (key === "PrintLoad") {
-              (json["load"] = this.printService.json["load"]),
-                (json["fix_node"] = this.printService.json["fix_node"]),
-                (json["element"] = this.printService.json["element"]),
-                (json["fix_member"] = this.printService.json["fix_member"]),
-                (json["PrintLoad"] = {});
+              (json["load"] = this.printService.json["load"] ?? {}),
+              (json["fix_node"] = this.printService.json["fix_node"] ?? {}),
+              (json["element"] = this.printService.json["element"] ?? {}),
+              (json["fix_member"] = this.printService.json["fix_member"] ?? {}),
+              (json["PrintLoad"] = {});
             }
             if (key === "PrintDiagram") {
-              (json["load"] = this.printService.json["load"]),
-                (json["fsec"] = this.printService.json["fsec"]),
-                (json["PrintDiagram"] = {});
+              (json["load"] = this.printService.json["load"] ?? {}),
+              (json["fsec"] = this.printService.json["fsec"] ?? {}),
+              (json["PrintDiagram"] = {});
             }
             if (key === "CombPrintDiagram") {
-              (json["combine"] = this.printService.json["combine"]),
-                (json["fsecCombine"] = this.printService.json["fsecCombine"]),
-                (json["CombPrintDiagram"] = {});
+              (json["combine"] = this.printService.json["combine"] ?? {}),
+              (json["fsecCombine"] = this.printService.json["fsecCombine"] ?? {}),
+              (json["CombPrintDiagram"] = {});
             }
             if (key === "PickPrintDiagram") {
-              (json["pickup"] = this.printService.json["pickup"]),
-                (json["fsecPickup"] = this.printService.json["fsecPickup"]),
-                (json["PickPrintDiagram"] = {});
+              (json["pickup"] = this.printService.json["pickup"] ?? {}),
+              (json["fsecPickup"] = this.printService.json["fsecPickup"] ?? {}),
+              (json["PickPrintDiagram"] = {});
             }
           }
           json[keyScreen]["pageOrientation"] =
@@ -836,8 +834,8 @@ export class PrintComponent implements OnInit, OnDestroy {
             ) {
               output.push("disg");
               selected = true;
-              json[keyScreen]["disg"] = this.printService.json["disg"];
-              json[keyScreen]["disgName"] = this.printService.json["disgName"];
+              json[keyScreen]["disg"] = this.printService.json["disg"] ?? {};
+              json[keyScreen]["disgName"] = this.printService.json["disgName"] ?? {};
             }
             json[keyScreen]["diagramResult"] = {
               layout: this.printService.printLayout,
