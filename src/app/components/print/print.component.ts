@@ -87,7 +87,7 @@ export class PrintComponent implements OnInit, OnDestroy {
     this.reset_ts();
     console.log("starting onPrintPDF...: 0 msec");
 
-    // 印刷ケースをセット
+    // 印刷ケースをセッ�
     let mode = "";
     if (this.printService.printCase === "PrintScreen") {
       // 画面印刷
@@ -99,7 +99,7 @@ export class PrintComponent implements OnInit, OnDestroy {
       // 断面力図
       mode = "fsec";
     } else if (this.printService.printCase === "disgDiagram") {
-      // 変位
+      // 変�
       mode = "disg";
     } else if (this.printService.printCase === "CombPrintDiagram") {
       // Combine 断面力図
@@ -116,7 +116,7 @@ export class PrintComponent implements OnInit, OnDestroy {
 
     this.three.mode = mode;
 
-    // 印刷対象を取得して、セット
+    // 印刷対象を取得して、セッ�
     if (
       (this.printService.flg === 14 && this.helper.dimension === 3) ||
       this.printService.flg === 10 ||
@@ -147,20 +147,20 @@ export class PrintComponent implements OnInit, OnDestroy {
         // loadingの表示
         this.loadind_enable();
 
-        // データの集計
-        console.log("データを集計中...: " + this.check_ts() + " msec");
+        // �タの雨
+        console.log("�タを集計中...: " + this.check_ts() + " msec");
         this.printService.optionList["input"].value = true;
         this.printService.optionList[this.three.mode].value = true;
         this.printService.getPrintDatas();
-        console.log("データの集計完了.: " + this.check_ts() + " msec");
+        console.log("�タの雨�完�: " + this.check_ts() + " msec");
 
-        // PDFサーバーに送る
+        // PDFサーバ�に送る
         const json = {};
         for (var key of ["node", "member", "dimension", "language"]) {
           json[key] = this.printService.json[key];
         }
 
-        // 印刷ケースを選択 ここから
+        // 印刷ケースを選�ここから
         if (this.three.mode == "fsec") {
           json["load"] = this.printService.json["load"];
           json["fsec"] = this.printService.json["fsec"];
@@ -173,19 +173,19 @@ export class PrintComponent implements OnInit, OnDestroy {
           json["pickup"] = this.printService.json["pickup"];
           json["fsecPickup"] = this.printService.json["fsecPickup"];
         }
-        // 印刷ケースの選択 ここまで
+        // 印刷ケースの選�ここまで
 
-        //console.log("印刷ケースの選択 ここまで: " + this.check_ts() + " msec");
+        //console.log("印刷ケースの選�ここまで: " + this.check_ts() + " msec");
 
-        // 印刷対象を選択 ここから
-        // 断面力図の種類を指定する
+        // 印刷対象を選�ここから
+        // 断面力図の種類を挮�す�
         const output = [];
         var selected: boolean = false;
         if (
           this.printService.customThree.threeEditable[5] &&
           this.printService.flg !== 15
         ) {
-          // z軸周りのモーメント図
+          // z軸周り�モーメント図
           output.push("mz");
           selected = true;
         }
@@ -194,7 +194,7 @@ export class PrintComponent implements OnInit, OnDestroy {
           this.printService.customThree.threeEditable[1] &&
           this.printService.flg !== 15
         ) {
-          // y方向のせん断力図
+          // y方向�せん断力図
           output.push("fy");
           selected = true;
         }
@@ -215,7 +215,7 @@ export class PrintComponent implements OnInit, OnDestroy {
           output.push("disg"); // 変位図
           selected = true;
 
-          // この場合は変位のデータも必要になる
+          // こ�場合�変位��タも忦�にな�
           json["disg"] = this.printService.json["disg"];
           json["disgName"] = this.printService.json["disgName"];
         }
@@ -232,9 +232,9 @@ export class PrintComponent implements OnInit, OnDestroy {
           selected = true;
         }
 
-        // 印刷対象を選択 ここまで
+        // 印刷対象を選�ここまで
 
-        //console.log("印刷対象を選択 ここまで: " + this.check_ts() + " msec");
+        //console.log("印刷対象を選�ここまで: " + this.check_ts() + " msec");
 
         if (!selected) {
           this.helper.alert(this.translate.instant("print.selectTarget"));
@@ -278,7 +278,7 @@ export class PrintComponent implements OnInit, OnDestroy {
 
         this.pdfPreView(base64Encoded);
 
-        //console.log("this.pdfPreView(base64Encoded);が終了: " + this.check_ts() + " msec");
+        //console.log("this.pdfPreView(base64Encoded);が終� " + this.check_ts() + " msec");
       } else {
         // 3D図の印刷
         if (
@@ -305,7 +305,7 @@ export class PrintComponent implements OnInit, OnDestroy {
         }
       }
     } else {
-      // 図以外の数字だけページの印刷
+      // 図以外�数字だけ�ージの印刷
       // this.helper.alert(this.translate.instant("print.selectTarget"));
       // return;
 
@@ -373,7 +373,7 @@ export class PrintComponent implements OnInit, OnDestroy {
 
         // loadingの表示
         this.loadind_enable();
-        // PDFサーバーに送る
+        // PDFサーバ�に送る
         this.pdfPreView(this.getPostJson(json));
         this.router.navigate(["/"]);
       }
@@ -491,7 +491,7 @@ export class PrintComponent implements OnInit, OnDestroy {
         this.printService.optionList[mode].value = true;
       }
 
-      // 印刷対象を取得して、セット
+      // 印刷対象を取得して、セッ�
       if (
         this.printService.flg === 14 ||
         this.printService.flg === 10 ||
@@ -587,7 +587,7 @@ export class PrintComponent implements OnInit, OnDestroy {
       if (hasPrintCalculation) {
         this.router.navigate(["/"]);
         this.loadind_enable();
-        // PDFサーバーに送る
+        // PDFサーバ�に送る
         setTimeout(() => {
           this.pdfPreView(this.getPostJson(json));
         }, 1000)
@@ -777,43 +777,43 @@ export class PrintComponent implements OnInit, OnDestroy {
           json = { ...json, ...initData };
           for (let key of this.printService.printCases) {
             if (key === "PrintLoad") {
-              (json["load"] = this.printService.json["load"]),
-                (json["fix_node"] = this.printService.json["fix_node"]),
-                (json["element"] = this.printService.json["element"]),
-                (json["fix_member"] = this.printService.json["fix_member"]),
-                (json["PrintLoad"] = {
-                  diagramInput,
-                });
+              (json["load"] = this.printService.json["load"]  ?? {}),
+              (json["fix_node"] = this.printService.json["fix_node"] ?? {}),
+              (json["element"] = this.printService.json["element"] ?? {}),
+              (json["fix_member"] = this.printService.json["fix_member"] ?? {}),
+              (json["PrintLoad"] = {
+                diagramInput,
+              });
             }
             if (key === "PrintDiagram") {
               let diagramResultTemp = {
                 layout: "single",
                 output: ["mz", "fy", "fx", "disg"],
               };
-              (json["load"] = this.printService.json["load"]),
-                (json["fsec"] = this.printService.json["fsec"]),
-                (json["PrintDiagram"] = {
-                  disg: this.printService.json["disg"],
-                  disgName: this.printService.json["disgName"],
-                  diagramResult: diagramResultTemp,
+              (json["load"] = this.printService.json["load"] ?? {}),
+              (json["fsec"] = this.printService.json["fsec"] ?? {}),
+              (json["PrintDiagram"] = {
+                disg: this.printService.json["disg"] ?? {},
+                disgName: this.printService.json["disgName"]?? {},
+                diagramResult: diagramResultTemp,
 
-                });
+              });
             }
             if (key === "CombPrintDiagram") {
-              (json["combine"] = this.printService.json["combine"]),
-                (json["fsecCombine"] = this.printService.json["fsecCombine"]),
-                (json["CombPrintDiagram"] = {
-                  diagramResult,
+              (json["combine"] = this.printService.json["combine"] ?? {}),
+              (json["fsecCombine"] = this.printService.json["fsecCombine"] ?? {}),
+              (json["CombPrintDiagram"] = {
+                diagramResult,
 
-                });
+              });
             }
             if (key === "PickPrintDiagram") {
-              (json["pickup"] = this.printService.json["pickup"]),
-                (json["fsecPickup"] = this.printService.json["fsecPickup"]),
-                (json["PickPrintDiagram"] = {
-                  diagramResult,
+              (json["pickup"] = this.printService.json["pickup"] ?? {}),
+              (json["fsecPickup"] = this.printService.json["fsecPickup"] ?? {}),
+              (json["PickPrintDiagram"] = {
+                diagramResult,
 
-                });
+              });
             }
           }
         } else {
@@ -829,26 +829,26 @@ export class PrintComponent implements OnInit, OnDestroy {
           for (let key of this.printService.printCases) {
             keyScreen = key;
             if (key === "PrintLoad") {
-              (json["load"] = this.printService.json["load"]),
-                (json["fix_node"] = this.printService.json["fix_node"]),
-                (json["element"] = this.printService.json["element"]),
-                (json["fix_member"] = this.printService.json["fix_member"]),
-                (json["PrintLoad"] = {});
+              (json["load"] = this.printService.json["load"] ?? {}),
+              (json["fix_node"] = this.printService.json["fix_node"] ?? {}),
+              (json["element"] = this.printService.json["element"] ?? {}),
+              (json["fix_member"] = this.printService.json["fix_member"] ?? {}),
+              (json["PrintLoad"] = {});
             }
             if (key === "PrintDiagram") {
-              (json["load"] = this.printService.json["load"]),
-                (json["fsec"] = this.printService.json["fsec"]),
-                (json["PrintDiagram"] = {});
+              (json["load"] = this.printService.json["load"] ?? {}),
+              (json["fsec"] = this.printService.json["fsec"] ?? {}),
+              (json["PrintDiagram"] = {});
             }
             if (key === "CombPrintDiagram") {
-              (json["combine"] = this.printService.json["combine"]),
-                (json["fsecCombine"] = this.printService.json["fsecCombine"]),
-                (json["CombPrintDiagram"] = {});
+              (json["combine"] = this.printService.json["combine"] ?? {}),
+              (json["fsecCombine"] = this.printService.json["fsecCombine"] ?? {}),
+              (json["CombPrintDiagram"] = {});
             }
             if (key === "PickPrintDiagram") {
-              (json["pickup"] = this.printService.json["pickup"]),
-                (json["fsecPickup"] = this.printService.json["fsecPickup"]),
-                (json["PickPrintDiagram"] = {});
+              (json["pickup"] = this.printService.json["pickup"] ?? {}),
+              (json["fsecPickup"] = this.printService.json["fsecPickup"] ?? {}),
+              (json["PickPrintDiagram"] = {});
             }
           }
           json[keyScreen]["pageOrientation"] =
@@ -906,8 +906,8 @@ export class PrintComponent implements OnInit, OnDestroy {
             ) {
               output.push("disg");
               selected = true;
-              json[keyScreen]["disg"] = this.printService.json["disg"];
-              json[keyScreen]["disgName"] = this.printService.json["disgName"];
+              json[keyScreen]["disg"] = this.printService.json["disg"] ?? {};
+              json[keyScreen]["disgName"] = this.printService.json["disgName"] ?? {};
             }
             json[keyScreen]["diagramResult"] = {
               layout: this.printService.printLayout,
@@ -954,7 +954,7 @@ export class PrintComponent implements OnInit, OnDestroy {
 
     this.http.post(this.url, base64Encoded, this.options).subscribe(
       (response) => {
-        console.log("pdfPreView が完了");
+        console.log("pdfPreView が完�);
 
         this.showPDF(response.toString());
       },
@@ -985,10 +985,10 @@ export class PrintComponent implements OnInit, OnDestroy {
     const jsonStr = JSON.stringify(json);
     // pako を使ってgzip圧縮する
     const compressed = pako.gzip(jsonStr);
-    //btoa() を使ってBase64エンコードする
+    //btoa() を使ってBase64エンコードす�
     const base64Encoded = btoa(compressed);
 
-    console.log("getPostJson が完了");
+    console.log("getPostJson が完�);
     return base64Encoded;
   }
 
@@ -999,8 +999,8 @@ export class PrintComponent implements OnInit, OnDestroy {
     this.id.style.opacity = "0.7";
   }
 
-  // finally的な処理
-  // loadingの表示終了
+  // finally皁�処�
+  // loadingの表示終�
   private loadind_desable() {
     document.getElementById("print-loading").style.display = "none";
     const id = document.getElementById("printButton");
@@ -1012,7 +1012,7 @@ export class PrintComponent implements OnInit, OnDestroy {
     this.loadind_desable();
 
     if (this.electronService.isElectron) {
-      // electron の場合
+      // electron の場�
       const byteCharacters = atob(base64);
       let byteNumbers = new Array(byteCharacters.length);
       for (let i = 0; i < byteCharacters.length; i++) {
@@ -1024,7 +1024,7 @@ export class PrintComponent implements OnInit, OnDestroy {
       window.open(fileURL, "_blank");
       this.router.navigate(["/"]);
     } else {
-      //Webアプリの場合
+      //Webアプリの場�
       printJS({ printable: base64, type: "pdf", base64: true });
     }
   }
