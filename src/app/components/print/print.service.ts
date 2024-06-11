@@ -231,7 +231,10 @@ export class PrintService {
 
     // check the All checkbox if all checkboxes are checked
     if (!this.ResultData.isCalculated) {
-      if (this.arrFlg.length === 2) {
+      if (
+        (this.helper.dimension === 2 && this.arrFlg.length === 2) || 
+        (this.helper.dimension === 3 && this.arrFlg.length === 1)
+      ) {
         this.isCheckAll = true
       }
     }
@@ -257,7 +260,7 @@ export class PrintService {
           this.optionList[key].value = true;
           // this.flg = id;
           // this.selectedIndex = this.optionList[key].id;
-          if ([ 11, 12, 13, 14, 15].includes(this.optionList[key].id)) {
+          if ([11, 12, 13, 14, 15].includes(this.optionList[key].id)) {
             this.printCases.push(key);
             // this.printCase = key;
           }
@@ -292,14 +295,15 @@ export class PrintService {
         }
       } else {
         if (!this.ResultData.isCalculated) {
-          this.selectCheckbox(0); 
-          this.selectCheckbox(15); 
+          this.selectCheckbox(0);
+          this.selectCheckbox(15);  
         } else {
           for (let i = 0; i <= 15; i++) {
             if (i == 10) continue;
             this.selectCheckbox(i);
           }
         }
+          // this.selectCheckbox(i);
       }
     }
 

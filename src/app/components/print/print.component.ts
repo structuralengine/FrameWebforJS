@@ -40,7 +40,7 @@ export class PrintComponent implements OnInit, OnDestroy {
     public helper: DataHelperModule,
     private translate: TranslateService,
     private app: AppComponent
-  ) {}
+  ) { }
 
   private a: boolean;
   ngOnInit() {
@@ -381,20 +381,18 @@ export class PrintComponent implements OnInit, OnDestroy {
   }
 
   //NEW LOGIC MULTI PRINT
-  public onPrintPDFNew(): void {
+  public async onPrintPDFNew(): Promise<void> {
     if (this.helper.dimension === 3) {
-      this.reset_ts();
-      console.log("starting onPrintPDF...: 0 msec");
-
       const dataCheckCalculation = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-      const dataCheckPrintScreen = [10, 11, 12, 13, 14, 15, 16];
       const arrFlg = this.printService.arrFlg;
       const hasPrintCalculation = arrFlg.every(data => dataCheckCalculation.includes(data));
-      const hasBothPrint = arrFlg.some(data => dataCheckCalculation.includes(data)) && arrFlg.some(data => dataCheckPrintScreen.includes(data));
-      const json: any = this.printService.json;
+      let json: any = {}
 
-      if (arrFlg.includes(0))
+      if (arrFlg.includes(0)) {
         json["hasPrintInputData"] = true;
+      }
+      this.printService.getPrintDatas();
+      json = { ...json, ...this.printService.json };
 
       if (Object.keys(json).length !== 0) {
         var checkSelectItem = false;
@@ -471,6 +469,7 @@ export class PrintComponent implements OnInit, OnDestroy {
       this.printService.optionList["input"].value = true;
       let mode = "";
       let modes = []
+
       for (let key of this.printService.printCases) {
         this.printService.optionList[key].value = true;
         if (key === "PrintLoad") {
@@ -478,12 +477,10 @@ export class PrintComponent implements OnInit, OnDestroy {
         }
         if (key === "PrintDiagram") {
           mode = "fsec";
-          this.printService.printTargetValues[6].value = true;
         }
         if (key === "disgDiagram") {
           mode = "disg"
         }
-
         if (key === "CombPrintDiagram") {
           mode = "comb_fsec";
         }
@@ -511,50 +508,90 @@ export class PrintComponent implements OnInit, OnDestroy {
           this.printService.customThree.threeEditable[i] = isSelected;
         }
       }
+
       if (
         this.printService.printCases.length !== 0 &&
         this.printService.printCase === ""
       ) {
+        // 図の印刷
         if (
           this.printService.customThree.threeEditable.filter((x) => x === true).length > 0
         ) {
           this.printService.print_target = []
-          console.log("3D図の印刷: " + this.check_ts() + " msec");
-          this.router.navigate(["/"]);
           if (modes.length !== 0) {
-            const capturePromises = modes.map(mode => {
-              this.three.mode = mode
-              return this.three.getCaptureImage().then((print_target) => {
-                console.log("getCaptureImage.then start: " + this.check_ts() + " msec");
-                print_target["mode"] = mode;
-                this.printService.print_target.push(print_target);
-                console.log("getCaptureImage.then last: " + this.check_ts() + " msec");
+            this.router.navigate(["/"]);
+            this.loadind_enable();
+            let count = 0;
+              const capturePromises = modes.map(mode => {
+                this.three.mode = mode
+                count += this.three.getTotalCaptureImage()
               });
-            });
-            Promise.all(capturePromises)
-              .then(() => {
-                console.log(this.printService.print_target);
-                this.printService.printDocument("invoice", [""]);
-              })
-              .catch(error => {
-                console.error("Error:", error);
-              });
+              if(count < 120){
+                setTimeout(() => {
+                            const capturePromises = modes.map(mode => {
+                              this.three.ChangeMode(mode);
+                              this.three.mode = mode
+                              return this.three.getCaptureImage().then((print_target) => {
+                                console.log("getCaptureImage.then start: " + this.check_ts() + " msec");
+                                print_target["mode"] = mode;
+                                this.printService.print_target.push(print_target);
+                                console.log("getCaptureImage.then last: " + this.check_ts() + " msec");
+                              });
+                            });
+                            Promise.all(capturePromises)
+                              .then(() => {
+                                json["PrintScreenData"] = this.printService.print_target
+                                this.pdfPreView(this.getPostJson(json));
+                              })
+                              .catch(error => {
+                                console.error("Error:", error);
+                              });
+                          }, 1000)
+              }
+              else{
+                const isConfirm = await this.helper.confirm(this.translate.instant("app.alertMultiPrinting"));
+                if (!isConfirm) {
+                  setTimeout(() => {
+                    const capturePromises = modes.map(mode => {
+                      this.three.ChangeMode(mode);
+                      this.three.mode = mode
+                      return this.three.getCaptureImage().then((print_target) => {
+                        console.log("getCaptureImage.then start: " + this.check_ts() + " msec");
+                        print_target["mode"] = mode;
+                        this.printService.print_target.push(print_target);
+                        console.log("getCaptureImage.then last: " + this.check_ts() + " msec");
+                      });
+                    });
+                    Promise.all(capturePromises)
+                      .then(() => {
+                        json["PrintScreenData"] = this.printService.print_target
+                        this.pdfPreView(this.getPostJson(json));
+                      })
+                      .catch(error => {
+                        console.error("Error:", error);
+                      });
+                  }, 1000)
+                }else{
+                  this.loadind_desable();
+                }
+              }
           }
-        } else {
+
+        }
+        else {
           this.helper.alert(this.translate.instant("print.selectTarget"));
           return;
         }
       }
-
-      if(hasBothPrint || hasPrintCalculation) {
-        // loadingの表示
+      // loadingの表示
+      if (hasPrintCalculation) {
+        this.router.navigate(["/"]);
         this.loadind_enable();
         // PDFサーバーに送る
-        this.pdfPreView(this.getPostJson(json));
-        this.router.navigate(["/"]);
+        setTimeout(() => {
+          this.pdfPreView(this.getPostJson(json));
+        }, 1000)
       }
-      
-
     } else {
       let json: any = {};
       const dataCheck = [1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -575,7 +612,7 @@ export class PrintComponent implements OnInit, OnDestroy {
       }
       if (count != 0) {
         this.printService.getPrintDatas();
-        json = {...json, ...this.printService.json};
+        json = { ...json, ...this.printService.json };
       }
       // data Calculation Results
       if (Object.keys(json).length !== 0) {
@@ -759,7 +796,7 @@ export class PrintComponent implements OnInit, OnDestroy {
                   disg: this.printService.json["disg"],
                   disgName: this.printService.json["disgName"],
                   diagramResult: diagramResultTemp,
-                 
+
                 });
             }
             if (key === "CombPrintDiagram") {
@@ -767,7 +804,7 @@ export class PrintComponent implements OnInit, OnDestroy {
                 (json["fsecCombine"] = this.printService.json["fsecCombine"]),
                 (json["CombPrintDiagram"] = {
                   diagramResult,
-                 
+
                 });
             }
             if (key === "PickPrintDiagram") {
@@ -775,7 +812,7 @@ export class PrintComponent implements OnInit, OnDestroy {
                 (json["fsecPickup"] = this.printService.json["fsecPickup"]),
                 (json["PickPrintDiagram"] = {
                   diagramResult,
-                 
+
                 });
             }
           }
@@ -892,10 +929,11 @@ export class PrintComponent implements OnInit, OnDestroy {
           }
         }
       }
-      this.loadind_enable();
-      const base64Encoded = this.getPostJson(json);
-      this.pdfPreView(base64Encoded);
       this.router.navigate(["/"]);
+      this.loadind_enable();
+      setTimeout(() => {
+        this.pdfPreView(this.getPostJson(json));
+      }, 1000)
     }
   }
 
@@ -905,6 +943,14 @@ export class PrintComponent implements OnInit, OnDestroy {
 
   private pdfPreView(base64Encoded: string): void {
     console.log("pdfPreView を実行中...");
+
+    const maxFileSize = 100 * 1024 * 1024
+    const size = this.getFileSizeInMb(base64Encoded)
+    if (size >= maxFileSize) {
+      this.loadind_desable();
+      this.helper.alert(this.translate.instant("message.mes-warning"));
+      return;
+    }
 
     this.http.post(this.url, base64Encoded, this.options).subscribe(
       (response) => {
@@ -921,7 +967,7 @@ export class PrintComponent implements OnInit, OnDestroy {
               return;
             }
           }
-        } catch (e) {}
+        } catch (e) { }
         this.loadind_desable();
         let alertMessage = err["message"];
         if (alertMessage.includes("0 Unknown Error")) {
@@ -981,5 +1027,12 @@ export class PrintComponent implements OnInit, OnDestroy {
       //Webアプリの場合
       printJS({ printable: base64, type: "pdf", base64: true });
     }
+  }
+
+  private getFileSizeInMb(base64: string) {
+    const encoder = new TextEncoder();
+    const encoded = encoder.encode(base64);
+    const bytes = encoded.byteLength;
+    return bytes;
   }
 }

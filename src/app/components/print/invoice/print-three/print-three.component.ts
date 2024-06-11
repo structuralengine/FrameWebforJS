@@ -28,10 +28,10 @@ export class PrintThreeComponent implements OnInit {
     public printService: PrintService,
     public customThree: PrintCustomThreeService,
     public three: ThreeService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
-    for (const printTarget of this.printService.print_target) { 
+    for (const printTarget of this.printService.print_target) {
       const print_target_result = printTarget.result;
       // let caseCount = this.three.selectedNumber
       let selectCount = this.three.selectedNumber || 6;
@@ -58,7 +58,7 @@ export class PrintThreeComponent implements OnInit {
           }
         }
       }
-      this.print_case.push({print_target : print_target_result, title1: printTarget.title1})
+      this.print_case.push({ print_target: print_target_result, title1: printTarget.title1 })
     }
   }
 }
