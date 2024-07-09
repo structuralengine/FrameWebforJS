@@ -523,17 +523,25 @@ export class PrintComponent implements OnInit, OnDestroy {
             this.loadind_enable();
             let count = 0;
               const capturePromises = modes.map(mode => {
-                this.three.mode = mode
+                let dataMode = mode
+                if(mode==="PrintLoad"){
+                  dataMode="print_load"
+                }
+                this.three.mode = dataMode
                 count += this.three.getTotalCaptureImage()
               });
               if(count < 120){
                 setTimeout(() => {
                             const capturePromises = modes.map(mode => {
-                              this.three.ChangeMode(mode);
-                              this.three.mode = mode
+                              let dataMode = mode
+                              if(mode==="PrintLoad"){
+                                dataMode="print_load"
+                              }
+                              this.three.ChangeMode(dataMode);
+                              this.three.mode = dataMode
                               return this.three.getCaptureImage().then((print_target) => {
                                 console.log("getCaptureImage.then start: " + this.check_ts() + " msec");
-                                print_target["mode"] = mode;
+                                print_target["mode"] = dataMode;
                                 this.printService.print_target.push(print_target);
                                 console.log("getCaptureImage.then last: " + this.check_ts() + " msec");
                               });
@@ -553,11 +561,15 @@ export class PrintComponent implements OnInit, OnDestroy {
                 if (!isConfirm) {
                   setTimeout(() => {
                     const capturePromises = modes.map(mode => {
-                      this.three.ChangeMode(mode);
-                      this.three.mode = mode
+                      let dataMode = mode
+                      if(mode==="PrintLoad"){
+                        dataMode="print_load"
+                      }
+                      this.three.ChangeMode(dataMode);
+                      this.three.mode = dataMode
                       return this.three.getCaptureImage().then((print_target) => {
                         console.log("getCaptureImage.then start: " + this.check_ts() + " msec");
-                        print_target["mode"] = mode;
+                        print_target["mode"] = dataMode;
                         this.printService.print_target.push(print_target);
                         console.log("getCaptureImage.then last: " + this.check_ts() + " msec");
                       });
