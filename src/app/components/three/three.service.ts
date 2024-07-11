@@ -751,8 +751,15 @@ export class ThreeService {
         const title5: string = captureInfo.title5;
         let counter = 0;
         // [1,2,3,...n]の配列
-        const ary = [...Array(this.inputLoadData.load_name.length)].map((_, i) => i + 1);
-
+        // const ary = [...Array(this.inputLoadData.load_name.length)].map((_, i) => i + 1);
+        
+        let arrCheck = []
+        this.inputLoadData.load_name.map((data)=> {
+          if(data.name !== ""){
+            arrCheck.push(data)
+          }
+        })
+        const ary = [...Array(arrCheck.length)].map((_, i) => i + 1);
         // "同期"でループする
         // const asyncLoop = async () => {
           for (const [index, i] of ary.entries()) {
@@ -791,7 +798,14 @@ export class ThreeService {
         // が選択されているときの処理
 
         // [1,2,3,...n]の配列
-        const ary = [...Array(this.inputLoadData.load_name.length)].map((_, i) => i + 1);
+        // const ary = [...Array(this.inputLoadData.load_name.length)].map((_, i) => i + 1);
+        let arrCheck = []
+        this.inputLoadData.load_name.map((data)=> {
+          if(data.name !== ""){
+            arrCheck.push(data)
+          }
+        })
+        const ary = [...Array(arrCheck.length)].map((_, i) => i + 1);
         let counter = 0;
         // "同期"でループする
         // const asyncLoop = async () => {
