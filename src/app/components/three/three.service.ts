@@ -731,7 +731,7 @@ export class ThreeService {
       screenArea.style.width = this.canvasWidth;
       screenArea.style.height = this.canvasHeight;
 
-      if (captureCase.length === 0) {
+      if (captureCase.length === 0 && this.mode !== "print_load") {
         // 印刷パネルで
         // 画面印刷
         // が選択されているときの処理
@@ -753,13 +753,13 @@ export class ThreeService {
         // [1,2,3,...n]の配列
         // const ary = [...Array(this.inputLoadData.load_name.length)].map((_, i) => i + 1);
         
-        let arrCheck = []
+        const ary = []
         this.inputLoadData.load_name.map((data)=> {
           if(data.name !== ""){
-            arrCheck.push(data)
+            ary.push(data.id)
           }
         })
-        const ary = [...Array(arrCheck.length)].map((_, i) => i + 1);
+
         // "同期"でループする
         // const asyncLoop = async () => {
           for (const [index, i] of ary.entries()) {
@@ -799,13 +799,13 @@ export class ThreeService {
 
         // [1,2,3,...n]の配列
         // const ary = [...Array(this.inputLoadData.load_name.length)].map((_, i) => i + 1);
-        let arrCheck = []
+        const ary = []
         this.inputLoadData.load_name.map((data)=> {
           if(data.name !== ""){
-            arrCheck.push(data)
+            ary.push(data.id)
           }
         })
-        const ary = [...Array(arrCheck.length)].map((_, i) => i + 1);
+        
         let counter = 0;
         // "同期"でループする
         // const asyncLoop = async () => {
@@ -1159,7 +1159,7 @@ export class ThreeService {
       const captureInfo = this.getCaptureCase();
       const captureCase: string[] = captureInfo.captureCase;
 
-      if (captureCase.length === 0) {
+      if (captureCase.length === 0 && this.mode !== "print_load") {
      
       } else if (this.mode === "print_load") {
         const ary = [...Array(this.inputLoadData.load_name.length)].map((_, i) => i + 1);
