@@ -805,7 +805,7 @@ export class ThreeService {
             ary.push(data.id)
           }
         })
-        
+
         let counter = 0;
         // "同期"でループする
         // const asyncLoop = async () => {
@@ -1108,8 +1108,8 @@ export class ThreeService {
     for (const key of Object.keys(load)) {
       const current = load[key];
       let str: string = key;
-      if (current.symbol.trim().length > 0) str += " " + current.symbol;
-      if (current.name.trim().length > 0) str += " " + current.name;
+      if (current.symbol!=null && current.symbol.trim().length > 0) str += " " + current.symbol;
+      if (current.name!=null && current.name.trim().length > 0) str += " " + current.name;
       title3.push(str);
     }
     return title3;
