@@ -731,7 +731,7 @@ export class ThreeService {
       screenArea.style.width = this.canvasWidth;
       screenArea.style.height = this.canvasHeight;
 
-      if (captureCase.length === 0) {
+      if (captureCase.length === 0 && this.mode !== "print_load") {
         // 印刷パネルで
         // 画面印刷
         // が選択されているときの処理
@@ -751,7 +751,14 @@ export class ThreeService {
         const title5: string = captureInfo.title5;
         let counter = 0;
         // [1,2,3,...n]の配列
-        const ary = [...Array(this.inputLoadData.load_name.length)].map((_, i) => i + 1);
+        // const ary = [...Array(this.inputLoadData.load_name.length)].map((_, i) => i + 1);
+        
+        const ary = []
+        this.inputLoadData.load_name.map((data)=> {
+          if(data.name !== ""){
+            ary.push(data.id)
+          }
+        })
 
         // "同期"でループする
         // const asyncLoop = async () => {
@@ -791,7 +798,14 @@ export class ThreeService {
         // が選択されているときの処理
 
         // [1,2,3,...n]の配列
-        const ary = [...Array(this.inputLoadData.load_name.length)].map((_, i) => i + 1);
+        // const ary = [...Array(this.inputLoadData.load_name.length)].map((_, i) => i + 1);
+        const ary = []
+        this.inputLoadData.load_name.map((data)=> {
+          if(data.name !== ""){
+            ary.push(data.id)
+          }
+        })
+
         let counter = 0;
         // "同期"でループする
         // const asyncLoop = async () => {
@@ -1094,8 +1108,8 @@ export class ThreeService {
     for (const key of Object.keys(load)) {
       const current = load[key];
       let str: string = key;
-      if (current.symbol.trim().length > 0) str += " " + current.symbol;
-      if (current.name.trim().length > 0) str += " " + current.name;
+      if (current.symbol!=null && current.symbol.trim().length > 0) str += " " + current.symbol;
+      if (current.name!=null && current.name.trim().length > 0) str += " " + current.name;
       title3.push(str);
     }
     return title3;
@@ -1145,7 +1159,7 @@ export class ThreeService {
       const captureInfo = this.getCaptureCase();
       const captureCase: string[] = captureInfo.captureCase;
 
-      if (captureCase.length === 0) {
+      if (captureCase.length === 0 && this.mode !== "print_load") {
      
       } else if (this.mode === "print_load") {
         const ary = [...Array(this.inputLoadData.load_name.length)].map((_, i) => i + 1);

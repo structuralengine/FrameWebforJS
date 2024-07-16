@@ -160,7 +160,11 @@ export class MenuComponent implements OnInit {
     this.app.dialogClose(); // 現在表示中の画面を閉じる
     this.ResultData.clear(); // 解析結果を削除
     const old = this.helper.dimension;
-    const jsonData: {} = JSON.parse(response.text);
+
+    // BOMを除去する
+    const cleanText = this.removeBOM(response.text);
+    const jsonData: {} = JSON.parse(cleanText);
+
     let resultData: {} = null;
     if ("result" in jsonData) {
       resultData = jsonData["result"];
@@ -178,6 +182,13 @@ export class MenuComponent implements OnInit {
     }
     this.three.fileload();
     modalRef.close();
+  }
+
+  private removeBOM(text) {
+    if (text.charCodeAt(0) === 0xFEFF) {
+      return text.slice(1);
+    }
+  return text;
   }
 
   // ファイルを開く
