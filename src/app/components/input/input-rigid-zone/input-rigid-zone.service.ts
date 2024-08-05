@@ -4,6 +4,7 @@ import { DataHelperModule } from 'src/app/providers/data-helper.module';
 import { InputMembersService } from '../input-members/input-members.service';
 import { ThreeService } from '../../three/three.service';
 import { ThreeMembersService } from '../../three/geometry/three-members.service';
+import { TranslateService } from "@ngx-translate/core";
 
 @Injectable({
   providedIn: 'root'
@@ -13,7 +14,8 @@ export class InputRigidZoneService {
 
   constructor(private node: InputNodesService,
     private helper: DataHelperModule,
-    private member: ThreeMembersService) {
+    private member: ThreeMembersService,
+    private translate: TranslateService,) {
     this.clear();
   }
   public clear(): void {
@@ -63,8 +65,8 @@ export class InputRigidZoneService {
         if (rigid !== undefined) {
           const result = {
             m: index,
-            Ilength: rigid['Ilength'],
-            Jlength: rigid['Jlength'],
+            Ilength: (rigid['Ilength'] == null) ? 0 : rigid['Ilength'],
+            Jlength: (rigid['Jlength'] == null) ? 0 : rigid['Jlength'],
             e: (e == null) ? '' : e.toFixed(0),
             L: '',
             e1: rigid['e'],
@@ -99,8 +101,8 @@ export class InputRigidZoneService {
       if (row['e1'] !== "") {
         result.push({
           m: row['m'],
-          Ilength: row['Ilength'],
-          Jlength: row['Jlength'],
+          Ilength: (row['Ilength'] == null) ? 0 : row['Ilength'],
+          Jlength: (row['Jlength'] == null) ? 0 : row['Jlength'],
           e: row['e1']
         });
       }

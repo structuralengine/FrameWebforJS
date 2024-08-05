@@ -286,7 +286,7 @@ export class AppComponent implements OnInit, AfterViewInit {
             this.ResultData.isCalculated = true;
           } catch (e) {
             if(e.message.includes("NaN")){
-              this.helper.alert(this.translate.instant("message.mes"));
+              this.helper.alert(this.translate.instant("message.calc"));
               check = false;
             }
               
@@ -306,11 +306,7 @@ export class AppComponent implements OnInit, AfterViewInit {
           }
         },
         (error) => {
-          let messege: string = "通信 " + error.statusText;
-          if ("_body" in error) {
-            messege += "\n" + error._body;
-          }
-          this.helper.alert(messege);
+          this.helper.alert(this.translate.instant("message.calc"));
           console.error(error);
           modalRef.close();
         }

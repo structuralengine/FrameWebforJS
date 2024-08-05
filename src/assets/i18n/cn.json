@@ -390,6 +390,7 @@
             "node_nodata": "没有节点数据",
             "member_nodata": "没有构件数据",
             "load_nodata": "没有载重数据",
+            "rigid_nodata": "未指定刚性区域的材料编号",
             "member": "构件",
             "node": "节点",
             "panel": "面板",
@@ -420,7 +421,9 @@
         "cut": "剪下"
     },
     "message":{
-        "mes": "The elastic modulus in the material menu is too small. Please check the units."
+        "calc": "计算错误",
+        "print": "打印错误",
+        "print-max": "文件太大。缩小选择范围并重新导出。"
     },
     "preset":{
         "ramen-viaduct" : "架构",
