@@ -393,6 +393,7 @@
             "node_nodata": "There is no node data",
             "member_nodata": "There is no member data",
             "load_nodata": "There is no load data",
+            "rigid_nodata": "Material number of rigid zone is not specified.",
             "member": "Member",
             "node": "Node",
             "panel": "Panel",

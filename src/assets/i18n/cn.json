@@ -390,6 +390,7 @@
             "node_nodata": "没有节点数据",
             "member_nodata": "没有构件数据",
             "load_nodata": "没有载重数据",
+            "rigid_nodata": "未指定刚性区域的材料编号",
             "member": "构件",
             "node": "节点",
             "panel": "面板",

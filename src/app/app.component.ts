@@ -306,11 +306,7 @@ export class AppComponent implements OnInit, AfterViewInit {
           }
         },
         (error) => {
-          let messege: string = "通信 " + error.statusText;
-          if ("_body" in error) {
-            messege += "\n" + error._body;
-          }
-          this.helper.alert(messege);
+          this.helper.alert(this.translate.instant("message.mes"));
           console.error(error);
           modalRef.close();
         }
