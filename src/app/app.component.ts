@@ -306,7 +306,7 @@ export class AppComponent implements OnInit, AfterViewInit {
           }
         },
         (error) => {
-          this.helper.alert(this.translate.instant("message.mes"));
+          this.helper.alert(this.translate.instant("message.calc"));
           console.error(error);
           modalRef.close();
         }
