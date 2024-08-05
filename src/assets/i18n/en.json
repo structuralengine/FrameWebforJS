@@ -425,8 +425,9 @@
         "cut": "Cut"
     },
     "message":{
-        "mes": "The elastic modulus in the material menu is too small. Please check the units.",
-        "mes-warning": "The file is too large. Please reduce the selection and output again."
+        "calc": "Computation error",
+        "print": "Print Error",
+        "print-max": "The file is too large. Please reduce the selection and output again."
     },
     "preset":{
         "ramen-viaduct" : "Ramen viaduct",

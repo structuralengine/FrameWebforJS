@@ -420,7 +420,9 @@
         "cut": "剪下"
     },
     "message":{
-        "mes": "The elastic modulus in the material menu is too small. Please check the units."
+        "calc": "计算错误",
+        "print": "打印错误",
+        "print-max": "文件太大。缩小选择范围并重新导出。"
     },
     "preset":{
         "ramen-viaduct" : "架构",

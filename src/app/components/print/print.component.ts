@@ -960,7 +960,7 @@ export class PrintComponent implements OnInit, OnDestroy {
     const size = this.getFileSizeInMb(base64Encoded)
     if (size >= maxFileSize) {
       this.loadind_desable();
-      this.helper.alert(this.translate.instant("message.mes-warning"));
+      this.helper.alert(this.translate.instant("message.print-max"));
       return;
     }
 
@@ -983,7 +983,7 @@ export class PrintComponent implements OnInit, OnDestroy {
         this.loadind_desable();
         let alertMessage = err["message"];
         if (alertMessage.includes("0 Unknown Error")) {
-          this.helper.alert(this.translate.instant("message.mes-warning"));
+          this.helper.alert(this.translate.instant("message.print"));
         } else {
           this.helper.alert(err["message"]);
         }
