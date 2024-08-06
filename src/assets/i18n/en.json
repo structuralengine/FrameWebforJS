@@ -393,6 +393,7 @@
             "node_nodata": "There is no node data",
             "member_nodata": "There is no member data",
             "load_nodata": "There is no load data",
+            "rigid_nodata": "Material number of rigid zone is not specified.",
             "member": "Member",
             "node": "Node",
             "panel": "Panel",
@@ -425,8 +426,9 @@
         "cut": "Cut"
     },
     "message":{
-        "mes": "The elastic modulus in the material menu is too small. Please check the units.",
-        "mes-warning": "The file is too large. Please reduce the selection and output again."
+        "calc": "Computation error",
+        "print": "Print Error",
+        "print-max": "The file is too large. Please reduce the selection and output again."
     },
     "preset":{
         "ramen-viaduct" : "Ramen viaduct",
