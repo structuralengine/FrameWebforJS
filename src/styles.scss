@@ -364,8 +364,11 @@ body {
   }
 }
 #load-strength-info{
-  text-align: center;
-  margin-top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 0px;
+  position: absolute; /* もしくは absolute */
+  z-index: 9999; /* 高めの値に設定 */
 }
 //chat
 #eye_catcher {

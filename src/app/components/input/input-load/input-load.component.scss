@@ -26,14 +26,21 @@
 
 .LL_area {
     overflow: hidden;
+    .title {
+        float: left;
+        margin: 0 0 0 16px;
+        color:aliceblue;
+    }
     .label {
         float: left;
         margin: 0 0 0 16px;
+        color:aliceblue;
     }
     .input{
         float: left;
         margin: 0 0 0 16px;
         width: 80px;
         text-align: right;
+        color:aliceblue;
     }
 }
