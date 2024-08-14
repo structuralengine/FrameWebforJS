@@ -23,6 +23,7 @@ button.delete_btn {
         left: 24px;
     max-width: 431px;
     overflow-x: scroll;
+    z-index: 9999;
     &::before {
         content: "";
         inset: 0;

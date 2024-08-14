@@ -316,6 +316,7 @@ export class InputLoadComponent implements OnInit, OnDestroy {
               dataIndx: this.columnKeys2D[3],
               sortable: false,
               width: 60,
+              align: 'center'
             },
           ],
         },
@@ -504,6 +505,7 @@ export class InputLoadComponent implements OnInit, OnDestroy {
               dataIndx: this.columnKeys3D[3],
               sortable: false,
               width: 60,
+              align: 'center'
             },
           ],
         },
@@ -628,6 +630,7 @@ export class InputLoadComponent implements OnInit, OnDestroy {
               dataIndx: this.columnKeys2D[3],
               sortable: false,
               width: 60,
+              align: 'center'
             },
           ],
         },
