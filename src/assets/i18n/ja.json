@@ -6,7 +6,7 @@
         "fixNode": "支点",
         "member": "部材",
         "element": "材料",
-        "panel": "パネル",
+        "panel": "パネル（β版）",
         "joint": "結合",
         "noticePoint": "着目点",
         "fixMember": "バネ",
