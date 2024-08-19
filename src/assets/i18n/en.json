@@ -445,6 +445,7 @@
         "nodeScale":"Node Scale",
         "fixnodeScale":"Fix-node Scale",
         "memberScale":"Member Scale",
+        "fixmenberScale":"Spring Scale",
         "LoadScale":"Load Scale",
         "dispScale":"dispScale",
         "reactScale":"eactScale",

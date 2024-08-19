@@ -444,6 +444,7 @@
         "nodeScale":"節点表示倍率",
         "fixnodeScale":"支点表示倍率",
         "memberScale":"部材表示倍率",
+        "fixmenberScale":"バネ表示倍率",
         "LoadScale":"荷重表示倍率",
         "dispScale":"変位表示倍率",
         "reactScale":"反力表示倍率",
