@@ -101,12 +101,14 @@ export class InputRigidZoneService {
       if (m == null) {
         continue;
       }
-      result.push({
-        m: row['m'],
-        Ilength: Ilength,
-        Jlength: Jlength,
-        e: e,
-      });
+      if (e != null) {
+        result.push({
+          m: row['m'],
+          Ilength: (Ilength == null) ? 0 : Ilength,
+          Jlength: (Jlength == null) ? 0 : Jlength,
+          e: e,
+        });
+      }
     }
     return result;
   }
