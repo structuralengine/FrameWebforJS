@@ -39,7 +39,7 @@ export class InputRigidZoneService {
   }
 
   public setRigidJson(jsonData: {}): void {
-    let json = this.member.changeData()   
+    let json = this.member.changeData()
     if (!('rigid' in jsonData)) {
       for (const index of Object.keys(json)) {
         const item = json[index];
@@ -65,8 +65,8 @@ export class InputRigidZoneService {
         if (rigid !== undefined) {
           const result = {
             m: index,
-            Ilength: (rigid['Ilength'] == null) ? 0 : rigid['Ilength'],
-            Jlength: (rigid['Jlength'] == null) ? 0 : rigid['Jlength'],
+            Ilength: rigid['Ilength'],
+            Jlength: rigid['Jlength'],
             e: (e == null) ? '' : e.toFixed(0),
             L: '',
             e1: rigid['e'],
@@ -95,17 +95,18 @@ export class InputRigidZoneService {
 
     for (const row of this.rigid_zone) {
       const m = this.helper.toNumber(row["m"]);
+      const Ilength = this.helper.toNumber(row["Ilength"]);
+      const Jlength = this.helper.toNumber(row["Jlength"]);
+      const e = this.helper.toNumber(row["e1"]);
       if (m == null) {
         continue;
       }
-      if (row['e1'] !== "") {
-        result.push({
-          m: row['m'],
-          Ilength: (row['Ilength'] == null) ? 0 : row['Ilength'],
-          Jlength: (row['Jlength'] == null) ? 0 : row['Jlength'],
-          e: row['e1']
-        });
-      }
+      result.push({
+        m: row['m'],
+        Ilength: Ilength,
+        Jlength: Jlength,
+        e: e,
+      });
     }
     return result;
   }
