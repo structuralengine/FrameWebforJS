@@ -82,10 +82,10 @@ export class InputMembersService {
 
       const key: string = columns.id;
 
-      jsonData[key] = { 
-        'ni': (ni == null) ? empty : ni, 
-        'nj': (nj == null) ? empty : nj, 
-        'e': (e == null) ? empty : e, 
+      jsonData[key] = {
+        'ni': (ni == null) ? empty : ni,
+        'nj': (nj == null) ? empty : nj,
+        'e': (e == null) ? empty : e,
         'cg': (cg == null) ? empty : cg
       };
 
