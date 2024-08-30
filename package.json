@@ -1,7 +1,7 @@
 {
   "name": "frame-web-for-js",
 
-  "version": "2.3.12",
+  "version": "2.3.13",
 
 
   "scripts": {
@@ -9,6 +9,8 @@
     "start": "ng serve --host=127.0.0.1",
     "build": "ng build --configuration production --base-href \"https://frameweb.malme.app/\" && npm run filecopy3 && angular-cli-ghpages",
     "build-action": "ng build --configuration production --base-href \"https://frameweb.malme.app/\" && npm run filecopy3",
+    "build-docker:local": "ng build --configuration production --base-href ./ && npm run filecopy3",
+    "build-actions:staging": "ng build --configuration production --base-href \"https://st-frameweb.malme.app/\" && npm run filecopy3",
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e",
