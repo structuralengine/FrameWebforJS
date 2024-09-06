@@ -114,18 +114,16 @@ export class ThreeLoadMemberMoment {
       if (XY.x < 0) {
         A = Math.PI - A;
       }
-      group.rotateZ(A);
+       group.rotateZ(A);
 
       const lenXY = Math.sqrt(Math.pow(localAxis.x.x, 2) + Math.pow(localAxis.x.y, 2));
       const XZ = new Vector2(lenXY, localAxis.x.z).normalize();
-      group.rotateY(-Math.asin(XZ.y));
-
-
+      group.rotateY(-Math.asin(XZ.y)); 
     } else if (direction === "gx") {
-      group.rotation.z = Math.asin(-Math.PI / 2);
+      group.rotation.z = Math.asin(1);
 
     } else if (direction === "gz") {
-      group.rotation.x = Math.asin(-Math.PI / 2);
+      group.rotation.x = Math.asin(-1);
 
     }
     group.name = ThreeLoadMemberMoment.id + "-" + row.toString() + '-' + direction.toString();

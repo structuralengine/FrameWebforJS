@@ -433,10 +433,14 @@ export class ThreeMembersService {
 
     // 座標変換ベクトルを用意
     t1[0][0] = 1;
-    t1[1][1] = Math.cos(theta);
-    t1[1][2] = Math.sin(theta);
-    t1[2][1] = -Math.sin(theta);
-    t1[2][2] = Math.cos(theta);
+    // t1[1][1] = Math.cos(theta);
+    // t1[1][2] = Math.sin(theta);
+    // t1[2][1] = -Math.sin(theta);
+    // t1[2][2] = Math.cos(theta);
+    t1[1][1] = Math.cos(theta * Math.PI / 180);
+    t1[1][2] = Math.sin(theta  * Math.PI / 180);
+    t1[2][1] = -Math.sin(theta  * Math.PI / 180);
+    t1[2][2] = Math.cos(theta  * Math.PI / 180);
 
     if (DX === 0 && DY === 0) {
       t2[0][2] = nn;
