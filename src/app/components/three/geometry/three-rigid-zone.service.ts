@@ -62,7 +62,7 @@ export class ThreeRigidZoneService {
         return 0.018895766721676047;// scale * 0.3;
     }
     public selectChange(index, index_sub): void {
-
+        console.log(index, index_sub);
         const jsonData = this.rigidZone.getRigidJson();
         if (Object.keys(jsonData).length <= 0) {
             return;
@@ -78,6 +78,7 @@ export class ThreeRigidZoneService {
                 item['material']['color'].setHex(0XFF0000);
             }
         }
+        this.changeData();
         this.scene.render();
     }
     // データが変更された時の処理
