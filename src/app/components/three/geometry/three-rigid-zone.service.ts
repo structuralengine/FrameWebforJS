@@ -62,9 +62,10 @@ export class ThreeRigidZoneService {
         return 0.018895766721676047;// scale * 0.3;
     }
     public selectChange(index, index_sub): void {
-        console.log(index, index_sub);
         const jsonData = this.rigidZone.getRigidJson();
         if (Object.keys(jsonData).length <= 0) {
+            this.memberThree.selectChange_clear_points();
+            this.scene.render();
             return;
         }
         const target = jsonData.find((e) => e.m === index.toString());
@@ -77,13 +78,13 @@ export class ThreeRigidZoneService {
                 this.memberThree.selectChange_clear_points();
                 item['material']['color'].setHex(0XFF0000);
             }
-        }
-        this.changeData();
+        }        
         this.scene.render();
     }
     // データが変更された時の処理
     public changeData(): void {
 
+        this.ClearData();
         // 格点データを入手
         const nodeData = this.node.getNodeJson(0);
         if (Object.keys(nodeData).length <= 0) {
@@ -98,6 +99,7 @@ export class ThreeRigidZoneService {
         // 着目点情報を入手
         const jsonData = this.rigidZone.getRigidJson();
         if (Object.keys(jsonData).length <= 0) {
+            this.scene.render();
             return;
         }
 
@@ -214,8 +216,6 @@ export class ThreeRigidZoneService {
     public ClearData(): void {
 
         // データをクリアする
-
-        console.log("rigidZoneList clear")
         for (const mesh of this.rigidZoneList.children) {
             // 文字を削除する
             while (mesh.children.length > 0) {
@@ -225,7 +225,17 @@ export class ThreeRigidZoneService {
             // オブジェクトを削除する
             this.scene.remove(mesh);
         }
+        for (const mesh of this.rigidZoneList1.children) {
+            // 文字を削除する
+            while (mesh.children.length > 0) {
+                const object = mesh.children[0];
+                object.parent.remove(object);
+            }
+            // オブジェクトを削除する
+            this.scene.remove(mesh);
+        }
         this.rigidZoneList.children = new Array();
+        this.rigidZoneList1.children = new Array();
     }
     public detectObject(raycaster: THREE.Raycaster, action: string): void {
         if (this.rigidZoneList.children.length === 0) {
