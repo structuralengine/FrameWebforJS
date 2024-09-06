@@ -219,9 +219,14 @@ export class ThreeLoadMemberPoint {
 
     if (direction === 'y') {
       arrow_1.rotation.z += Math.PI;
+      arrow_1.rotateY(Math.PI)
     } else if (direction === 'z') {
       arrow_1.rotation.x += Math.PI / 2;
-    } else if (direction === "gx") {
+    }else if (direction === 'x') {
+      arrow_1.rotation.x += Math.PI;
+      arrow_1.rotateY(Math.PI)
+    } 
+    else if (direction === "gx") {
       const arrowhelper = arrow_1.getObjectByName('arrow');
       // 仕様の位置に届かせるための微調整
       arrowhelper.position.y += 1;
