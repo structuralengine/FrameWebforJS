@@ -14,7 +14,7 @@ export class InputRigidZoneService {
 
   constructor(private node: InputNodesService,
     private helper: DataHelperModule,
-    private member: ThreeMembersService,
+    private member: InputMembersService,
     private translate: TranslateService,) {
     this.clear();
   }
@@ -23,7 +23,7 @@ export class InputRigidZoneService {
   }
   public getRigidZoneColums(mem: number): any {
     let result: any = null;
-    let json = this.member.changeData()  
+    let json = this.member.getMemberJson()  
     for (const tmp of this.rigid_zone) {
       if (tmp["m"].toString() === mem.toString() && json[mem] != null) {
         tmp['e'] = json[mem]['e'];
@@ -39,7 +39,7 @@ export class InputRigidZoneService {
   }
 
   public setRigidJson(jsonData: {}): void {
-    let json = this.member.changeData()
+    let json = this.member.getMemberJson()
     if (!('rigid' in jsonData)) {
       for (const index of Object.keys(json)) {
         const item = json[index];

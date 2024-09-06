@@ -205,6 +205,9 @@ export class ThreeRigidZoneService {
         for (const mesh of this.rigidZoneList.children) {
             mesh.visible = flag;
         }
+        for (const mesh of this.rigidZoneList1.children) {
+            mesh.visible = flag;
+        }
         this.objVisible = flag;
     }
     public ClearData(): void {
