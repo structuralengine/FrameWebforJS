@@ -352,8 +352,8 @@ export class ThreeLoadMemberPoint {
       }
 
     } else if (direction === "gx") {
-      group.rotateZ(Math.PI / 2);
-      group.rotation.x = (Math.atan( localAxis.x.z / localAxis.x.y ))
+      // group.rotateZ(Math.PI / 2);
+      // group.rotation.x = (Math.atan( localAxis.x.z / localAxis.x.y ))
     } else if (direction === "gy") {
       group.rotateX(Math.PI);
       group.rotation.y = (Math.atan( localAxis.x.z / localAxis.x.x ))
