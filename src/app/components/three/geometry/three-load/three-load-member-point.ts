@@ -331,8 +331,12 @@ export class ThreeLoadMemberPoint {
       const lenXY = Math.sqrt(Math.pow(localAxis.x.x, 2) + Math.pow(localAxis.x.y, 2));
       const XZ = new Vector2(lenXY, localAxis.x.z).normalize();
       group.rotateY(-Math.asin(XZ.y));
-
-      if (localAxis.x.x === 0 && localAxis.x.y === 0) {
+      if(localAxis.x.x < 0 && localAxis.y.y < 0) {
+        if (direction === "x") {
+          group.rotateZ(Math.PI);
+        }
+      }
+      else if (localAxis.x.x === 0 && localAxis.x.y === 0) {
         // 鉛直の部材
         if (direction === "z") {
           group.rotateX(-Math.PI);
