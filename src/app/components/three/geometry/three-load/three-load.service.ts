@@ -492,7 +492,7 @@ export class ThreeLoadService {
           }
           const oldMember = this.memberData[key];
           const newMember = this.newMemberData[key];
-          if (oldMember.ni !== newMember.ni || oldMember.nj !== newMember.nj) {
+          if (oldMember.ni !== newMember.ni || oldMember.nj !== newMember.nj || oldMember.cg !== newMember.cg) {
             changeMemberList[key] = "change";
           }
         }

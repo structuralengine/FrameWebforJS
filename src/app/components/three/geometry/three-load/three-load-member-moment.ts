@@ -106,7 +106,8 @@ export class ThreeLoadMemberMoment {
     group.position.set(nodei.x, nodei.y, nodei.z);
 
     // 全体の向きを修正する
-
+    var theta = this.calculateThetaFromLocalAxis(localAxis, nodei, nodej);
+    console.log("theta", theta)
     if (!direction.includes('g')) {
       const XY = new Vector2(localAxis.x.x, localAxis.x.y).normalize();
       let A = Math.asin(XY.y);
@@ -119,6 +120,11 @@ export class ThreeLoadMemberMoment {
       const lenXY = Math.sqrt(Math.pow(localAxis.x.x, 2) + Math.pow(localAxis.x.y, 2));
       const XZ = new Vector2(lenXY, localAxis.x.z).normalize();
       group.rotateY(-Math.asin(XZ.y)); 
+      if(180 - theta > 0){   
+        const lenYZ = Math.sqrt(Math.pow(localAxis.z.x, 2) + Math.pow(localAxis.z.y, 2));
+        const XZ = new Vector2(lenYZ, localAxis.z.z).normalize();
+        group.rotateX(-Math.asin(XZ.y)); 
+      }
     } else if (direction === "gx") {
       group.rotation.z = Math.asin(1);
 
@@ -386,5 +392,32 @@ export class ThreeLoadMemberMoment {
     group.add(dim);
     
 
+  }
+  private calculateThetaFromLocalAxis(localAxisResult, nodei: Vector3, nodej: Vector3) {
+    // Lấy các vector X, Y từ kết quả localAxis
+    const X = localAxisResult.x; // Vector X đã biến đổi
+    const Y = localAxisResult.y; // Vector Y đã biến đổi
+  
+    // Tính các vector ban đầu từ điểm i đến điểm j
+    const DX = nodej.x - nodei.x;
+    const DY = nodej.y - nodei.y;
+    const DZ = nodej.z - nodei.z;
+  
+    // Độ dài vector từ i đến j
+    const EL = Math.sqrt(DX * DX + DY * DY + DZ * DZ);
+  
+    // Tính các thành phần cosines chỉ hướng ban đầu
+    const ll = DX / EL;
+    const mm = DY / EL;
+    const nn = DZ / EL;
+  
+    // Tính góc theta bằng cách sử dụng thành phần y và x của vector Y đã biến đổi
+    const theta = Math.atan2(Y.y, Y.x); // Tính theta từ Y đã biến đổi
+  
+    // // Chuyển đổi sang độ nếu cần thiết
+    const thetaDeg = theta * (180 / Math.PI);
+  
+    //return theta;
+    return thetaDeg;
   }
 }
