@@ -49,7 +49,8 @@ export class ThreeLoadMemberMoment {
     P2: number,
     row: number,
     count: number,
-    gDir?: string
+    gDir?: string,
+    cg?: number
   ): THREE.Group {
 
     const offset: number = 0;
@@ -120,6 +121,11 @@ export class ThreeLoadMemberMoment {
       const XZ = new Vector2(lenXY, localAxis.x.z).normalize();
       group.rotateY(-Math.asin(XZ.y)); 
       group.rotateX(2.5 * Math.asin(XZ.y));       
+      
+      if (direction === "y" || direction === "z")
+      {
+        group.rotateX(((cg ?? 0) * Math.PI) / 180);
+      }
    
     } else if (direction === "gx") {
       group.rotation.z = Math.asin(1);        

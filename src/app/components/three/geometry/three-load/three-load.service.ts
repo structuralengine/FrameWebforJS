@@ -1315,7 +1315,8 @@ export class ThreeLoadService {
             load.L2,
             P1,
             P2,
-            load.row
+            load.row,
+            m.cg
           );
         } else if (direction === "r") {
           // ねじり布荷重
@@ -1372,7 +1373,8 @@ export class ThreeLoadService {
               P1,
               P2,
               load.row,
-              n
+              n,
+              m.cg
             );
             if(arrow !== null){
               arrow["row"] = load.row;
@@ -1395,11 +1397,12 @@ export class ThreeLoadService {
               P2,
               load.row,
               n,
-              gDir.includes("g") ? gDir : null
+              gDir.includes("g") ? gDir : null,
+              m.cg
             );
-            if(arrow !== null && m.cg != undefined && m.cg > 0 && gDir.includes(["x", "y", "z"])){
-              this.rotateAngle(arrow, m.cg)
-            }
+            // if(arrow !== null && m.cg != undefined && m.cg > 0 && gDir.includes(["x", "y", "z"])){
+            //   this.rotateAngle(arrow, m.cg)
+            // }
             if(arrow !== null){
               arrow["row"] = load.row;
               // arrow["name"] = "child";
@@ -2056,6 +2059,6 @@ export class ThreeLoadService {
   }
 
   public rotateAngle(group: THREE.Group, codeAngle: number){
-      group.rotateX(codeAngle * Math.PI / 180)
+      group.rotateX((codeAngle * Math.PI) / 180)
   }
 }

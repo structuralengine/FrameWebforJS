@@ -49,7 +49,8 @@ export class ThreeLoadMemberPoint {
     P1: number,
     P2: number,
     row: number,
-    count: number
+    count: number,
+    cg?: number
   ): THREE.Group {
 
     const offset: number = 0;
@@ -120,7 +121,7 @@ export class ThreeLoadMemberPoint {
     group['value'] = P; // 値を保存
 
     // 全体の向きを修正する
-    this.setRotate(direction, group, localAxis);
+    this.setRotate(direction, group, localAxis, cg);
 
     // 全体の位置を修正する
     this.setPosition(direction, group, nodei, nodej, P1, P2);
@@ -317,7 +318,7 @@ export class ThreeLoadMemberPoint {
 
   // 全体の向きを修正する
   private setRotate( direction: string, group: any, 
-                     localAxis: { x:Vector3, y:Vector3, z:Vector3 }) {
+                     localAxis: { x:Vector3, y:Vector3, z:Vector3 }, cg?: number) {
 
     if (!direction.includes('g')) {
       const XY = new Vector2(localAxis.x.x, localAxis.x.y).normalize();
@@ -334,9 +335,15 @@ export class ThreeLoadMemberPoint {
       if(localAxis.x.x < 0 && localAxis.y.y < 0) {
         if (direction === "x") {
           group.rotateZ(Math.PI);
+        } else if (direction === "z") {
+          group.rotateX(-Math.PI / 2);
+        }
+        else if (direction === "y") {
+          group.rotateX(Math.PI);
         }
       }
-      else if (localAxis.x.x === 0 && localAxis.x.y === 0) {
+      else  
+      if (localAxis.x.x === 0 && localAxis.x.y === 0) {
         // 鉛直の部材
         if (direction === "z") {
           group.rotateX(-Math.PI);
@@ -350,7 +357,7 @@ export class ThreeLoadMemberPoint {
           group.rotateX(Math.PI);
         }
       }
-
+      group.rotateX(((cg ?? 0) * Math.PI) / 180);
     } else if (direction === "gx") {
       group.rotateZ(Math.PI / 2);
       group.rotation.x = (Math.atan( localAxis.x.z / localAxis.x.y ))

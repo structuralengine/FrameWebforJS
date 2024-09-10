@@ -154,7 +154,8 @@ select:focus-visible {
 //grid
 body {
   div.pq-editor-outer {
-    background: transparent !important;
+    //background: transparent !important;
+    background: var(--table_empty_bg) !important;
   }
   div.pq-theme {
     color: var(--primary);

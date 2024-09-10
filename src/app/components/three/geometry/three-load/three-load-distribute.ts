@@ -72,7 +72,7 @@ export class ThreeLoadDistribute {
   // scale: スケール
   public create(nodei: THREE.Vector3, nodej: THREE.Vector3, localAxis: any,
     direction: string, pL1: number, pL2: number, P1: number, P2: number,
-    row: number): THREE.Group {
+    row: number, cg?: number): THREE.Group {
 
     const offset: number = 0;
     const height: number = 1;
@@ -116,7 +116,7 @@ export class ThreeLoadDistribute {
     group["value"] = p.Pmax; // 大きい方の値を保存
 
     // 全体の向きを修正する
-    this.setRotate(direction, group, localAxis);
+    this.setRotate(direction, group, localAxis, cg);
 
     // 全体の位置を修正する
     this.setPosition(direction, group, nodei, nodej, P1, P2);
@@ -335,7 +335,7 @@ export class ThreeLoadDistribute {
   }
 
   private setRotate( direction: string, group: any, 
-    localAxis: { x:Vector3, y:Vector3, z:Vector3 }) {
+    localAxis: { x:Vector3, y:Vector3, z:Vector3 }, cg?: number) {
 
     // 全体の向きを修正する
     if (!direction.includes("g")) {
@@ -368,6 +368,7 @@ export class ThreeLoadDistribute {
           group.rotateX(Math.PI);
         }
       }
+      group.rotateX(((cg ?? 0) * Math.PI) / 180);
 
     } else if (direction === "gx") {
       group.rotateZ(Math.PI / 2);
