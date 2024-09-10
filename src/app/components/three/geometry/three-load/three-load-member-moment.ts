@@ -48,7 +48,8 @@ export class ThreeLoadMemberMoment {
     P1: number,
     P2: number,
     row: number,
-    count: number
+    count: number,
+    gDir?: string
   ): THREE.Group {
 
     const offset: number = 0;
@@ -77,7 +78,7 @@ export class ThreeLoadMemberMoment {
     if(P===0)
       return null;
     // 矢印
-    const arrow: THREE.Group = this.getArrow(direction, P, L);
+    const arrow: THREE.Group = this.getArrow(direction, P, L, gDir);
     arrow.position.y = offset;
 
     // 全体
@@ -105,9 +106,7 @@ export class ThreeLoadMemberMoment {
 
     group.position.set(nodei.x, nodei.y, nodei.z);
 
-    // 全体の向きを修正する
-    var theta = this.calculateThetaFromLocalAxis(localAxis, nodei, nodej);
-    console.log("theta", theta)
+    // 全体の向きを修正する    
     if (!direction.includes('g')) {
       const XY = new Vector2(localAxis.x.x, localAxis.x.y).normalize();
       let A = Math.asin(XY.y);
@@ -115,19 +114,15 @@ export class ThreeLoadMemberMoment {
       if (XY.x < 0) {
         A = Math.PI - A;
       }
-       group.rotateZ(A);
+      group.rotateZ(A);
 
       const lenXY = Math.sqrt(Math.pow(localAxis.x.x, 2) + Math.pow(localAxis.x.y, 2));
       const XZ = new Vector2(lenXY, localAxis.x.z).normalize();
       group.rotateY(-Math.asin(XZ.y)); 
-      if(180 - theta > 0){   
-        const lenYZ = Math.sqrt(Math.pow(localAxis.z.x, 2) + Math.pow(localAxis.z.y, 2));
-        const XZ = new Vector2(lenYZ, localAxis.z.z).normalize();
-        group.rotateX(-Math.asin(XZ.y)); 
-      }
+      group.rotateX(2.5 * Math.asin(XZ.y));       
+   
     } else if (direction === "gx") {
-      group.rotation.z = Math.asin(1);
-
+      group.rotation.z = Math.asin(1);        
     } else if (direction === "gz") {
       group.rotation.x = Math.asin(-1);
 
@@ -196,7 +191,7 @@ export class ThreeLoadMemberMoment {
   private getArrow(
     direction: string,
     value: number,
-    points: number): THREE.Group {
+    points: number, gDir? :string): THREE.Group {
 
     const result: THREE.Group = new THREE.Group();
 
@@ -205,8 +200,17 @@ export class ThreeLoadMemberMoment {
     const Px = value;
 
     const pos1 = new THREE.Vector3(points, 0, 0);
-
-    const arrow_1 = this.moment.create(pos1, 0, Px, 1, key, 0)
+    let color: number = null
+    if(gDir != null){
+      if(gDir === "gx"){
+        color = 0xff0000
+      }else if(gDir === "gy"){
+        color = 0x00ff00
+      }else{
+        color = 0x0000ff
+      }
+    }
+    const arrow_1 = this.moment.create(pos1, 0, Px, 1, key, 0, color)
 
     //モーメントの作成時に向きまで制御しているので，制御不要
     //if (direction === 'y') {
