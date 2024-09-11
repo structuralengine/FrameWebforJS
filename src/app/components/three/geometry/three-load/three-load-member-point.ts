@@ -226,6 +226,7 @@ export class ThreeLoadMemberPoint {
       const arrowhelper = arrow_1.getObjectByName('arrow');
       // 仕様の位置に届かせるための微調整
       arrowhelper.position.y += 1;
+      arrow_1.rotation.z -= Math.PI/2;
     } else if (direction === "gy" || direction === "gz") {
       const arrowhelper = arrow_1.getObjectByName('arrow');
       // 仕様の位置に届かせるための微調整
@@ -352,8 +353,8 @@ export class ThreeLoadMemberPoint {
       }
 
     } else if (direction === "gx") {
-      // group.rotateZ(Math.PI / 2);
-      // group.rotation.x = (Math.atan( localAxis.x.z / localAxis.x.y ))
+      group.rotateZ(Math.PI / 2);
+      group.rotation.x = (Math.atan( localAxis.x.z / localAxis.x.y ))
     } else if (direction === "gy") {
       group.rotateX(Math.PI);
       group.rotation.y = (Math.atan( localAxis.x.z / localAxis.x.x ))
