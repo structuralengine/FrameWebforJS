@@ -48,7 +48,9 @@ export class ThreeLoadMemberMoment {
     P1: number,
     P2: number,
     row: number,
-    count: number
+    count: number,
+    gDir?: string,
+    cg?: number
   ): THREE.Group {
 
     const offset: number = 0;
@@ -77,7 +79,7 @@ export class ThreeLoadMemberMoment {
     if(P===0)
       return null;
     // 矢印
-    const arrow: THREE.Group = this.getArrow(direction, P, L);
+    const arrow: THREE.Group = this.getArrow(direction, P, L, gDir);
     arrow.position.y = offset;
 
     // 全体
@@ -105,8 +107,7 @@ export class ThreeLoadMemberMoment {
 
     group.position.set(nodei.x, nodei.y, nodei.z);
 
-    // 全体の向きを修正する
-
+    // 全体の向きを修正する    
     if (!direction.includes('g')) {
       const XY = new Vector2(localAxis.x.x, localAxis.x.y).normalize();
       let A = Math.asin(XY.y);
@@ -114,14 +115,20 @@ export class ThreeLoadMemberMoment {
       if (XY.x < 0) {
         A = Math.PI - A;
       }
-       group.rotateZ(A);
+      group.rotateZ(A);
 
       const lenXY = Math.sqrt(Math.pow(localAxis.x.x, 2) + Math.pow(localAxis.x.y, 2));
       const XZ = new Vector2(lenXY, localAxis.x.z).normalize();
       group.rotateY(-Math.asin(XZ.y)); 
+      group.rotateX(2.5 * Math.asin(XZ.y));       
+      
+      if (direction === "y" || direction === "z")
+      {
+        group.rotateX(((cg ?? 0) * Math.PI) / 180);
+      }
+   
     } else if (direction === "gx") {
-      group.rotation.z = Math.asin(1);
-
+      group.rotation.z = Math.asin(1);        
     } else if (direction === "gz") {
       group.rotation.x = Math.asin(-1);
 
@@ -190,7 +197,7 @@ export class ThreeLoadMemberMoment {
   private getArrow(
     direction: string,
     value: number,
-    points: number): THREE.Group {
+    points: number, gDir? :string): THREE.Group {
 
     const result: THREE.Group = new THREE.Group();
 
@@ -199,8 +206,17 @@ export class ThreeLoadMemberMoment {
     const Px = value;
 
     const pos1 = new THREE.Vector3(points, 0, 0);
-
-    const arrow_1 = this.moment.create(pos1, 0, Px, 1, key, 0)
+    let color: number = null
+    if(gDir != null){
+      if(gDir === "gx"){
+        color = 0xff0000
+      }else if(gDir === "gy"){
+        color = 0x00ff00
+      }else{
+        color = 0x0000ff
+      }
+    }
+    const arrow_1 = this.moment.create(pos1, 0, Px, 1, key, 0, color)
 
     //モーメントの作成時に向きまで制御しているので，制御不要
     //if (direction === 'y') {
@@ -386,5 +402,32 @@ export class ThreeLoadMemberMoment {
     group.add(dim);
     
 
+  }
+  private calculateThetaFromLocalAxis(localAxisResult, nodei: Vector3, nodej: Vector3) {
+    // Lấy các vector X, Y từ kết quả localAxis
+    const X = localAxisResult.x; // Vector X đã biến đổi
+    const Y = localAxisResult.y; // Vector Y đã biến đổi
+  
+    // Tính các vector ban đầu từ điểm i đến điểm j
+    const DX = nodej.x - nodei.x;
+    const DY = nodej.y - nodei.y;
+    const DZ = nodej.z - nodei.z;
+  
+    // Độ dài vector từ i đến j
+    const EL = Math.sqrt(DX * DX + DY * DY + DZ * DZ);
+  
+    // Tính các thành phần cosines chỉ hướng ban đầu
+    const ll = DX / EL;
+    const mm = DY / EL;
+    const nn = DZ / EL;
+  
+    // Tính góc theta bằng cách sử dụng thành phần y và x của vector Y đã biến đổi
+    const theta = Math.atan2(Y.y, Y.x); // Tính theta từ Y đã biến đổi
+  
+    // // Chuyển đổi sang độ nếu cần thiết
+    const thetaDeg = theta * (180 / Math.PI);
+  
+    //return theta;
+    return thetaDeg;
   }
 }
