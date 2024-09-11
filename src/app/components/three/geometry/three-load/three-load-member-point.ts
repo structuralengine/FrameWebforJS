@@ -230,18 +230,18 @@ export class ThreeLoadMemberPoint {
       }
     }
     else if (direction === "gx") {
-      const arrowhelper = arrow_1.getObjectByName('arrow');
+      // const arrowhelper = arrow_1.getObjectByName('arrow');
       // 仕様の位置に届かせるための微調整
-      arrowhelper.position.y += 1;
+      arrow_1.position.x -= 1;
       arrow_1.rotation.z -= Math.PI/2;
     } else if (direction === "gy" || direction === "gz") {
-      const arrowhelper = arrow_1.getObjectByName('arrow');
+      // const arrowhelper = arrow_1.getObjectByName('arrow');
       // 仕様の位置に届かせるための微調整
       // if (value[i] > 0) {
       if (value > 0) {
-        arrowhelper.position.x += 1;
+        arrow_1.position.x -= 1;
       } else {
-        arrowhelper.position.x -= 1;
+        arrow_1.position.x += 1;
       }
     }
     // arrow_1.rotateX(Math.PI)
