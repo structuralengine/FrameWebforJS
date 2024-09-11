@@ -120,7 +120,7 @@ export class ThreeLoadMemberMoment {
       const lenXY = Math.sqrt(Math.pow(localAxis.x.x, 2) + Math.pow(localAxis.x.y, 2));
       const XZ = new Vector2(lenXY, localAxis.x.z).normalize();
       group.rotateY(-Math.asin(XZ.y)); 
-      group.rotateX(2.5 * Math.asin(XZ.y));       
+      group.rotateX(Math.asin(XZ.y));       
       
       if (direction === "y" || direction === "z")
       {
