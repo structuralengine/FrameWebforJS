@@ -90,7 +90,7 @@ export class ThreeLoadMemberPoint {
       return null;
 
     // 矢印
-    const arrow: THREE.Group = this.getArrow(direction, length, P, L);
+    const arrow: THREE.Group = this.getArrow(direction, localAxis, P, L);
     arrow.position.y = offset;
     arrow.name = "arrow"
 
@@ -200,7 +200,7 @@ export class ThreeLoadMemberPoint {
   // 両端の矢印
   private getArrow(
     direction: string,
-    length: number,
+    localAxis: any,
     value: number,
     points: number): THREE.Group {
 
@@ -219,22 +219,30 @@ export class ThreeLoadMemberPoint {
     const arrow_1 = this.point.create(pos1, 0, Px, 1, key, 0);
 
     if (direction === 'y') {
+      if(!(localAxis.x.x < 0) && !(localAxis.y.y < 0)) {
       arrow_1.rotation.z += Math.PI;
+      }
     } else if (direction === 'z') {
       arrow_1.rotation.x += Math.PI / 2;
     }
+    else if(direction === 'x'){
+      if(localAxis.x.x < 0 && localAxis.y.y < 0) {
+      arrow_1.rotation.z += Math.PI;
+      }
+    }
     else if (direction === "gx") {
-      const arrowhelper = arrow_1.getObjectByName('arrow');
+      // const arrowhelper = arrow_1.getObjectByName('arrow');
       // 仕様の位置に届かせるための微調整
-      arrowhelper.position.y += 1;
+      arrow_1.position.x -= 1;
+      arrow_1.rotation.z -= Math.PI/2;
     } else if (direction === "gy" || direction === "gz") {
-      const arrowhelper = arrow_1.getObjectByName('arrow');
+      // const arrowhelper = arrow_1.getObjectByName('arrow');
       // 仕様の位置に届かせるための微調整
       // if (value[i] > 0) {
       if (value > 0) {
-        arrowhelper.position.x += 1;
+        arrow_1.position.x -= 1;
       } else {
-        arrowhelper.position.x -= 1;
+        arrow_1.position.x += 1;
       }
     }
     // arrow_1.rotateX(Math.PI)
@@ -332,17 +340,12 @@ export class ThreeLoadMemberPoint {
       const lenXY = Math.sqrt(Math.pow(localAxis.x.x, 2) + Math.pow(localAxis.x.y, 2));
       const XZ = new Vector2(lenXY, localAxis.x.z).normalize();
       group.rotateY(-Math.asin(XZ.y));
-      if(localAxis.x.x < 0 && localAxis.y.y < 0) {
-        if (direction === "x") {
-          group.rotateZ(Math.PI);
-        } else if (direction === "z") {
-          group.rotateX(-Math.PI / 2);
-        }
-        else if (direction === "y") {
-          group.rotateX(Math.PI);
-        }
-      }
-      else  
+      // if(localAxis.x.x < 0 && localAxis.y.y < 0) {
+      //   if (direction === "x") {
+      //     group.rotateZ(Math.PI);
+      //   }
+      // }
+      // else 
       if (localAxis.x.x === 0 && localAxis.x.y === 0) {
         // 鉛直の部材
         if (direction === "z") {
@@ -359,8 +362,8 @@ export class ThreeLoadMemberPoint {
       }
       group.rotateX(((cg ?? 0) * Math.PI) / 180);
     } else if (direction === "gx") {
-      // group.rotateZ(Math.PI / 2);
-      // group.rotation.x = (Math.atan( localAxis.x.z / localAxis.x.y ))
+      group.rotateZ(Math.PI / 2);
+      group.rotation.x = (Math.atan( localAxis.x.z / localAxis.x.y ))
     } else if (direction === "gy") {
       group.rotateX(Math.PI);
       group.rotation.y = (Math.atan( localAxis.x.z / localAxis.x.x ))
