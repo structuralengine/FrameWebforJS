@@ -1316,7 +1316,8 @@ export class ThreeLoadService {
             P1,
             P2,
             load.row,
-            m.cg
+            m.cg,
+            gDir.includes('g') ? gDir : null
           );
         } else if (direction === "r") {
           // ねじり布荷重
