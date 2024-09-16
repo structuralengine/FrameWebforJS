@@ -1260,11 +1260,12 @@ export class ThreeLoadService {
       } else {
         direction = direction.trim().toLowerCase();
       }
-      if(localAxis.x.x < 0 && localAxis.y.y < 0) {
-        if (direction === "gx") direction = "x";
-        if (direction === "gy") direction = "y";
-        if (direction === "gz") direction = "z";
-      } else if (localAxis.x.y === 0 && localAxis.x.z === 0) {
+      // if(localAxis.x.x < 0 && localAxis.y.y < 0) {
+      //   if (direction === "gx") direction = "x";
+      //   if (direction === "gy") direction = "y";
+      //   if (direction === "gz") direction = "z";
+      // } else 
+      if (localAxis.x.y === 0 && localAxis.x.z === 0) {
         //console.log(load.m, m, 'は x軸に平行な部材です')
         if (direction === "gx") direction = "x";
         if (direction === "gy") direction = "y";
@@ -1317,7 +1318,8 @@ export class ThreeLoadService {
             P1,
             P2,
             load.row,
-            m.cg
+            m.cg,
+            gDir.includes('g') ? gDir : null
           );
         } else if (direction === "r") {
           // ねじり布荷重

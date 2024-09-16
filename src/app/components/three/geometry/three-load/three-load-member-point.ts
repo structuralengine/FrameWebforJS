@@ -179,13 +179,13 @@ export class ThreeLoadMemberPoint {
     //let LL: number = len;
 
     // 絶対座標系荷重の距離変換を行う
-    if (direction === "gx") {
-      len = new THREE.Vector2(nodei.z, nodei.y).distanceTo(new THREE.Vector2(nodej.z, nodej.y));
-    } else if (direction === "gy") {
-      len = new THREE.Vector2(nodei.x, nodei.z).distanceTo(new THREE.Vector2(nodej.x, nodej.z));
-    } else if (direction === "gz") {
-      len = new THREE.Vector2(nodei.x, nodei.y).distanceTo(new THREE.Vector2(nodej.x, nodej.y));
-    }
+    // if (direction === "gx") {
+    //   len = new THREE.Vector2(nodei.z, nodei.y).distanceTo(new THREE.Vector2(nodej.z, nodej.y));
+    // } else if (direction === "gy") {
+    //   len = new THREE.Vector2(nodei.x, nodei.z).distanceTo(new THREE.Vector2(nodej.x, nodej.z));
+    // } else if (direction === "gz") {
+    //   len = new THREE.Vector2(nodei.x, nodei.y).distanceTo(new THREE.Vector2(nodej.x, nodej.y));
+    // }
     const L1 = pL1;
     const L2 = pL2;
 
@@ -386,7 +386,8 @@ export class ThreeLoadMemberPoint {
         }
       }
       group.rotateX(((cg ?? 0) * Math.PI) / 180);
-    } else if (direction === "gx") {
+    } 
+    else if (direction === "gx") {
       group.rotateZ(Math.PI / 2);
       if(!(localGroup.x !==0 && localGroup.y !==0 && localGroup.z !==0)){
         group.rotation.x = (Math.atan( localAxis.x.z / localAxis.x.y ))
@@ -470,10 +471,16 @@ export class ThreeLoadMemberPoint {
     const L2: number = group.L2;
     const P1: number = group.P1;
     const P2: number = group.P2;
+    const localAxis = group.localAxis
+    const direction = group.direction
+    const codeAngle = Math.atan(localAxis.x.y / localAxis.x.x); 
     if (L2 === 0) {
       point[1].x = L
     }
-
+    if(codeAngle !== 0 && (direction === 'gx' || direction === 'gy')){
+      point[1].x = L / Math.cos(codeAngle)
+    }
+  
     const points: THREE.Vector3[] = [ new Vector3(point[0].x, 0, 0), 
                                       new Vector3(point[0].x, point[0].y, point[0].z),
                                       new Vector3(point[1].x, point[1].y, point[1].z),
@@ -500,16 +507,24 @@ export class ThreeLoadMemberPoint {
     const y3a = Math.abs(points[2].y);
     const y4a = Math.max(y1a, y3a) + (size * 10);
     const a = (y1a > y3a) ? Math.sign(points[1].y) : Math.sign(points[2].y);
-    const y4 = a * y4a;
-
+    const y4 = a * y4a; 
     if(L1 > 0){
-      const x0 = points[1].x - L1;
-      const p = [
+      let x0 = points[1].x - L1;
+      let p = [
         new THREE.Vector2(x0, 0),
         new THREE.Vector2(x0, y4),
         new THREE.Vector2(points[1].x, y4),
         new THREE.Vector2(points[1].x, points[1].y),
       ];
+      if(codeAngle !== 0 && (direction === 'gx' || direction === 'gy')){ 
+        x0 = x0 *  Math.cos(codeAngle) 
+        p = [
+          new THREE.Vector2(x0, 0),
+          new THREE.Vector2(x0, y4),
+          new THREE.Vector2(points[1].x * Math.cos(codeAngle) , y4 - points[1].x * Math.cos(codeAngle) /  Math.tan(codeAngle)),
+          new THREE.Vector2(points[1].x * Math.cos(codeAngle) , points[1].y),
+        ];       
+      }
       const points0x = point[0].x.toString()
       dim1 = this.dim.create(p, Number(points0x).toFixed(3))
       dim1.visible = true;
@@ -517,12 +532,28 @@ export class ThreeLoadMemberPoint {
       dim.add(dim1);
     }
 
-    const p = [
+    let p = [
       new THREE.Vector2(points[1].x, points[1].y),
       new THREE.Vector2(points[1].x, y4),
       new THREE.Vector2(points[2].x, y4),
       new THREE.Vector2(points[2].x, points[2].y),
     ];
+    if(codeAngle !== 0 && (direction === 'gx' || direction === 'gy')){ 
+      p = [
+        new THREE.Vector2(points[1].x * Math.cos(codeAngle), points[1].y),
+        new THREE.Vector2(points[1].x * Math.cos(codeAngle), y4 - points[1].x * Math.cos(codeAngle) /  Math.tan(codeAngle)),
+        new THREE.Vector2(points[2].x * Math.cos(codeAngle), y4 - points[2].x * Math.cos(codeAngle) /  Math.tan(codeAngle)),
+        new THREE.Vector2(points[2].x * Math.cos(codeAngle), points[2].y),
+      ];
+      if(y4 - points[2].x * Math.cos(codeAngle) /  Math.tan(codeAngle) < points[2].y){
+        p = [
+          new THREE.Vector2(points[1].x * Math.cos(codeAngle), points[1].y),
+          new THREE.Vector2(points[1].x * Math.cos(codeAngle), y4 - points[1].x * Math.cos(codeAngle) /  Math.tan(codeAngle)),
+          new THREE.Vector2(points[2].x * Math.cos(codeAngle), points[2].y),
+          new THREE.Vector2(points[2].x * Math.cos(codeAngle), y4 - points[2].x * Math.cos(codeAngle) /  Math.tan(codeAngle)),          
+        ];
+      }
+    }
     dim2 = this.dim.create(p, (point[1].x - point[0].x).toFixed(3))
     dim2.visible = true;
     dim2.name = "Dimension2";
@@ -530,21 +561,28 @@ export class ThreeLoadMemberPoint {
 
     if(L2 > 0){
       const x4 = L;
-      const p = [
+      let p = [
         new THREE.Vector2(points[2].x, points[2].y),
         new THREE.Vector2(points[2].x, y4),
         new THREE.Vector2(x4, y4),
         new THREE.Vector2(x4, 0),
       ];
+      if(codeAngle !== 0 && (direction === 'gx' || direction === 'gy')){ 
+        p = [
+          new THREE.Vector2(points[1].x * Math.cos(codeAngle), points[1].y),
+          new THREE.Vector2(points[1].x * Math.cos(codeAngle), y4),
+          new THREE.Vector2(x4, y4),
+          new THREE.Vector2(x4, 0),
+        ];
+      }
       dim3 = this.dim.create(p, (L - point[1].x).toFixed(3))
       dim3.visible = true;
       dim3.name = "Dimension3";
       dim.add(dim3);
     }
 
-    // 登録
+  //   // 登録
     dim.name = "Dimension";
-
     group.add(dim);
 
   }

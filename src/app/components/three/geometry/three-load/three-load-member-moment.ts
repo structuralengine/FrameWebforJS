@@ -81,7 +81,10 @@ export class ThreeLoadMemberMoment {
     // 矢印
     const arrow: THREE.Group = this.getArrow(direction, P, L, gDir);
     arrow.position.y = offset;
-
+    if (direction === "y" || direction === "z")
+    {
+      arrow.rotateX(((cg ?? 0) * Math.PI) / 180);
+    }   
     // 全体
     // child.name = "child";
     // child.position.y = offset;
@@ -108,7 +111,7 @@ export class ThreeLoadMemberMoment {
     group.position.set(nodei.x, nodei.y, nodei.z);
 
     // 全体の向きを修正する    
-    if (!direction.includes('g')) {
+    if (!direction.includes('g')) {    
       const XY = new Vector2(localAxis.x.x, localAxis.x.y).normalize();
       let A = Math.asin(XY.y);
 
@@ -155,13 +158,13 @@ export class ThreeLoadMemberMoment {
     let LL: number = len;
 
     // 絶対座標系荷重の距離変換を行う
-    if (direction === "gx") {
-      LL = new THREE.Vector2(nodei.z, nodei.y).distanceTo(new THREE.Vector2(nodej.z, nodej.y));
-    } else if (direction === "gy") {
-      LL = new THREE.Vector2(nodei.x, nodei.z).distanceTo(new THREE.Vector2(nodej.x, nodej.z));
-    } else if (direction === "gz") {
-      LL = new THREE.Vector2(nodei.x, nodei.y).distanceTo(new THREE.Vector2(nodej.x, nodej.y));
-    }
+    // if (direction === "gx") {
+    //   LL = new THREE.Vector2(nodei.z, nodei.y).distanceTo(new THREE.Vector2(nodej.z, nodej.y));
+    // } else if (direction === "gy") {
+    //   LL = new THREE.Vector2(nodei.x, nodei.z).distanceTo(new THREE.Vector2(nodej.x, nodej.z));
+    // } else if (direction === "gz") {
+    //   LL = new THREE.Vector2(nodei.x, nodei.y).distanceTo(new THREE.Vector2(nodej.x, nodej.y));
+    // }
     const L1 = pL1 * len / LL;
     const L2 = pL2 * len / LL;
 
@@ -224,7 +227,6 @@ export class ThreeLoadMemberMoment {
     //} else if (direction === 'z') {
     //arrow_1.rotation.x += Math.PI / 2;
     //}
-
     result.add(arrow_1);
     result.name = "arrow";
 
@@ -323,6 +325,10 @@ export class ThreeLoadMemberMoment {
     const L2: number = group.L2;
     const P1: number = group.P1;
     const P2: number = group.P2;
+    const localAxis = group.localAxis
+    const direction = group.direction
+    const codeAngle = Math.atan(localAxis.x.y / localAxis.x.x); 
+    const nodei = group.nodei;
     if (L2 === 0 && P2 === 0) {
       point[1].x = L
     }
@@ -401,33 +407,5 @@ export class ThreeLoadMemberMoment {
 
     group.add(dim);
     
-
-  }
-  private calculateThetaFromLocalAxis(localAxisResult, nodei: Vector3, nodej: Vector3) {
-    // Lấy các vector X, Y từ kết quả localAxis
-    const X = localAxisResult.x; // Vector X đã biến đổi
-    const Y = localAxisResult.y; // Vector Y đã biến đổi
-  
-    // Tính các vector ban đầu từ điểm i đến điểm j
-    const DX = nodej.x - nodei.x;
-    const DY = nodej.y - nodei.y;
-    const DZ = nodej.z - nodei.z;
-  
-    // Độ dài vector từ i đến j
-    const EL = Math.sqrt(DX * DX + DY * DY + DZ * DZ);
-  
-    // Tính các thành phần cosines chỉ hướng ban đầu
-    const ll = DX / EL;
-    const mm = DY / EL;
-    const nn = DZ / EL;
-  
-    // Tính góc theta bằng cách sử dụng thành phần y và x của vector Y đã biến đổi
-    const theta = Math.atan2(Y.y, Y.x); // Tính theta từ Y đã biến đổi
-  
-    // // Chuyển đổi sang độ nếu cần thiết
-    const thetaDeg = theta * (180 / Math.PI);
-  
-    //return theta;
-    return thetaDeg;
-  }
+  }  
 }

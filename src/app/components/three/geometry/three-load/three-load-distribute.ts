@@ -72,13 +72,13 @@ export class ThreeLoadDistribute {
   // scale: スケール
   public create(nodei: THREE.Vector3, nodej: THREE.Vector3, localAxis: any,
     direction: string, pL1: number, pL2: number, P1: number, P2: number,
-    row: number, cg?: number): THREE.Group {
+    row: number, cg?: number, gDir?: string): THREE.Group {
 
     const offset: number = 0;
     const height: number = 1;
 
     // 線の色を決める
-    const my_color = this.getColor(direction);
+    const my_color = this.getColor(gDir != null ? gDir : direction);
 
     const child = new THREE.Group();
 
@@ -114,7 +114,7 @@ export class ThreeLoadDistribute {
     group["localAxis"] = localAxis;
     group["editor"] = this;
     group["value"] = p.Pmax; // 大きい方の値を保存
-
+    group["gDir"] = gDir;
     // 全体の向きを修正する
     this.setRotate(direction, group, localAxis, cg);
 
@@ -306,8 +306,10 @@ export class ThreeLoadDistribute {
 
     if (status === "clear") {
       //デフォルトのカラーに戻す
-      const direction: string = group.name.slice(-1);
-      if (direction === 'y') {
+      let direction: string = group.name.slice(-1);
+      const gDir = group.gDir
+      if(gDir != null && gDir != undefined ) direction = gDir
+      if (direction === 'y' || direction === 'gy') {
         face_color = this.face_mat_Green;
         line_color = this.line_mat_Green;
       } else if (direction === 'z') {
