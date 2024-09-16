@@ -92,16 +92,26 @@ export class ThreeLoadMemberPoint {
     // 矢印
     const arrow: THREE.Group = this.getArrow(direction, localAxis, P, L);
     // arrow.position.y = offset;
-    arrow.name = "arrowParent"
-    if(direction==="gx"||direction==="gy"){
     const localGroup = this.calculatePointA(nodei,nodej,L)
-    arrow.position.set(localGroup.x-nodei.x, -localGroup.y+nodei.y, -localGroup.z+nodei.z);
-    }else if(direction==="gz"){
-      const localGroup = this.calculatePointA(nodei,nodej,L)
-      if(localGroup.z !==0){
+    arrow.name = "arrowParent"
+    if(direction==="gx"){
+      if(localGroup.x !==0 && localGroup.y !==0 && localGroup.z !==0){
+        arrow.position.set((localGroup.x-nodei.x), -(localGroup.y-nodei.y), (localGroup.z-nodei.z));
+      }else{
         arrow.position.set(localGroup.x-nodei.x, -localGroup.y+nodei.y, -localGroup.z+nodei.z);
+      }
+    }else if(direction==="gy"){
+      if(localGroup.x !==0 && localGroup.y !==0 && localGroup.z !==0){
+      arrow.position.set((localGroup.x-nodei.x), -(localGroup.y-nodei.y), -(localGroup.z-nodei.z));
+      }else{
+        arrow.position.set(localGroup.x-nodei.x, -localGroup.y+nodei.y, -localGroup.z+nodei.z);
+      }
+    }
+    else if(direction==="gz"){
+      if(localGroup.x !==0 && localGroup.y !==0 && localGroup.z !==0){
+        arrow.position.set((localGroup.x-nodei.x), -(localGroup.y-nodei.y), (localGroup.z-nodei.z));
       }else {
-        arrow.position.set(L, 0, 0);
+        arrow.position.set(L,0,0);
       }
     }
 
@@ -132,7 +142,7 @@ export class ThreeLoadMemberPoint {
     group['value'] = P; // 値を保存
 
     // 全体の向きを修正する
-    this.setRotate(direction, group, localAxis, cg);
+    this.setRotate(direction, group, localAxis, cg,localGroup);
 
     // 全体の位置を修正する
     this.setPosition(direction, group, nodei, nodej, P1, P2);
@@ -341,7 +351,7 @@ export class ThreeLoadMemberPoint {
 
   // 全体の向きを修正する
   private setRotate( direction: string, group: any, 
-                     localAxis: { x:Vector3, y:Vector3, z:Vector3 }, cg?: number) {
+                     localAxis: { x:Vector3, y:Vector3, z:Vector3 }, cg?: number,localGroup?:any) {
 
     if (!direction.includes('g')) {
       const XY = new Vector2(localAxis.x.x, localAxis.x.y).normalize();
@@ -378,15 +388,21 @@ export class ThreeLoadMemberPoint {
       group.rotateX(((cg ?? 0) * Math.PI) / 180);
     } else if (direction === "gx") {
       group.rotateZ(Math.PI / 2);
-      group.rotation.x = (Math.atan( localAxis.x.z / localAxis.x.y ))
+      if(!(localGroup.x !==0 && localGroup.y !==0 && localGroup.z !==0)){
+        group.rotation.x = (Math.atan( localAxis.x.z / localAxis.x.y ))
+      }
     } else if (direction === "gy") {
       group.rotateX(Math.PI);
-      group.rotation.y = (Math.atan( localAxis.x.z / localAxis.x.x ))
+      if(!(localGroup.x !==0 && localGroup.y !==0 && localGroup.z !==0)){
+        group.rotation.y = (Math.atan( localAxis.x.z / localAxis.x.x ))
+      }
     } else if (direction === "gz") {
-      group.rotation.z = (Math.atan( localAxis.x.y / localAxis.x.x ))
+      if(!(localGroup.x !==0 && localGroup.y !==0 && localGroup.z !==0)){
+        group.rotation.z = (Math.atan( localAxis.x.y / localAxis.x.x ))
+      }
       group.rotateX(-Math.PI / 2);
-    }
 
+    }
   }
 
   // 
