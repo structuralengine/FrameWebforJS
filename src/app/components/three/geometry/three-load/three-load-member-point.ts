@@ -91,8 +91,19 @@ export class ThreeLoadMemberPoint {
 
     // 矢印
     const arrow: THREE.Group = this.getArrow(direction, localAxis, P, L);
-    arrow.position.y = offset;
-    arrow.name = "arrow"
+    // arrow.position.y = offset;
+    arrow.name = "arrowParent"
+    if(direction==="gx"||direction==="gy"){
+    const localGroup = this.calculatePointA(nodei,nodej,L)
+    arrow.position.set(localGroup.x-nodei.x, -localGroup.y+nodei.y, -localGroup.z+nodei.z);
+    }else if(direction==="gz"){
+      const localGroup = this.calculatePointA(nodei,nodej,L)
+      if(localGroup.z !==0){
+        arrow.position.set(localGroup.x-nodei.x, -localGroup.y+nodei.y, -localGroup.z+nodei.z);
+      }else {
+        arrow.position.set(L, 0, 0);
+      }
+    }
 
      // 全体
     //child.name = "child";
@@ -233,16 +244,19 @@ export class ThreeLoadMemberPoint {
     else if (direction === "gx") {
       // const arrowhelper = arrow_1.getObjectByName('arrow');
       // 仕様の位置に届かせるための微調整
-      arrow_1.position.x -= 1;
+      // arrowhelper.position.y -= 1;
+      // arrowhelper.position.y += 1;
       arrow_1.rotation.z -= Math.PI/2;
     } else if (direction === "gy" || direction === "gz") {
       // const arrowhelper = arrow_1.getObjectByName('arrow');
       // 仕様の位置に届かせるための微調整
       // if (value[i] > 0) {
       if (value > 0) {
-        arrow_1.position.x -= 1;
+        // arrow_1.position.x -= 1;
+        // arrowhelper.position.x += 1;
       } else {
-        arrow_1.position.x += 1;
+        // arrow_1.position.x += 1;
+        // arrowhelper.position.x -= 1;
       }
     }
     // arrow_1.rotateX(Math.PI)
@@ -283,7 +297,8 @@ export class ThreeLoadMemberPoint {
     const group0 = group.getObjectByName("group");
     const child = group0.getObjectByName("child");
     for (const item of child.children) {
-      item.position.y = offset + 1;
+      // item.position.y = offset + 1;
+      item.position.y = offset;
     }
   }
 
@@ -516,5 +531,25 @@ export class ThreeLoadMemberPoint {
 
     group.add(dim);
 
+  }
+  public calculatePointA(I, J, L) {
+    // Tính độ dài của vector IJ
+    const distanceIJ = Math.sqrt(
+        Math.pow(J.x - I.x, 2) +
+        Math.pow(J.y - I.y, 2) +
+        Math.pow(J.z - I.z, 2)
+    );
+
+    // Tính vector đơn vị dọc theo IJ
+    const ux = (J.x - I.x) / distanceIJ;
+    const uy = (J.y - I.y) / distanceIJ;
+    const uz = (J.z - I.z) / distanceIJ;
+
+    // Tính tọa độ điểm A
+    const x = I.x + L * ux;
+    const y = I.y + L * uy;
+    const z = I.z + L * uz;
+
+    return { x, y, z };
   }
 }
