@@ -94,43 +94,15 @@ export class ThreeLoadMemberPoint {
     // arrow.position.y = offset;
     const localGroup = this.calculatePointA(nodei,nodej,L)
     arrow.name = "arrowParent"
-    // if(direction==="gx"){
-    //   if(localGroup.x !==0 && localGroup.y !==0 && localGroup.z !==0){
-    //     arrow.position.set((localGroup.x-nodei.x), -(localGroup.y-nodei.y), (localGroup.z-nodei.z));
-    //   }else{
-    //     arrow.position.set(localGroup.x-nodei.x, -localGroup.y+nodei.y, -localGroup.z+nodei.z);
-    //   }
-    // }else if(direction==="gy"){
-    //   if(localGroup.x !==0 && localGroup.y !==0 && localGroup.z !==0){
-    //   arrow.position.set((localGroup.x-nodei.x), -(localGroup.y-nodei.y), -(localGroup.z-nodei.z));
-    //   }else{
-    //     arrow.position.set(localGroup.x-nodei.x, -localGroup.y+nodei.y, -localGroup.z+nodei.z);
-    //   }
-    // }
-    // else if(direction==="gz"){
-    //   if(localGroup.x !==0 && localGroup.y !==0 && localGroup.z !==0){
-    //     arrow.position.set((localGroup.x-nodei.x), -(localGroup.y-nodei.y), (localGroup.z-nodei.z));
-    //   }else {
-    //     arrow.position.set(L,0,0);
-    //   }
-    // }
     if(direction==="gx"){
-      arrow.position.x += localGroup.x;
-      arrow.position.y += localGroup.y;
-      arrow.position.z += localGroup.z;
-
+      arrow.position.set(localGroup.x, localGroup.y, localGroup.z)
+      arrow.rotateZ(Math.PI/2);
     }else if(direction==="gy"){
-      arrow.position.x += localGroup.x;
-      arrow.position.y += localGroup.y;
-      arrow.position.z += localGroup.z;
-
+      arrow.position.set(localGroup.x, localGroup.y, localGroup.z)
       arrow.rotateZ(Math.PI);
     }
     else if(direction==="gz"){
-      arrow.position.x += localGroup.x;
-      arrow.position.y += localGroup.y;
-      arrow.position.z += localGroup.z;
-
+      arrow.position.set(localGroup.x, localGroup.y, localGroup.z)
       arrow.rotation.z +=  Math.PI /2;
       arrow.rotation.y -=  Math.PI /2;
     }
@@ -276,7 +248,7 @@ export class ThreeLoadMemberPoint {
       // 仕様の位置に届かせるための微調整
       // arrowhelper.position.y -= 1;
       // arrowhelper.position.y += 1;
-      //arrow_1.rotation.z -= Math.PI/2;
+      arrow_1.rotation.z -= Math.PI/2;
     } else if (direction === "gy" || direction === "gz") {
       // const arrowhelper = arrow_1.getObjectByName('arrow');
       // 仕様の位置に届かせるための微調整
