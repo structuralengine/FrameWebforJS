@@ -94,25 +94,45 @@ export class ThreeLoadMemberPoint {
     // arrow.position.y = offset;
     const localGroup = this.calculatePointA(nodei,nodej,L)
     arrow.name = "arrowParent"
+    // if(direction==="gx"){
+    //   if(localGroup.x !==0 && localGroup.y !==0 && localGroup.z !==0){
+    //     arrow.position.set((localGroup.x-nodei.x), -(localGroup.y-nodei.y), (localGroup.z-nodei.z));
+    //   }else{
+    //     arrow.position.set(localGroup.x-nodei.x, -localGroup.y+nodei.y, -localGroup.z+nodei.z);
+    //   }
+    // }else if(direction==="gy"){
+    //   if(localGroup.x !==0 && localGroup.y !==0 && localGroup.z !==0){
+    //   arrow.position.set((localGroup.x-nodei.x), -(localGroup.y-nodei.y), -(localGroup.z-nodei.z));
+    //   }else{
+    //     arrow.position.set(localGroup.x-nodei.x, -localGroup.y+nodei.y, -localGroup.z+nodei.z);
+    //   }
+    // }
+    // else if(direction==="gz"){
+    //   if(localGroup.x !==0 && localGroup.y !==0 && localGroup.z !==0){
+    //     arrow.position.set((localGroup.x-nodei.x), -(localGroup.y-nodei.y), (localGroup.z-nodei.z));
+    //   }else {
+    //     arrow.position.set(L,0,0);
+    //   }
+    // }
     if(direction==="gx"){
-      if(localGroup.x !==0 && localGroup.y !==0 && localGroup.z !==0){
-        arrow.position.set((localGroup.x-nodei.x), -(localGroup.y-nodei.y), (localGroup.z-nodei.z));
-      }else{
-        arrow.position.set(localGroup.x-nodei.x, -localGroup.y+nodei.y, -localGroup.z+nodei.z);
-      }
+      arrow.position.x += localGroup.x;
+      arrow.position.y += localGroup.y;
+      arrow.position.z += localGroup.z;
+
     }else if(direction==="gy"){
-      if(localGroup.x !==0 && localGroup.y !==0 && localGroup.z !==0){
-      arrow.position.set((localGroup.x-nodei.x), -(localGroup.y-nodei.y), -(localGroup.z-nodei.z));
-      }else{
-        arrow.position.set(localGroup.x-nodei.x, -localGroup.y+nodei.y, -localGroup.z+nodei.z);
-      }
+      arrow.position.x += localGroup.x;
+      arrow.position.y += localGroup.y;
+      arrow.position.z += localGroup.z;
+
+      arrow.rotateZ(Math.PI);
     }
     else if(direction==="gz"){
-      if(localGroup.x !==0 && localGroup.y !==0 && localGroup.z !==0){
-        arrow.position.set((localGroup.x-nodei.x), -(localGroup.y-nodei.y), (localGroup.z-nodei.z));
-      }else {
-        arrow.position.set(L,0,0);
-      }
+      arrow.position.x += localGroup.x;
+      arrow.position.y += localGroup.y;
+      arrow.position.z += localGroup.z;
+
+      arrow.rotation.z +=  Math.PI /2;
+      arrow.rotation.y -=  Math.PI /2;
     }
 
      // 全体
@@ -256,7 +276,7 @@ export class ThreeLoadMemberPoint {
       // 仕様の位置に届かせるための微調整
       // arrowhelper.position.y -= 1;
       // arrowhelper.position.y += 1;
-      arrow_1.rotation.z -= Math.PI/2;
+      //arrow_1.rotation.z -= Math.PI/2;
     } else if (direction === "gy" || direction === "gz") {
       // const arrowhelper = arrow_1.getObjectByName('arrow');
       // 仕様の位置に届かせるための微調整
@@ -387,23 +407,23 @@ export class ThreeLoadMemberPoint {
       }
       group.rotateX(((cg ?? 0) * Math.PI) / 180);
     } 
-    else if (direction === "gx") {
-      group.rotateZ(Math.PI / 2);
-      if(!(localGroup.x !==0 && localGroup.y !==0 && localGroup.z !==0)){
-        group.rotation.x = (Math.atan( localAxis.x.z / localAxis.x.y ))
-      }
-    } else if (direction === "gy") {
-      group.rotateX(Math.PI);
-      if(!(localGroup.x !==0 && localGroup.y !==0 && localGroup.z !==0)){
-        group.rotation.y = (Math.atan( localAxis.x.z / localAxis.x.x ))
-      }
-    } else if (direction === "gz") {
-      if(!(localGroup.x !==0 && localGroup.y !==0 && localGroup.z !==0)){
-        group.rotation.z = (Math.atan( localAxis.x.y / localAxis.x.x ))
-      }
-      group.rotateX(-Math.PI / 2);
+    // else if (direction === "gx") {
+    //   if(!(localGroup.x !==0 && localGroup.y !==0 && localGroup.z !==0)){
+    //     group.rotation.x = (Math.atan( localAxis.x.z / localAxis.x.y ))
+    //   }
+    //   group.rotateZ(Math.PI / 2);
+    // } else if (direction === "gy") {
+    //   if(!(localGroup.x !==0 && localGroup.y !==0 && localGroup.z !==0)){
+    //     group.rotation.y = (Math.atan( localAxis.x.z / localAxis.x.x ))
+    //   }
+    //   group.rotateX(Math.PI);
+    // } else if (direction === "gz") {
+    //   if(!(localGroup.x !==0 && localGroup.y !==0 && localGroup.z !==0)){
+    //     group.rotation.z = (Math.atan( localAxis.x.y / localAxis.x.x ))
+    //   }
+    //   //group.rotateX(-Math.PI / 2);
 
-    }
+    // }
   }
 
   // 
@@ -413,52 +433,53 @@ export class ThreeLoadMemberPoint {
 
     if (!direction.includes('g')) {
       group.position.set(nodei.x, nodei.y, nodei.z);
-    } else if (direction === 'gx') {
-      // nodeとPの関係によって、セットする位置(x座標)が異なる。
-      if (P1 >= 0 && P2 >= 0) {
-        if (nodei.x >= nodej.x) {
-          group.position.set(nodej.x, nodei.y, nodei.z);
-        } else {
-          group.position.set(nodei.x, nodei.y, nodei.z);
-        }
-      } else {
-        if (nodei.x >= nodej.x) {
-          group.position.set(nodei.x, nodei.y, nodei.z);
-        } else {
-          group.position.set(nodej.x, nodei.y, nodei.z);
-        }
-      }
-    } else if (direction === 'gy') {
-      // nodeとPの関係によって、セットする位置(y座標)が異なる。
-      if (P1 >= 0 && P2 >= 0) {
-        if (nodei.y >= nodej.y) {
-          group.position.set(nodei.x, nodej.y, nodei.z);
-        } else {
-          group.position.set(nodei.x, nodei.y, nodei.z);
-        }
-      } else {
-        if (nodei.y >= nodej.y) {
-          group.position.set(nodei.x, nodei.y, nodei.z);
-        } else {
-          group.position.set(nodei.x, nodej.y, nodei.z);
-        }
-      }
-    } else if (direction === 'gz') {
-      // nodeとPの関係によって、セットする位置(z座標)が異なる。
-      if (P1 >= 0 && P2 >= 0) {
-        if (nodei.z >= nodej.z) {
-          group.position.set(nodei.x, nodei.y, nodej.z);
-        } else {
-          group.position.set(nodei.x, nodei.y, nodei.z);
-        }
-      } else {
-        if (nodei.z >= nodej.z) {
-          group.position.set(nodei.x, nodei.y, nodei.z);
-        } else {
-          group.position.set(nodei.x, nodei.y, nodej.z);
-        }
-      }
-    }
+    } 
+    // else if (direction === 'gx') {
+    //   // nodeとPの関係によって、セットする位置(x座標)が異なる。
+    //   if (P1 >= 0 && P2 >= 0) {
+    //     if (nodei.x >= nodej.x) {
+    //       group.position.set(nodej.x, nodei.y, nodei.z);
+    //     } else {
+    //       group.position.set(nodei.x, nodei.y, nodei.z);
+    //     }
+    //   } else {
+    //     if (nodei.x >= nodej.x) {
+    //       group.position.set(nodei.x, nodei.y, nodei.z);
+    //     } else {
+    //       group.position.set(nodej.x, nodei.y, nodei.z);
+    //     }
+    //   }
+    // } else if (direction === 'gy') {
+    //   // nodeとPの関係によって、セットする位置(y座標)が異なる。
+    //   if (P1 >= 0 && P2 >= 0) {
+    //     if (nodei.y >= nodej.y) {
+    //       group.position.set(nodei.x, nodej.y, nodei.z);
+    //     } else {
+    //       group.position.set(nodei.x, nodei.y, nodei.z);
+    //     }
+    //   } else {
+    //     if (nodei.y >= nodej.y) {
+    //       group.position.set(nodei.x, nodei.y, nodei.z);
+    //     } else {
+    //       group.position.set(nodei.x, nodej.y, nodei.z);
+    //     }
+    //   }
+    // } else if (direction === 'gz') {
+    //   // nodeとPの関係によって、セットする位置(z座標)が異なる。
+    //   if (P1 >= 0 && P2 >= 0) {
+    //     if (nodei.z >= nodej.z) {
+    //       group.position.set(nodei.x, nodei.y, nodej.z);
+    //     } else {
+    //       group.position.set(nodei.x, nodei.y, nodei.z);
+    //     }
+    //   } else {
+    //     if (nodei.z >= nodej.z) {
+    //       group.position.set(nodei.x, nodei.y, nodei.z);
+    //     } else {
+    //       group.position.set(nodei.x, nodei.y, nodej.z);
+    //     }
+    //   }
+    // }
   }
 
   // 寸法線
