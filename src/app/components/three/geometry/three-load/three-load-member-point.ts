@@ -199,13 +199,13 @@ export class ThreeLoadMemberPoint {
     //let LL: number = len;
 
     // 絶対座標系荷重の距離変換を行う
-    // if (direction === "gx") {
-    //   len = new THREE.Vector2(nodei.z, nodei.y).distanceTo(new THREE.Vector2(nodej.z, nodej.y));
-    // } else if (direction === "gy") {
-    //   len = new THREE.Vector2(nodei.x, nodei.z).distanceTo(new THREE.Vector2(nodej.x, nodej.z));
-    // } else if (direction === "gz") {
-    //   len = new THREE.Vector2(nodei.x, nodei.y).distanceTo(new THREE.Vector2(nodej.x, nodej.y));
-    // }
+    if (direction === "gx") {
+      len = new THREE.Vector2(nodei.z, nodei.y).distanceTo(new THREE.Vector2(nodej.z, nodej.y));
+    } else if (direction === "gy") {
+      len = new THREE.Vector2(nodei.x, nodei.z).distanceTo(new THREE.Vector2(nodej.x, nodej.z));
+    } else if (direction === "gz") {
+      len = new THREE.Vector2(nodei.x, nodei.y).distanceTo(new THREE.Vector2(nodej.x, nodej.y));
+    }
     const L1 = pL1;
     const L2 = pL2;
 
