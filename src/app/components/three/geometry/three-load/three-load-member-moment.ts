@@ -138,10 +138,10 @@ export class ThreeLoadMemberMoment {
       group.rotateY(-Math.asin(XZ.y)); 
       group.rotateX(Math.asin(XZ.y));       
       
-      if (direction === "y" || direction === "z")
-      {
-        group.rotateX(((cg ?? 0) * Math.PI) / 180);
-      }
+      // if (direction === "y" || direction === "z")
+      // {
+      //   group.rotateX(((cg ?? 0) * Math.PI) / 180);
+      // }
    
     } 
     group.name = ThreeLoadMemberMoment.id + "-" + row.toString() + '-' + direction.toString();
