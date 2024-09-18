@@ -159,7 +159,9 @@ export class ThreeLoadMoment {
     group.name = ThreeLoadMoment.id + "-" + row.toString() + '-' + direction.toString();
 
     // 位置を修正する
-    //group.position.set(node.x, node.y, node.z);
+    if(!direction.includes('g')){
+    group.position.set(node.x, node.y, node.z);
+    }
 
     return group;
   }

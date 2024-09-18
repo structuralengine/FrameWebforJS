@@ -469,9 +469,17 @@ export class ThreeLoadMemberPoint {
     const nodei = group.nodei
     const nodej = group.nodej
     const length = nodei.distanceTo(nodej)
+    const codeAngle = Math.atan(localAxis.x.y / localAxis.x.x)
+    const codeAngleY = Math.atan(localAxis.x.x / localAxis.x.y)
+    const codeAngleZ = Math.atan(Math.sqrt(localAxis.x.y * localAxis.x.y+ localAxis.x.x * localAxis.x.x) / localAxis.x.z)
+
+    const phi = this.calculatePhiAngle(nodei.x,nodei.y,nodei.z,nodej.x,nodej.y,nodej.z,)   
     if (L2 === 0) {
-      point[1].x = length - L1
+      point[1].x = L
     } 
+    // if(codeAngle !== 0 && (direction === 'gx' || direction === 'gy')){
+    //   point[1].x = L / Math.cos(codeAngle)
+    // }
     const points: THREE.Vector3[] = [ new Vector3(point[0].x, 0, 0), 
                                       new Vector3(point[0].x, point[0].y, point[0].z),
                                       new Vector3(point[1].x, point[1].y, point[1].z),
@@ -507,6 +515,15 @@ export class ThreeLoadMemberPoint {
         new THREE.Vector2(points[1].x, y4),
         new THREE.Vector2(points[1].x, points[1].y),
       ];    
+      // if(codeAngle !== 0 && (direction === 'gx' || direction === 'gy')){ 
+      //   x0 = x0 *  Math.cos(codeAngle) 
+      //   p = [
+      //     new THREE.Vector2(x0, 0),
+      //     new THREE.Vector2(x0, y4),
+      //     new THREE.Vector2(points[1].x * Math.cos(codeAngle) , y4 - points[1].x * Math.cos(codeAngle) /  Math.tan(codeAngle)),
+      //     new THREE.Vector2(points[1].x * Math.cos(codeAngle) , points[1].y),
+      //   ];       
+      // }
       const points0x = point[0].x.toString()
       dim1 = this.dim.create(p, Number(points0x).toFixed(3))
       dim1.visible = true;
@@ -520,7 +537,23 @@ export class ThreeLoadMemberPoint {
       new THREE.Vector2(points[2].x, y4),
       new THREE.Vector2(points[2].x, points[2].y),
     ];   
-    dim2 = this.dim.create(p, (point[1].x - point[0].x).toFixed(3))
+    // if(codeAngle !== 0 && (direction === 'gx' || direction === 'gy')){ 
+    //   p = [
+    //     new THREE.Vector2(points[1].x * Math.cos(codeAngle), points[1].y),
+    //     new THREE.Vector2(points[1].x * Math.cos(codeAngle), y4 - points[1].x * Math.cos(codeAngle) /  Math.tan(codeAngle)),
+    //     new THREE.Vector2(points[2].x * Math.cos(codeAngle), y4 - points[2].x * Math.cos(codeAngle) /  Math.tan(codeAngle)),
+    //     new THREE.Vector2(points[2].x * Math.cos(codeAngle), -length * Math.sin(codeAngle) * Math.cos(phi)),
+    //   ];
+    //   if(y4 - points[2].x * Math.cos(codeAngle) /  Math.tan(codeAngle) < points[2].y){
+    //     p = [
+    //       new THREE.Vector2(points[1].x * Math.cos(codeAngle), points[1].y),
+    //       new THREE.Vector2(points[1].x * Math.cos(codeAngle), y4 - points[1].x * Math.cos(codeAngle) /  Math.tan(codeAngle)),
+    //       new THREE.Vector2(points[2].x * Math.cos(codeAngle), -length * Math.sin(codeAngle) * Math.cos(phi)),
+    //       new THREE.Vector2(points[2].x * Math.cos(codeAngle), y4 - points[2].x * Math.cos(codeAngle) /  Math.tan(codeAngle)),          
+    //     ];
+    //   }
+    // }
+    dim2 = this.dim.create(p,  (length - L1).toFixed(3))
     dim2.visible = true;
     dim2.name = "Dimension2";
     dim.add(dim2);
@@ -532,7 +565,15 @@ export class ThreeLoadMemberPoint {
         new THREE.Vector2(points[2].x, y4),
         new THREE.Vector2(x4, y4),
         new THREE.Vector2(x4, 0),
-      ];      
+      ];   
+      // if(codeAngle !== 0 && (direction === 'gx' || direction === 'gy')){ 
+      //   p = [
+      //     new THREE.Vector2(points[1].x * Math.cos(codeAngle), points[1].y),
+      //     new THREE.Vector2(points[1].x * Math.cos(codeAngle), y4),
+      //     new THREE.Vector2(x4, y4),
+      //     new THREE.Vector2(x4, 0),
+      //   ];
+      // }   
       dim3 = this.dim.create(p, (L - point[1].x).toFixed(3))
       dim3.visible = true;
       dim3.name = "Dimension3";
@@ -612,4 +653,12 @@ export class ThreeLoadMemberPoint {
 
     return { x, y, z };
   }
+  public calculatePhiAngle(x1, y1, z1, x2, y2, z2) {  
+    const dx = x2 - x1;  
+    const dy = y2 - y1;  
+    const dz = z2 - z1;  
+    const distInXY = Math.sqrt(dx * dx + dy * dy);  
+    const phi = Math.abs(Math.atan2(dz, distInXY));  
+    return phi;  
+  }  
 }
