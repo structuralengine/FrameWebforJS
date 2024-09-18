@@ -468,9 +468,9 @@ export class ThreeLoadMemberPoint {
     const direction = group.direction
     const nodei = group.nodei
     const nodej = group.nodej
-
+    const length = nodei.distanceTo(nodej)
     if (L2 === 0) {
-      point[1].x = L
+      point[1].x = length - L1
     } 
     const points: THREE.Vector3[] = [ new Vector3(point[0].x, 0, 0), 
                                       new Vector3(point[0].x, point[0].y, point[0].z),

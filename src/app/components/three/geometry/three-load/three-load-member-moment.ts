@@ -80,11 +80,24 @@ export class ThreeLoadMemberMoment {
       return null;
     // 矢印
     const arrow: THREE.Group = this.getArrow(direction, P, L, gDir);
-    arrow.position.y = offset;
+    //arrow.position.y = offset;
     if (direction === "y" || direction === "z")
     {
       arrow.rotateX(((cg ?? 0) * Math.PI) / 180);
     }   
+    if(direction.includes('g')){
+      let gPos = this.calculatePointA(nodei, nodej, L);   
+      arrow.position.set(gPos.x, gPos.y, gPos.z)
+    }
+    if (direction === "gx") {    
+      arrow.rotation.y = -Math.asin(1);   
+    } else if (direction === "gy") {
+      arrow.rotation.x = Math.asin(-1);
+    }else if (direction === "gz") {
+      arrow.rotation.z =-Math.atan(localAxis.x.y / localAxis.x.x)
+      arrow.rotation.x = -Math.PI/2
+      arrow.rotation.y =-Math.atan(localAxis.x.y / localAxis.x.x)
+    }
     // 全体
     // child.name = "child";
     // child.position.y = offset;
@@ -108,10 +121,10 @@ export class ThreeLoadMemberMoment {
     group["editor"] = this;
     group['value'] = P; // 値を保存
 
-    group.position.set(nodei.x, nodei.y, nodei.z);
 
     // 全体の向きを修正する    
     if (!direction.includes('g')) {    
+      group.position.set(nodei.x, nodei.y, nodei.z);
       const XY = new Vector2(localAxis.x.x, localAxis.x.y).normalize();
       let A = Math.asin(XY.y);
 
@@ -130,12 +143,7 @@ export class ThreeLoadMemberMoment {
         group.rotateX(((cg ?? 0) * Math.PI) / 180);
       }
    
-    } else if (direction === "gx") {
-      group.rotation.z = Math.asin(1);        
-    } else if (direction === "gz") {
-      group.rotation.x = Math.asin(-1);
-
-    }
+    } 
     group.name = ThreeLoadMemberMoment.id + "-" + row.toString() + '-' + direction.toString();
 
     return group;
@@ -228,8 +236,7 @@ export class ThreeLoadMemberMoment {
     //arrow_1.rotation.x += Math.PI / 2;
     //}
     result.add(arrow_1);
-    result.name = "arrow";
-
+    result.name = "arrow";  
     return result;
 
   }
@@ -404,8 +411,28 @@ export class ThreeLoadMemberMoment {
     dim.name = "Dimension";
     //center.visible = true;
     dim.rotateX(Math.PI)
-
+    if(direction.includes('g')){
+      dim.position.set(nodei.x, nodei.y, nodei.z);
+      dim.rotateZ(-Math.atan(localAxis.x.x / localAxis.x.y))
+    }
     group.add(dim);
     
   }  
+  public calculatePointA(I, J, L) {
+    const distanceIJ = Math.sqrt(
+        Math.pow(J.x - I.x, 2) +
+        Math.pow(J.y - I.y, 2) +
+        Math.pow(J.z - I.z, 2)
+    );
+
+    const ux = (J.x - I.x) / distanceIJ;
+    const uy = (J.y - I.y) / distanceIJ;
+    const uz = (J.z - I.z) / distanceIJ;
+
+    const x = I.x + L * ux;
+    const y = I.y + L * uy;
+    const z = I.z + L * uz;
+
+    return { x, y, z };
+  }
 }
