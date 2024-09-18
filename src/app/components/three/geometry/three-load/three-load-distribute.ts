@@ -74,7 +74,8 @@ export class ThreeLoadDistribute {
     direction: string, pL1: number, pL2: number, P1: number, P2: number,
     row: number, cg?: number, gDir?: string): THREE.Group {
 
-    const offset: number = 0;
+    // const offset: number = 0;
+    const offset: number = (direction === 'z' || direction === 'gz') ? 0 : -4.5;
     const height: number = 1;
 
     // 線の色を決める
