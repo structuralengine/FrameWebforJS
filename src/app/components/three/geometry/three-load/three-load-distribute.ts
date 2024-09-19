@@ -75,7 +75,7 @@ export class ThreeLoadDistribute {
     row: number, cg?: number, gDir?: string): THREE.Group {
 
     // const offset: number = 0;
-    const offset: number = (direction === 'z' || direction === 'gz') ? 0 : -4.5;
+    const offset: number = (direction === 'z' || direction === 'gz') ? 0 : -1;
     const height: number = 1;
 
     // 線の色を決める
@@ -86,7 +86,7 @@ export class ThreeLoadDistribute {
     // 長さを決める
     const p = this.getPoints(nodei, nodej, direction, pL1, pL2, P1, P2, height);
     const points: THREE.Vector3[] = p.points;
-
+    console.log("point",points);
     // 面
     child.add(this.getFace(my_color, points));
 
@@ -95,7 +95,8 @@ export class ThreeLoadDistribute {
 
     // 全体
     child.name = "child";
-    child.position.y = offset;
+    child.position.y = offset - 0.1 ;
+    child.position.x = -0.2;
 
     const group0 = new THREE.Group();
     group0.add(child);
