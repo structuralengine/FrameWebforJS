@@ -106,7 +106,91 @@ export class ThreeLoadDimension {
     return group;
 
   }
+  public createGlobal( points: THREE.Vector3[], textStr: string, scaleX: number = 1, localAxis: any, direction:string): THREE.Group {
 
+    const positions = [
+      new THREE.Vector3(points[0].x, points[0].y, points[0].z),
+      new THREE.Vector3(points[1].x, points[1].y, points[1].z),
+      new THREE.Vector3(points[2].x, points[2].y, points[2].z),
+      new THREE.Vector3(points[3].x, points[3].y, points[3].z),
+    ];
+    const line_color = 0x000000;
+
+
+    const group = new THREE.Group();
+
+    group.add(this.getLine(positions));
+
+    // 寸法線のはみ出している部分を描く
+    for(let i = 0; i < 2; i++){
+      const positions2 = [
+        new THREE.Vector3(0, -0.03, 0),
+        new THREE.Vector3(0, 0.03, 0),
+        new THREE.Vector3(0, 0, 0),
+      ];
+      if (i === 0) {
+        positions2.push( new THREE.Vector3(-0.02, 0, 0) )
+      } else {
+        positions2.push( new THREE.Vector3( 0.02, 0, 0) )
+      }
+      const plus = this.getLine(positions2)
+      plus.position.set(points[i + 1].x, points[i + 1].y, points[i + 1].z)
+      group.add(plus);
+    }
+
+    // 文字を描く
+    const x = points[1].x + (points[2].x - points[1].x) / 2;
+    const y = points[1].y + (points[2].y - points[1].y) / 2;
+    const z = points[1].z + (points[2].z- points[1].z) / 2;
+
+    const horizontal: string = 'center';
+    let vartical: string = 'top';
+    if(points[1].y >= 0 ){
+      if (points[1].y < points[0].y) vartical = 'bottom';
+    } else {
+      if (points[1].y > points[0].y) vartical = 'bottom';
+    }
+    const text = this.text.createG(textStr, new THREE.Vector3(x, y, z), 0.08);
+    const height = Math.abs(text.geometry.boundingBox.max.y - text.geometry.boundingBox.min.y);
+    const width = Math.abs(text.geometry.boundingBox.max.x - text.geometry.boundingBox.min.x);
+    // if (vartical === 'bottom') {
+    //   text.position.y -= 0.5 * height;
+
+    // } else if (vartical === 'top') {
+    //   text.position.y += 0.9 * height;
+    // }
+    // if (horizontal === 'left') {
+    //   text.position.x += 5 * width;
+    // } else if (horizontal === 'right') {
+    //   text.position.x -= 5 * width;
+    // }
+    // text.rotateZ(Math.PI/2);
+    // text.rotateY(-Math.atan(localAxis.x.z / localAxis.x.y))
+    // text.rotateZ(Math.PI);
+    //  text.rotateY(Math.PI);
+    if(direction==="gx"){
+    text.rotateZ(Math.PI/2);
+    console.log("localAxis",localAxis)
+    console.log("Math.atan(localAxis.x.z / localAxis.x.x)",Math.atan(localAxis.x.z / localAxis.x.x))
+    if(localAxis.x.x>0 && localAxis.x.z<0){
+      text.rotateY(-Math.atan(localAxis.x.z / localAxis.x.x))
+    }else if(localAxis.x.x<0 && localAxis.x.z>0){
+      text.rotateY(Math.atan(localAxis.x.z / localAxis.x.x))
+    }
+    }else if(direction==="gy"){
+
+    }
+    else if(direction==="gz"){
+      
+    }
+    text.name = "text";
+    text.scale.y = 2.0;
+    text.scale.x = scaleX;
+    group.add(text);
+
+    return group;
+
+  }
   private getLine(positions: THREE.Vector3[]): THREE.Line{
     //const line_color = 0x000000;
 

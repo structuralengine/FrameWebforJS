@@ -43,5 +43,27 @@ export class ThreeLoadText {
 
     return text;
   }
+  public createG(
+    textString: string,
+    position: THREE.Vector3,
+    size: number,
+    offset: number = 0): THREE.Mesh {
+
+    const text_geo = new THREE.TextGeometry(textString, {
+      font: this.font,
+      size: size,
+      height: 0.001,
+      curveSegments: 4,
+      bevelEnabled: false,
+    });
+
+    text_geo.center();
+
+    const text = new THREE.Mesh(text_geo, this.text_mat);
+
+    text.position.set(position.x, position.y + offset, position.z);
+
+    return text;
+  }
 
 }

@@ -307,13 +307,13 @@ export class ThreeLoadMemberPoint {
   // 大きさを反映する
   public setScale(group: any, scale: number): void {
     for (const item of group.children) {
-      //if (item.name === 'arrow') {
+      if (item.name !== 'Dimension') {
         //for (const item_child1 of item.children) {
           item.scale.set(1, scale, scale);
           // コーンの先が細く、または太くなる。
           //item.children[0].scale.x = scale;
         //}
-      //}
+      }
     }
   }
 
@@ -337,8 +337,10 @@ export class ThreeLoadMemberPoint {
 
 
     // 寸法線
-    this.setDim(group, status);
-
+    if(!group.direction.includes("g"))
+      this.setDim(group, status);
+    else
+      this.setDimGlobal(group, status);
   }
 
   // 全体の向きを修正する
@@ -528,7 +530,7 @@ export class ThreeLoadMemberPoint {
       dim1 = this.dim.create(p, Number(points0x).toFixed(3))
       dim1.visible = true;
       dim1.name = "Dimension1";
-      dim.add(dim1);
+      //dim.add(dim1);
     }
 
     let p = [
@@ -556,7 +558,7 @@ export class ThreeLoadMemberPoint {
     dim2 = this.dim.create(p,  (length - L1).toFixed(3))
     dim2.visible = true;
     dim2.name = "Dimension2";
-    dim.add(dim2);
+   // dim.add(dim2);
 
     if(L2 > 0){
       const x4 = L;
@@ -661,4 +663,197 @@ export class ThreeLoadMemberPoint {
     const phi = Math.abs(Math.atan2(dz, distInXY));  
     return phi;  
   }  
+  private setDimGlobal(group: any, status: string): void{
+    
+    let point: THREE.Vector3[] = group.points;
+    //const offset: number = group.offset;
+    const L1: number = group.L1;
+    const L: number = group.L;
+    const L2: number = group.L2;
+    const P1: number = group.P1;
+    const P2: number = group.P2;
+    const localAxis = group.localAxis
+    const direction = group.direction
+    const nodei = group.nodei
+    const nodej = group.nodej
+    const length = nodei.distanceTo(nodej)     
+    if (L2 === 0) {
+      point[1].x = L
+    }  
+    const points: THREE.Vector3[] = [ new Vector3(point[0].x, 0, 0), 
+                                      new Vector3(point[0].x, point[0].y, point[0].z),
+                                      new Vector3(point[1].x, point[1].y, point[1].z),
+                                      new Vector3(point[1].x, 0, 0) ];
+
+    // 一旦削除
+    const text = group.getObjectByName('Dimension');
+    if(text !== undefined){
+      group.remove(text);
+    }
+    if (status !== "select") {
+      return;
+    }
+
+    const dim = new THREE.Group();
+
+    let dim1: THREE.Group;
+    let dim2: THREE.Group;
+    let dim3: THREE.Group;
+
+    const size: number = 0.1; // 文字サイズ
+
+    const y1a = Math.abs(points[1].y);
+    const y3a = Math.abs(points[2].y);
+    const y4a = Math.max(y1a, y3a) + (size * 10);
+    const a = (y1a > y3a) ? Math.sign(points[1].y) : Math.sign(points[2].y);
+    const y4 = a * y4a; 
+    let nodeGlobal = this.calculatePointA(nodei, nodej, L1);
+    let p: any  = []
+    if(L1 > 0){
+      // let x0 = points[1].x - L1;   
+      if(direction === 'gx')  {
+        p = [
+          new THREE.Vector3(nodei.x, nodei.y, nodei.z),
+          new THREE.Vector3(nodei.x - y4, nodei.y, nodei.z),
+          new THREE.Vector3(nodeGlobal.x - y4, nodeGlobal.y, nodeGlobal.z),
+          new THREE.Vector3(nodeGlobal.x, nodeGlobal.y, nodeGlobal.z),
+        ];    
+      } else if(direction === 'gy'){
+        p = [
+          new THREE.Vector3(nodei.x, nodei.y, nodei.z),
+          new THREE.Vector3(nodei.x, nodei.y - y4, nodei.z),
+          new THREE.Vector3(nodeGlobal.x, nodeGlobal.y - y4, nodeGlobal.z),
+          new THREE.Vector3(nodeGlobal.x, nodeGlobal.y, nodeGlobal.z),
+        ];   
+      }else if(direction === 'gz'){
+        p = [
+          new THREE.Vector3(nodei.x, nodei.y, nodei.z),
+          new THREE.Vector3(nodei.x, nodei.y, nodei.z  - y4),
+          new THREE.Vector3(nodeGlobal.x, nodeGlobal.y, nodeGlobal.z  - y4),
+          new THREE.Vector3(nodeGlobal.x, nodeGlobal.y, nodeGlobal.z),
+        ];   
+      }  
+      
+      const points0x = point[0].x.toString()
+      dim1 = this.dim.createGlobal(p, Number(points0x).toFixed(3),1, localAxis,direction)
+      dim1.visible = true;
+      dim1.name = "Dimension1";
+      dim.add(dim1);
+    }
+    if(direction === 'gx')  {
+      p = [
+        new THREE.Vector3(nodej.x, nodej.y, nodej.z),
+        new THREE.Vector3(nodej.x -  y4, nodej.y, nodej.z),
+        new THREE.Vector3(nodeGlobal.x - y4, nodeGlobal.y, nodeGlobal.z),
+        new THREE.Vector3(nodeGlobal.x, nodeGlobal.y, nodeGlobal.z),
+      ];    
+    } else if(direction === 'gy'){
+      p = [
+        new THREE.Vector3(nodej.x, nodej.y, nodej.z),
+        new THREE.Vector3(nodej.x , nodej.y-  y4, nodej.z),
+        new THREE.Vector3(nodeGlobal.x , nodeGlobal.y- y4, nodeGlobal.z),
+        new THREE.Vector3(nodeGlobal.x, nodeGlobal.y, nodeGlobal.z),
+      ];  
+    }else if(direction === 'gz'){
+      p = [
+        new THREE.Vector3(nodej.x, nodej.y, nodej.z),
+        new THREE.Vector3(nodej.x , nodej.y, nodej.z-  y4),
+        new THREE.Vector3(nodeGlobal.x , nodeGlobal.y, nodeGlobal.z- y4),
+        new THREE.Vector3(nodeGlobal.x, nodeGlobal.y, nodeGlobal.z),
+      ];  
+    }  
+  
+    dim2 = this.dim.createGlobal(p,  (length - L1).toFixed(3),1, localAxis,direction)
+    dim2.visible = true;
+    dim2.name = "Dimension2";
+    dim.add(dim2);
+
+    if(L2 > 0){
+      nodeGlobal = this.calculatePointA(nodei, nodej, L2)
+      if(direction === 'gx')  {
+        p = [
+          new THREE.Vector3(nodei.x, nodei.y, nodei.z),
+          new THREE.Vector3(nodei.x - y4, nodei.y, nodei.z),
+          new THREE.Vector3(nodeGlobal.x - y4, nodeGlobal.y, nodeGlobal.z),
+          new THREE.Vector3(nodeGlobal.x, nodeGlobal.y, nodeGlobal.z),
+        ];    
+      } else if(direction === 'gy'){
+        p = [
+          new THREE.Vector3(nodei.x, nodei.y, nodei.z),
+          new THREE.Vector3(nodei.x, nodei.y - y4, nodei.z),
+          new THREE.Vector3(nodeGlobal.x, nodeGlobal.y - y4, nodeGlobal.z),
+          new THREE.Vector3(nodeGlobal.x, nodeGlobal.y, nodeGlobal.z),
+        ];   
+      }else if(direction === 'gz'){
+        p = [
+          new THREE.Vector3(nodei.x, nodei.y, nodei.z),
+          new THREE.Vector3(nodei.x, nodei.y, nodei.z  - y4),
+          new THREE.Vector3(nodeGlobal.x, nodeGlobal.y, nodeGlobal.z  - y4),
+          new THREE.Vector3(nodeGlobal.x, nodeGlobal.y, nodeGlobal.z),
+        ];   
+      }  
+      dim3 = this.dim.createGlobal(p, (L2 - L1).toFixed(3), 1, localAxis,direction)
+      dim3.visible = true;
+      dim3.name = "Dimension3";
+      dim.add(dim3);
+    }
+
+  //   // 登録
+    dim.name = "Dimension";
+    group.add(dim);
+  //   if (direction === "gx") {
+    
+  //     //dim.rotation.x = (Math.atan( localAxis.x.z / localAxis.x.y ))
+  //     // dim.rotateY(Math.PI);
+  //     // dim.position.set(nodei.x, nodei.y, nodei.z);
+  //     // if (P1 >= 0 && P2 >= 0) {
+  //     //   if (nodei.x >= nodej.x) {
+  //     //     dim.position.set(nodej.x, nodei.y, nodei.z);
+  //     //   } else {
+  //     //     dim.position.set(nodei.x, nodei.y, nodei.z);
+  //     //   }
+  //     // } else {
+  //     //   if (nodei.x >= nodej.x) {
+  //     //     dim.position.set(nodei.x, nodei.y, nodei.z);
+  //     //   } else {
+  //     //     dim.position.set(nodej.x, nodei.y, nodei.z);
+  //     //   }
+  //     // }
+  // } 
+  //else if (direction === "gy") {
+      
+  //     // dim.rotation.y = (Math.atan( localAxis.x.z / localAxis.x.x ))
+  //     // dim.rotateX(Math.PI);
+  //     if (P1 >= 0 && P2 >= 0) {
+  //       if (nodei.y >= nodej.y) {
+  //         dim.position.set(nodei.x, nodej.y, nodei.z);
+  //       } else {
+  //         dim.position.set(nodei.x, nodei.y, nodei.z);
+  //       }
+  //     } else {
+  //       if (nodei.y >= nodej.y) {
+  //         dim.position.set(nodei.x, nodei.y, nodei.z);
+  //       } else {
+  //         dim.position.set(nodei.x, nodej.y, nodei.z);
+  //       }
+  //     }
+  //   } else if (direction === "gz") {
+      
+  //     // dim.rotation.z = (Math.atan( localAxis.x.y / localAxis.x.x ))
+  //     // dim.rotateX(-Math.PI / 2);
+  //     if (P1 >= 0 && P2 >= 0) {
+  //       if (nodei.z >= nodej.z) {
+  //         dim.position.set(nodei.x, nodei.y, nodej.z);
+  //       } else {
+  //         dim.position.set(nodei.x, nodei.y, nodei.z);
+  //       }
+  //     } else {
+  //       if (nodei.z >= nodej.z) {
+  //         dim.position.set(nodei.x, nodei.y, nodei.z);
+  //       } else {
+  //         dim.position.set(nodei.x, nodei.y, nodej.z);
+  //       }
+  //     }
+  //   }   
+  }
 }
