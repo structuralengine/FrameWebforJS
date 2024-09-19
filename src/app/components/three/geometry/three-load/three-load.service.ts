@@ -1892,13 +1892,13 @@ export class ThreeLoadService {
             );
             editor.setSize(item, scale);
             // オフセットする
-            if (item.value > 0) {
-              editor.setGlobalOffset(item, offset1, k);
-              offset1 += scale * 1.0; // オフセット距離に高さを加算する
-            } else {
-              editor.setGlobalOffset(item, offset2, k);
-              offset2 -= scale * 1.0; // オフセット距離に高さを加算する
-            }
+            // if (item.value > 0) {
+            //   editor.setGlobalOffset(item, offset1, k);
+            //   offset1 += scale * 1.0; // オフセット距離に高さを加算する
+            // } else {
+            //   editor.setGlobalOffset(item, offset2, k);
+            //   offset2 -= scale * 1.0; // オフセット距離に高さを加算する
+            // }
           }
         });
       });

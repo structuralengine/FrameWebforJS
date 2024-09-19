@@ -93,7 +93,7 @@ export class ThreeLoadMemberPoint {
     const arrow: THREE.Group = this.getArrow(direction, localAxis, P, L);
     // arrow.position.y = offset;
     const localGroup = this.calculatePointA(nodei,nodej,L)
-    arrow.name = "arrowParent"
+    arrow.name = "arrow"
     if(direction==="gx"){
       arrow.position.set(localGroup.x, localGroup.y, localGroup.z)
       arrow.rotateZ(Math.PI/2);
@@ -359,12 +359,6 @@ export class ThreeLoadMemberPoint {
       const lenXY = Math.sqrt(Math.pow(localAxis.x.x, 2) + Math.pow(localAxis.x.y, 2));
       const XZ = new Vector2(lenXY, localAxis.x.z).normalize();
       group.rotateY(-Math.asin(XZ.y));
-      // if(localAxis.x.x < 0 && localAxis.y.y < 0) {
-      //   if (direction === "x") {
-      //     group.rotateZ(Math.PI);
-      //   }
-      // }
-      // else 
       if (localAxis.x.x === 0 && localAxis.x.y === 0) {
         // 鉛直の部材
         if (direction === "z") {
@@ -466,22 +460,12 @@ export class ThreeLoadMemberPoint {
     const L2: number = group.L2;
     const P1: number = group.P1;
     const P2: number = group.P2;
-    const localAxis = group.localAxis
-    const direction = group.direction
     const nodei = group.nodei
     const nodej = group.nodej
     const length = nodei.distanceTo(nodej)
-    const codeAngle = Math.atan(localAxis.x.y / localAxis.x.x)
-    const codeAngleY = Math.atan(localAxis.x.x / localAxis.x.y)
-    const codeAngleZ = Math.atan(Math.sqrt(localAxis.x.y * localAxis.x.y+ localAxis.x.x * localAxis.x.x) / localAxis.x.z)
-
-    const phi = this.calculatePhiAngle(nodei.x,nodei.y,nodei.z,nodej.x,nodej.y,nodej.z,)   
     if (L2 === 0) {
       point[1].x = L
     } 
-    // if(codeAngle !== 0 && (direction === 'gx' || direction === 'gy')){
-    //   point[1].x = L / Math.cos(codeAngle)
-    // }
     const points: THREE.Vector3[] = [ new Vector3(point[0].x, 0, 0), 
                                       new Vector3(point[0].x, point[0].y, point[0].z),
                                       new Vector3(point[1].x, point[1].y, point[1].z),
@@ -517,20 +501,11 @@ export class ThreeLoadMemberPoint {
         new THREE.Vector2(points[1].x, y4),
         new THREE.Vector2(points[1].x, points[1].y),
       ];    
-      // if(codeAngle !== 0 && (direction === 'gx' || direction === 'gy')){ 
-      //   x0 = x0 *  Math.cos(codeAngle) 
-      //   p = [
-      //     new THREE.Vector2(x0, 0),
-      //     new THREE.Vector2(x0, y4),
-      //     new THREE.Vector2(points[1].x * Math.cos(codeAngle) , y4 - points[1].x * Math.cos(codeAngle) /  Math.tan(codeAngle)),
-      //     new THREE.Vector2(points[1].x * Math.cos(codeAngle) , points[1].y),
-      //   ];       
-      // }
       const points0x = point[0].x.toString()
       dim1 = this.dim.create(p, Number(points0x).toFixed(3))
       dim1.visible = true;
       dim1.name = "Dimension1";
-      //dim.add(dim1);
+      dim.add(dim1);
     }
 
     let p = [
@@ -539,22 +514,6 @@ export class ThreeLoadMemberPoint {
       new THREE.Vector2(points[2].x, y4),
       new THREE.Vector2(points[2].x, points[2].y),
     ];   
-    // if(codeAngle !== 0 && (direction === 'gx' || direction === 'gy')){ 
-    //   p = [
-    //     new THREE.Vector2(points[1].x * Math.cos(codeAngle), points[1].y),
-    //     new THREE.Vector2(points[1].x * Math.cos(codeAngle), y4 - points[1].x * Math.cos(codeAngle) /  Math.tan(codeAngle)),
-    //     new THREE.Vector2(points[2].x * Math.cos(codeAngle), y4 - points[2].x * Math.cos(codeAngle) /  Math.tan(codeAngle)),
-    //     new THREE.Vector2(points[2].x * Math.cos(codeAngle), -length * Math.sin(codeAngle) * Math.cos(phi)),
-    //   ];
-    //   if(y4 - points[2].x * Math.cos(codeAngle) /  Math.tan(codeAngle) < points[2].y){
-    //     p = [
-    //       new THREE.Vector2(points[1].x * Math.cos(codeAngle), points[1].y),
-    //       new THREE.Vector2(points[1].x * Math.cos(codeAngle), y4 - points[1].x * Math.cos(codeAngle) /  Math.tan(codeAngle)),
-    //       new THREE.Vector2(points[2].x * Math.cos(codeAngle), -length * Math.sin(codeAngle) * Math.cos(phi)),
-    //       new THREE.Vector2(points[2].x * Math.cos(codeAngle), y4 - points[2].x * Math.cos(codeAngle) /  Math.tan(codeAngle)),          
-    //     ];
-    //   }
-    // }
     dim2 = this.dim.create(p,  (length - L1).toFixed(3))
     dim2.visible = true;
     dim2.name = "Dimension2";
@@ -568,14 +527,6 @@ export class ThreeLoadMemberPoint {
         new THREE.Vector2(x4, y4),
         new THREE.Vector2(x4, 0),
       ];   
-      // if(codeAngle !== 0 && (direction === 'gx' || direction === 'gy')){ 
-      //   p = [
-      //     new THREE.Vector2(points[1].x * Math.cos(codeAngle), points[1].y),
-      //     new THREE.Vector2(points[1].x * Math.cos(codeAngle), y4),
-      //     new THREE.Vector2(x4, y4),
-      //     new THREE.Vector2(x4, 0),
-      //   ];
-      // }   
       dim3 = this.dim.create(p, (L - point[1].x).toFixed(3))
       dim3.visible = true;
       dim3.name = "Dimension3";
@@ -585,58 +536,6 @@ export class ThreeLoadMemberPoint {
   //   // 登録
     dim.name = "Dimension";
     group.add(dim);
-    if (direction === "gx") {
-    
-      dim.rotation.x = (Math.atan( localAxis.x.z / localAxis.x.y ))
-      dim.rotateZ(Math.PI / 2);
-      if (P1 >= 0 && P2 >= 0) {
-        if (nodei.x >= nodej.x) {
-          dim.position.set(nodej.x, nodei.y, nodei.z);
-        } else {
-          dim.position.set(nodei.x, nodei.y, nodei.z);
-        }
-      } else {
-        if (nodei.x >= nodej.x) {
-          dim.position.set(nodei.x, nodei.y, nodei.z);
-        } else {
-          dim.position.set(nodej.x, nodei.y, nodei.z);
-        }
-      }
-    } else if (direction === "gy") {
-      
-      dim.rotation.y = (Math.atan( localAxis.x.z / localAxis.x.x ))
-      dim.rotateX(Math.PI);
-      if (P1 >= 0 && P2 >= 0) {
-        if (nodei.y >= nodej.y) {
-          dim.position.set(nodei.x, nodej.y, nodei.z);
-        } else {
-          dim.position.set(nodei.x, nodei.y, nodei.z);
-        }
-      } else {
-        if (nodei.y >= nodej.y) {
-          dim.position.set(nodei.x, nodei.y, nodei.z);
-        } else {
-          dim.position.set(nodei.x, nodej.y, nodei.z);
-        }
-      }
-    } else if (direction === "gz") {
-      
-      dim.rotation.z = (Math.atan( localAxis.x.y / localAxis.x.x ))
-      dim.rotateX(-Math.PI / 2);
-      if (P1 >= 0 && P2 >= 0) {
-        if (nodei.z >= nodej.z) {
-          dim.position.set(nodei.x, nodei.y, nodej.z);
-        } else {
-          dim.position.set(nodei.x, nodei.y, nodei.z);
-        }
-      } else {
-        if (nodei.z >= nodej.z) {
-          dim.position.set(nodei.x, nodei.y, nodei.z);
-        } else {
-          dim.position.set(nodei.x, nodei.y, nodej.z);
-        }
-      }
-    }   
   }
   public calculatePointA(I, J, L) {
     const distanceIJ = Math.sqrt(
@@ -801,59 +700,5 @@ export class ThreeLoadMemberPoint {
   //   // 登録
     dim.name = "Dimension";
     group.add(dim);
-  //   if (direction === "gx") {
-    
-  //     //dim.rotation.x = (Math.atan( localAxis.x.z / localAxis.x.y ))
-  //     // dim.rotateY(Math.PI);
-  //     // dim.position.set(nodei.x, nodei.y, nodei.z);
-  //     // if (P1 >= 0 && P2 >= 0) {
-  //     //   if (nodei.x >= nodej.x) {
-  //     //     dim.position.set(nodej.x, nodei.y, nodei.z);
-  //     //   } else {
-  //     //     dim.position.set(nodei.x, nodei.y, nodei.z);
-  //     //   }
-  //     // } else {
-  //     //   if (nodei.x >= nodej.x) {
-  //     //     dim.position.set(nodei.x, nodei.y, nodei.z);
-  //     //   } else {
-  //     //     dim.position.set(nodej.x, nodei.y, nodei.z);
-  //     //   }
-  //     // }
-  // } 
-  //else if (direction === "gy") {
-      
-  //     // dim.rotation.y = (Math.atan( localAxis.x.z / localAxis.x.x ))
-  //     // dim.rotateX(Math.PI);
-  //     if (P1 >= 0 && P2 >= 0) {
-  //       if (nodei.y >= nodej.y) {
-  //         dim.position.set(nodei.x, nodej.y, nodei.z);
-  //       } else {
-  //         dim.position.set(nodei.x, nodei.y, nodei.z);
-  //       }
-  //     } else {
-  //       if (nodei.y >= nodej.y) {
-  //         dim.position.set(nodei.x, nodei.y, nodei.z);
-  //       } else {
-  //         dim.position.set(nodei.x, nodej.y, nodei.z);
-  //       }
-  //     }
-  //   } else if (direction === "gz") {
-      
-  //     // dim.rotation.z = (Math.atan( localAxis.x.y / localAxis.x.x ))
-  //     // dim.rotateX(-Math.PI / 2);
-  //     if (P1 >= 0 && P2 >= 0) {
-  //       if (nodei.z >= nodej.z) {
-  //         dim.position.set(nodei.x, nodei.y, nodej.z);
-  //       } else {
-  //         dim.position.set(nodei.x, nodei.y, nodei.z);
-  //       }
-  //     } else {
-  //       if (nodei.z >= nodej.z) {
-  //         dim.position.set(nodei.x, nodei.y, nodei.z);
-  //       } else {
-  //         dim.position.set(nodei.x, nodei.y, nodej.z);
-  //       }
-  //     }
-  //   }   
   }
 }

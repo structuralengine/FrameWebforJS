@@ -153,35 +153,16 @@ export class ThreeLoadDimension {
     const text = this.text.createG(textStr, new THREE.Vector3(x, y, z), 0.08);
     const height = Math.abs(text.geometry.boundingBox.max.y - text.geometry.boundingBox.min.y);
     const width = Math.abs(text.geometry.boundingBox.max.x - text.geometry.boundingBox.min.x);
-    // if (vartical === 'bottom') {
-    //   text.position.y -= 0.5 * height;
-
-    // } else if (vartical === 'top') {
-    //   text.position.y += 0.9 * height;
-    // }
-    // if (horizontal === 'left') {
-    //   text.position.x += 5 * width;
-    // } else if (horizontal === 'right') {
-    //   text.position.x -= 5 * width;
-    // }
-    // text.rotateZ(Math.PI/2);
-    // text.rotateY(-Math.atan(localAxis.x.z / localAxis.x.y))
-    // text.rotateZ(Math.PI);
-    //  text.rotateY(Math.PI);
     if(direction==="gx"){
-    text.rotateZ(Math.PI/2);
-    console.log("localAxis",localAxis)
-    console.log("Math.atan(localAxis.x.z / localAxis.x.x)",Math.atan(localAxis.x.z / localAxis.x.x))
-    if(localAxis.x.x>0 && localAxis.x.z<0){
-      text.rotateY(-Math.atan(localAxis.x.z / localAxis.x.x))
-    }else if(localAxis.x.x<0 && localAxis.x.z>0){
-      text.rotateY(Math.atan(localAxis.x.z / localAxis.x.x))
-    }
+      text.rotateZ(Math.PI/2);
+      text.rotation.x = (Math.atan( localAxis.x.z / localAxis.x.y ))
     }else if(direction==="gy"){
-
+      text.rotateX(Math.PI);
+      text.rotation.y = (Math.atan( localAxis.x.z / localAxis.x.x ))
     }
     else if(direction==="gz"){
-      
+      text.rotation.z = (Math.atan( localAxis.x.y / localAxis.x.x ))
+      text.rotateX(-Math.PI / 2);
     }
     text.name = "text";
     text.scale.y = 2.0;
@@ -203,6 +184,4 @@ export class ThreeLoadDimension {
     return line;
 
   }
-
-
 }
