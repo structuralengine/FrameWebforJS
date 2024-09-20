@@ -171,13 +171,14 @@ export class ThreeLoadDimension {
       //   localAxis.x.z / localAxis.x.x < 0 && localAxis.x.z / localAxis.x.y < 0
       // ){
       //   text.rotation.z = (Math.atan( Math.abs(localAxis.x.z / localAxis.x.x)))
-      // }
-      // if(localAxis.x.z / localAxis.x.x > 0 && localAxis.x.z / localAxis.x.y < 0 ||
+      // }else if(localAxis.x.z / localAxis.x.x > 0 && localAxis.x.z / localAxis.x.y < 0 ||
       //   localAxis.x.z / localAxis.x.x < 0 && localAxis.x.z / localAxis.x.y > 0
       // ){
       //   text.rotation.z = (-Math.atan(Math.abs(localAxis.x.z / localAxis.x.x)))
+      // }else{
+      //   text.rotation.z = (Math.atan(localAxis.x.x / localAxis.x.y))
       // }
-      text.position.x -= 0.7 * width;
+      text.position.x -= 1.4 * height;
     }else if(direction==="gy"){
       text.rotateX(Math.PI);
       text.rotation.y = (Math.atan( localAxis.x.z / localAxis.x.x ))
@@ -185,13 +186,13 @@ export class ThreeLoadDimension {
       //   localAxis.x.z / localAxis.x.z > 0 && localAxis.x.y / localAxis.x.z > 0
       // ){
       //   text.rotation.z = (-(Math.atan( Math.abs(localAxis.x.x / localAxis.x.z))))
-      // }
-      // if(localAxis.x.x / localAxis.x.z > 0 && localAxis.x.y / localAxis.x.z < 0 ||
-      //   localAxis.x.x / localAxis.x.z < 0 && localAxis.x.y / localAxis.x.z > 0
+      // }else if(localAxis.x.x / localAxis.x.z > 0 && localAxis.x.y / localAxis.x.z < 0 ||
+      //          localAxis.x.x / localAxis.x.z < 0 && localAxis.x.y / localAxis.x.z > 0
       // ){
       //   text.rotation.z = ((Math.atan( Math.abs(localAxis.x.x / localAxis.x.z))))
+      // }else{
       // }
-      text.position.y -= 0.5 * width;
+      text.position.y -= 1.4 * height;
     }
     else if(direction==="gz"){
       text.rotation.z = (Math.atan( localAxis.x.y / localAxis.x.x ))
@@ -200,12 +201,11 @@ export class ThreeLoadDimension {
       //    localAxis.x.y / localAxis.x.x > 0 && localAxis.x.x / localAxis.x.z < 0
       // ){
       //   text.rotation.z = (Math.atan( Math.abs(localAxis.x.z / localAxis.x.x)))
-      // }
-      // if(localAxis.x.y / localAxis.x.x > 0 && localAxis.x.x / localAxis.x.z > 0 ||
-      //   localAxis.x.y / localAxis.x.x < 0 && localAxis.x.x / localAxis.x.z > 0){
+      // }else if(localAxis.x.y / localAxis.x.x > 0 && localAxis.x.x / localAxis.x.z > 0 ||
+      //          localAxis.x.y / localAxis.x.x < 0 && localAxis.x.x / localAxis.x.z > 0){
       //   text.rotation.z = (-Math.atan( Math.abs(localAxis.x.z / localAxis.x.x)))
       // }
-      text.position.z -= 1 * width;
+      text.position.z -= 2.8 * height;
     }
     text.name = "text";
     text.scale.y = 2.0;
