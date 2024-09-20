@@ -543,10 +543,10 @@
           <div class="btn-wrap">
             <a
               [routerLink]="getDisgLink()"
-              (click)="disg.isCalculated && contentsDailogShow(10)"
+              (click)="ResultData.isCalculated && contentsDailogShow(10)"
               id="10"
               class="btn-md btn-blue"
-              [class.disabled]="!disg.isCalculated"
+              [class.disabled]="!ResultData.isCalculated"
             >
               <div class="icon-img ppt">
                 <svg
@@ -594,10 +594,10 @@
           <div class="btn-wrap">
             <a
               [routerLink]="getReacLink()"
-              (click)="reac.isCalculated && contentsDailogShow(11)"
+              (click)="ResultData.isCalculated && contentsDailogShow(11)"
               id="11"
               class="btn-md btn-blue"
-              [class.disabled]="!reac.isCalculated"
+              [class.disabled]="!ResultData.isCalculated"
             >
               <div class="icon-img ppt">
                 <svg
@@ -664,11 +664,11 @@
           <div class="btn-wrap">
             <a
               [routerLink]="getFsecLink()"
-              (click)="fsec.isCalculated && contentsDailogShow(12)"
+              (click)="ResultData.isCalculated && contentsDailogShow(12)"
               routerLinkActive="selected-item"
               id="12"
               class="btn-md btn-blue"
-              [class.disabled]="!fsec.isCalculated"
+              [class.disabled]="!ResultData.isCalculated"
             >
               <div class="icon-img ppt">
                 <svg
