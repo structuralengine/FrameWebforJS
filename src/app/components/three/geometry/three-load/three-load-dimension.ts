@@ -122,26 +122,37 @@ export class ThreeLoadDimension {
     group.add(this.getLine(positions));
 
     // 寸法線のはみ出している部分を描く
-    for(let i = 0; i < 2; i++){
-      const positions2 = [
-        new THREE.Vector3(0, -0.03, 0),
-        new THREE.Vector3(0, 0.03, 0),
-        new THREE.Vector3(0, 0, 0),
-      ];
-      if (i === 0) {
-        positions2.push( new THREE.Vector3(-0.02, 0, 0) )
-      } else {
-        positions2.push( new THREE.Vector3( 0.02, 0, 0) )
-      }
-      const plus = this.getLine(positions2)
-      plus.position.set(points[i + 1].x, points[i + 1].y, points[i + 1].z)
-      group.add(plus);
-    }
+    // for(let i = 0; i < 2; i++){
+    //   const positions2 = [
+    //     new THREE.Vector3(0, -0.03, 0),
+    //     new THREE.Vector3(0, 0.03, 0),
+    //     new THREE.Vector3(0, 0, 0),
+    //   ];
+    //   if (i === 0) {
+    //     positions2.push( new THREE.Vector3(-0.02, 0, 0) )
+    //   } else {
+    //     positions2.push( new THREE.Vector3( 0.02, 0, 0) )
+    //   }
+    //   const plus = this.getLine(positions2)
+    //   plus.position.set(points[i + 1].x, points[i + 1].y, points[i + 1].z)
+    //   if(direction==="gx"){
+    //     plus.rotateZ(-Math.PI/2);
+    //     // plus.rotation.x = (-Math.atan( localAxis.x.z / localAxis.x.y ))
+    //   }else if(direction==="gy"){
+    //     plus.rotateX(-Math.PI);
+    //     // plus.rotation.y = (-Math.atan( localAxis.x.z / localAxis.x.x ))
+    //   }
+    //   else if(direction==="gz"){
+    //     // plus.rotation.z = (-Math.atan( localAxis.x.y / localAxis.x.x ))
+    //     plus.rotateX(Math.PI / 2);
+    //   }
+    //   group.add(plus);
+    // }
 
     // 文字を描く
-    const x = points[1].x + (points[2].x - points[1].x) / 2;
-    const y = points[1].y + (points[2].y - points[1].y) / 2;
-    const z = points[1].z + (points[2].z- points[1].z) / 2;
+    const x =  (points[2].x + points[1].x) / 2;
+    const y =  (points[2].y + points[1].y) / 2;
+    const z =  (points[2].z + points[1].z) / 2;
 
     const horizontal: string = 'center';
     let vartical: string = 'top';
@@ -150,19 +161,51 @@ export class ThreeLoadDimension {
     } else {
       if (points[1].y > points[0].y) vartical = 'bottom';
     }
-    const text = this.text.createG(textStr, new THREE.Vector3(x, y, z), 0.08);
+    const text = this.text.createG(textStr, new THREE.Vector3(x, y, z), 0.04);
     const height = Math.abs(text.geometry.boundingBox.max.y - text.geometry.boundingBox.min.y);
     const width = Math.abs(text.geometry.boundingBox.max.x - text.geometry.boundingBox.min.x);
     if(direction==="gx"){
       text.rotateZ(Math.PI/2);
       text.rotation.x = (Math.atan( localAxis.x.z / localAxis.x.y ))
+      // if(localAxis.x.z / localAxis.x.x > 0 && localAxis.x.z / localAxis.x.y > 0 ||
+      //   localAxis.x.z / localAxis.x.x < 0 && localAxis.x.z / localAxis.x.y < 0
+      // ){
+      //   text.rotation.z = (Math.atan( Math.abs(localAxis.x.z / localAxis.x.x)))
+      // }
+      // if(localAxis.x.z / localAxis.x.x > 0 && localAxis.x.z / localAxis.x.y < 0 ||
+      //   localAxis.x.z / localAxis.x.x < 0 && localAxis.x.z / localAxis.x.y > 0
+      // ){
+      //   text.rotation.z = (-Math.atan(Math.abs(localAxis.x.z / localAxis.x.x)))
+      // }
+      text.position.x -= 0.7 * width;
     }else if(direction==="gy"){
       text.rotateX(Math.PI);
       text.rotation.y = (Math.atan( localAxis.x.z / localAxis.x.x ))
+      // if(localAxis.x.x / localAxis.x.z < 0 && localAxis.x.y / localAxis.x.z < 0 ||
+      //   localAxis.x.z / localAxis.x.z > 0 && localAxis.x.y / localAxis.x.z > 0
+      // ){
+      //   text.rotation.z = (-(Math.atan( Math.abs(localAxis.x.x / localAxis.x.z))))
+      // }
+      // if(localAxis.x.x / localAxis.x.z > 0 && localAxis.x.y / localAxis.x.z < 0 ||
+      //   localAxis.x.x / localAxis.x.z < 0 && localAxis.x.y / localAxis.x.z > 0
+      // ){
+      //   text.rotation.z = ((Math.atan( Math.abs(localAxis.x.x / localAxis.x.z))))
+      // }
+      text.position.y -= 0.5 * width;
     }
     else if(direction==="gz"){
       text.rotation.z = (Math.atan( localAxis.x.y / localAxis.x.x ))
       text.rotateX(-Math.PI / 2);
+      // if(localAxis.x.y / localAxis.x.x < 0 && localAxis.x.x / localAxis.x.z < 0 ||
+      //    localAxis.x.y / localAxis.x.x > 0 && localAxis.x.x / localAxis.x.z < 0
+      // ){
+      //   text.rotation.z = (Math.atan( Math.abs(localAxis.x.z / localAxis.x.x)))
+      // }
+      // if(localAxis.x.y / localAxis.x.x > 0 && localAxis.x.x / localAxis.x.z > 0 ||
+      //   localAxis.x.y / localAxis.x.x < 0 && localAxis.x.x / localAxis.x.z > 0){
+      //   text.rotation.z = (-Math.atan( Math.abs(localAxis.x.z / localAxis.x.x)))
+      // }
+      text.position.z -= 1 * width;
     }
     text.name = "text";
     text.scale.y = 2.0;
