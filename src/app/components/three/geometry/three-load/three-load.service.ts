@@ -768,7 +768,7 @@ export class ThreeLoadService {
       let row1 = row; // 変更・調整されるrow1を定義
 
       // 節点荷重を変更
-      //this.changeNodeLode(row, nodeLoadData);
+      this.changeNodeLode(row, nodeLoadData);
   
   
       if (this.currentIndex in memberLoadData) {
