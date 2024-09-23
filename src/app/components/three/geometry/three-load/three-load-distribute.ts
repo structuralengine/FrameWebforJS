@@ -292,7 +292,11 @@ export class ThreeLoadDistribute {
     key: string
   ): void {
     for (const item of group.children) {
-      item.position.y = offset- 1;
+      if(group["L"]=== 0.8) {
+        item.position.y = offset- 1;
+      }else{
+        item.position.y = offset;
+      }
       // item.position.y = 0
     }
     group['offset'] = offset;
