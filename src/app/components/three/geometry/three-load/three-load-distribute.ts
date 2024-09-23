@@ -281,6 +281,7 @@ export class ThreeLoadDistribute {
   public setOffset(group: THREE.Group, offset: number): void {
     for (const item of group.children) {
       item.position.y = offset;
+      // item.position.y = 0
     }
     group['offset'] = offset;
   }
@@ -291,8 +292,8 @@ export class ThreeLoadDistribute {
     key: string
   ): void {
     for (const item of group.children) {
-      // item.position.y = offset;
-      item.position.y = 0
+      item.position.y = offset- 1;
+      // item.position.y = 0
     }
     group['offset'] = offset;
   }
