@@ -94,9 +94,9 @@ export class ThreeLoadMemberMoment {
     } else if (direction === "gy") {
       arrow.rotation.x = Math.asin(-1);
     }else if (direction === "gz") {
-      arrow.rotation.z =-Math.atan(localAxis.x.y / localAxis.x.x)
-      arrow.rotation.x = -Math.PI/2
-      arrow.rotation.y =-Math.atan(localAxis.x.y / localAxis.x.x)
+      //arrow.rotation.x = Math.PI/2
+      arrow.rotation.y = - Math.PI
+      //arrow.rotation.y = Math.PI/2
     }
     // 全体
     // child.name = "child";
@@ -138,10 +138,10 @@ export class ThreeLoadMemberMoment {
       group.rotateY(-Math.asin(XZ.y)); 
       group.rotateX(Math.asin(XZ.y));       
       
-      if (direction === "y" || direction === "z")
-      {
-        group.rotateX(((cg ?? 0) * Math.PI) / 180);
-      }
+      // if (direction === "y" || direction === "z")
+      // {
+      //   group.rotateX(((cg ?? 0) * Math.PI) / 180);
+      // }
    
     } 
     group.name = ThreeLoadMemberMoment.id + "-" + row.toString() + '-' + direction.toString();

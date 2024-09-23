@@ -768,7 +768,7 @@ export class ThreeLoadService {
       let row1 = row; // 変更・調整されるrow1を定義
 
       // 節点荷重を変更
-      //this.changeNodeLode(row, nodeLoadData);
+      this.changeNodeLode(row, nodeLoadData);
   
   
       if (this.currentIndex in memberLoadData) {
@@ -1892,13 +1892,13 @@ export class ThreeLoadService {
             );
             editor.setSize(item, scale);
             // オフセットする
-            if (item.value > 0) {
-              editor.setGlobalOffset(item, offset1, k);
-              offset1 += scale * 1.0; // オフセット距離に高さを加算する
-            } else {
-              editor.setGlobalOffset(item, offset2, k);
-              offset2 -= scale * 1.0; // オフセット距離に高さを加算する
-            }
+            // if (item.value > 0) {
+            //   editor.setGlobalOffset(item, offset1, k);
+            //   offset1 += scale * 1.0; // オフセット距離に高さを加算する
+            // } else {
+            //   editor.setGlobalOffset(item, offset2, k);
+            //   offset2 -= scale * 1.0; // オフセット距離に高さを加算する
+            // }
           }
         });
       });
