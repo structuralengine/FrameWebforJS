@@ -122,32 +122,21 @@ export class ThreeLoadDimension {
     group.add(this.getLine(positions));
 
     // 寸法線のはみ出している部分を描く
-    // for(let i = 0; i < 2; i++){
-    //   const positions2 = [
-    //     new THREE.Vector3(0, -0.03, 0),
-    //     new THREE.Vector3(0, 0.03, 0),
-    //     new THREE.Vector3(0, 0, 0),
-    //   ];
-    //   if (i === 0) {
-    //     positions2.push( new THREE.Vector3(-0.02, 0, 0) )
-    //   } else {
-    //     positions2.push( new THREE.Vector3( 0.02, 0, 0) )
-    //   }
-    //   const plus = this.getLine(positions2)
-    //   plus.position.set(points[i + 1].x, points[i + 1].y, points[i + 1].z)
-    //   if(direction==="gx"){
-    //     plus.rotateZ(-Math.PI/2);
-    //     // plus.rotation.x = (-Math.atan( localAxis.x.z / localAxis.x.y ))
-    //   }else if(direction==="gy"){
-    //     plus.rotateX(-Math.PI);
-    //     // plus.rotation.y = (-Math.atan( localAxis.x.z / localAxis.x.x ))
-    //   }
-    //   else if(direction==="gz"){
-    //     // plus.rotation.z = (-Math.atan( localAxis.x.y / localAxis.x.x ))
-    //     plus.rotateX(Math.PI / 2);
-    //   }
-    //   group.add(plus);
-    // }
+    for(let i = 0; i < 2; i++){
+      const positions2 = [
+        new THREE.Vector3(0, -0.03, 0),
+        new THREE.Vector3(0, 0.03, 0),
+        new THREE.Vector3(0, 0, 0),
+      ];
+      if (i === 0) {
+        positions2.push( new THREE.Vector3(-0.02, 0, 0) )
+      } else {
+        positions2.push( new THREE.Vector3( 0.02, 0, 0) )
+      }
+      const plus = this.getLine(positions2)
+      plus.position.set(points[i + 1].x, points[i + 1].y, points[i + 1].z)
+      group.add(plus);
+    }
 
     // 文字を描く
     const x =  (points[2].x + points[1].x) / 2;

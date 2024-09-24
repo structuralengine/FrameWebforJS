@@ -283,7 +283,6 @@ export class ThreeLoadService {
     // 荷重の表示非表示を切り替える
     for (const key of Object.keys(this.AllCaseLoadList)) {
       const targetLoad = this.AllCaseLoadList[key];
-      console.log("targetLoad",targetLoad)
       const ThreeObject: THREE.Object3D = targetLoad.ThreeObject;
       ThreeObject.visible = key === id ? true : false;
     }
