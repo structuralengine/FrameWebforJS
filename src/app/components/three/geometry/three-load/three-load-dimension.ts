@@ -123,18 +123,19 @@ export class ThreeLoadDimension {
 
     // 寸法線のはみ出している部分を描く
     for(let i = 0; i < 2; i++){
+      const point = i===0 ? this.findPoint(points[1],points[2],0.03):this.findPoint(points[2],points[1],0.03)
       const positions2 = [
-        new THREE.Vector3(0, -0.03, 0),
-        new THREE.Vector3(0, 0.03, 0),
-        new THREE.Vector3(0, 0, 0),
-      ];
-      if (i === 0) {
-        positions2.push( new THREE.Vector3(-0.02, 0, 0) )
-      } else {
-        positions2.push( new THREE.Vector3( 0.02, 0, 0) )
+          new THREE.Vector3(point.x, point.y, point.z),
+          new THREE.Vector3(points[i + 1].x, points[i + 1].y, points[i + 1].z),
+        ];
+      if(direction=="gx"){
+        positions2.push( new THREE.Vector3(points[i + 1].x-0.02, points[i + 1].y, points[i + 1].z) )
+      }else if(direction=="gy"){
+        positions2.push( new THREE.Vector3(points[i + 1].x, points[i + 1].y-0.02, points[i + 1].z) )
+      }else if(direction=="gz"){
+        positions2.push( new THREE.Vector3(points[i + 1].x, points[i + 1].y, points[i + 1].z-0.02) )
       }
       const plus = this.getLine(positions2)
-      plus.position.set(points[i + 1].x, points[i + 1].y, points[i + 1].z)
       group.add(plus);
     }
 
@@ -216,4 +217,23 @@ export class ThreeLoadDimension {
     return line;
 
   }
+  private findPoint(point1, point2, distance) {  
+    const dx = point2.x - point1.x;  
+    const dy = point2.y - point1.y;  
+    const dz = point2.z - point1.z;   
+     
+    const length = Math.sqrt(dx * dx + dy * dy + dz * dz);  
+
+    const unitVector = {  
+        x: dx / length,  
+        y: dy / length,  
+        z: dz / length 
+    };  
+
+    const Px = point1.x - unitVector.x * distance;  
+    const Py = point1.y - unitVector.y * distance;  
+    const Pz = point1.z - unitVector.z * distance; 
+
+    return { x: Px, y: Py, z: Pz };
+}  
 }

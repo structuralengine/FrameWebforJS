@@ -606,7 +606,7 @@ export class ThreeLoadMemberPoint {
     const y3a = Math.abs(points[2].y);
     const y4a = Math.max(y1a, y3a) + (size * 10);
     const a = (y1a > y3a) ? Math.sign(points[1].y) : Math.sign(points[2].y);
-    const y4 = a * y4a * scale; 
+    const y4 = a * y4a * scale + 1; 
     let nodeGlobal = this.calculatePointA(nodei, nodej, L1);
     let p: any  = []
     if(L1 > 0){
