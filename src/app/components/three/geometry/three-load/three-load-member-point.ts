@@ -313,6 +313,8 @@ export class ThreeLoadMemberPoint {
           // コーンの先が細く、または太くなる。
           //item.children[0].scale.x = scale;
         //}
+      }else{
+        this.setDimGlobal(group,"select",scale)
       }
     }
   }
@@ -334,7 +336,6 @@ export class ThreeLoadMemberPoint {
         }
       }
     }
-
 
     // 寸法線
     if(!group.direction.includes("g"))
@@ -562,8 +563,8 @@ export class ThreeLoadMemberPoint {
     const phi = Math.abs(Math.atan2(dz, distInXY));  
     return phi;  
   }  
-  private setDimGlobal(group: any, status: string): void{
-    
+  private setDimGlobal(group: any, status: string ,scale:number=0.8): void{
+     
     let point: THREE.Vector3[] = group.points;
     //const offset: number = group.offset;
     const L1: number = group.L1;
@@ -605,7 +606,7 @@ export class ThreeLoadMemberPoint {
     const y3a = Math.abs(points[2].y);
     const y4a = Math.max(y1a, y3a) + (size * 10);
     const a = (y1a > y3a) ? Math.sign(points[1].y) : Math.sign(points[2].y);
-    const y4 = a * y4a; 
+    const y4 = a * y4a * scale; 
     let nodeGlobal = this.calculatePointA(nodei, nodej, L1);
     let p: any  = []
     if(L1 > 0){
