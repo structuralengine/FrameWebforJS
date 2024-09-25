@@ -642,24 +642,24 @@ export class ThreeLoadMemberPoint {
     }
     if(direction === 'gx')  {
       p = [
-        new THREE.Vector3(nodej.x, nodej.y, nodej.z),
-        new THREE.Vector3(nodej.x -  y4, nodej.y, nodej.z),
-        new THREE.Vector3(nodeGlobal.x - y4, nodeGlobal.y, nodeGlobal.z),
         new THREE.Vector3(nodeGlobal.x, nodeGlobal.y, nodeGlobal.z),
+        new THREE.Vector3(nodeGlobal.x - y4, nodeGlobal.y, nodeGlobal.z),
+        new THREE.Vector3(nodej.x -  y4, nodej.y, nodej.z),
+        new THREE.Vector3(nodej.x, nodej.y, nodej.z),
       ];    
     } else if(direction === 'gy'){
       p = [
-        new THREE.Vector3(nodej.x, nodej.y, nodej.z),
-        new THREE.Vector3(nodej.x , nodej.y-  y4, nodej.z),
-        new THREE.Vector3(nodeGlobal.x , nodeGlobal.y- y4, nodeGlobal.z),
         new THREE.Vector3(nodeGlobal.x, nodeGlobal.y, nodeGlobal.z),
+        new THREE.Vector3(nodeGlobal.x , nodeGlobal.y- y4, nodeGlobal.z),
+        new THREE.Vector3(nodej.x , nodej.y-  y4, nodej.z),
+        new THREE.Vector3(nodej.x, nodej.y, nodej.z),
       ];  
     }else if(direction === 'gz'){
       p = [
-        new THREE.Vector3(nodej.x, nodej.y, nodej.z),
-        new THREE.Vector3(nodej.x , nodej.y, nodej.z-  y4),
-        new THREE.Vector3(nodeGlobal.x , nodeGlobal.y, nodeGlobal.z- y4),
         new THREE.Vector3(nodeGlobal.x, nodeGlobal.y, nodeGlobal.z),
+        new THREE.Vector3(nodeGlobal.x , nodeGlobal.y, nodeGlobal.z- y4),
+        new THREE.Vector3(nodej.x , nodej.y, nodej.z-  y4),
+        new THREE.Vector3(nodej.x, nodej.y, nodej.z),
       ];  
     }  
   

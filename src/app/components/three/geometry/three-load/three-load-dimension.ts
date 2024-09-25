@@ -144,19 +144,14 @@ export class ThreeLoadDimension {
     const y =  (points[2].y + points[1].y) / 2;
     const z =  (points[2].z + points[1].z) / 2;
 
-    const horizontal: string = 'center';
-    let vartical: string = 'top';
-    if(points[1].y >= 0 ){
-      if (points[1].y < points[0].y) vartical = 'bottom';
-    } else {
-      if (points[1].y > points[0].y) vartical = 'bottom';
-    }
     const text = this.text.createG(textStr, new THREE.Vector3(x, y, z), 0.04);
     const height = Math.abs(text.geometry.boundingBox.max.y - text.geometry.boundingBox.min.y);
     const width = Math.abs(text.geometry.boundingBox.max.x - text.geometry.boundingBox.min.x);
     if(direction==="gx"){
       text.rotateZ(Math.PI/2);
       text.rotation.x = (Math.atan( localAxis.x.z / localAxis.x.y ))
+      // const angle = this.findAngle(points[0],points[1],points[2])
+      // text.rotateZ(angle)
       // if(localAxis.x.z / localAxis.x.x > 0 && localAxis.x.z / localAxis.x.y > 0 ||
       //   localAxis.x.z / localAxis.x.x < 0 && localAxis.x.z / localAxis.x.y < 0
       // ){
@@ -165,10 +160,11 @@ export class ThreeLoadDimension {
       //   localAxis.x.z / localAxis.x.x < 0 && localAxis.x.z / localAxis.x.y > 0
       // ){
       //   text.rotation.z = (-Math.atan(Math.abs(localAxis.x.z / localAxis.x.x)))
-      // }else{
+      // }
+      // else{
       //   text.rotation.z = (Math.atan(localAxis.x.x / localAxis.x.y))
       // }
-      text.position.x -= 1.4 * height;
+      // text.position.x -= 3.1 * height;
     }else if(direction==="gy"){
       text.rotateX(Math.PI);
       text.rotation.y = (Math.atan( localAxis.x.z / localAxis.x.x ))
@@ -180,9 +176,10 @@ export class ThreeLoadDimension {
       //          localAxis.x.x / localAxis.x.z < 0 && localAxis.x.y / localAxis.x.z > 0
       // ){
       //   text.rotation.z = ((Math.atan( Math.abs(localAxis.x.x / localAxis.x.z))))
-      // }else{
       // }
-      text.position.y -= 1.4 * height;
+      // else{
+      // }
+      // text.position.y -= 3.1 * height;
     }
     else if(direction==="gz"){
       text.rotation.z = (Math.atan( localAxis.x.y / localAxis.x.x ))
@@ -195,7 +192,7 @@ export class ThreeLoadDimension {
       //          localAxis.x.y / localAxis.x.x < 0 && localAxis.x.x / localAxis.x.z > 0){
       //   text.rotation.z = (-Math.atan( Math.abs(localAxis.x.z / localAxis.x.x)))
       // }
-      text.position.z -= 2.8 * height;
+      // text.position.z -= 3.1 * height;
     }
     text.name = "text";
     text.scale.y = 2.0;
@@ -236,4 +233,31 @@ export class ThreeLoadDimension {
 
     return { x: Px, y: Py, z: Pz };
 }  
+private findAngle(point0:any, point1:any, point2:any){
+  const vector1 = {
+    x:point0.x-point1.x,
+    y:point0.y-point1.y,
+    z:point0.z-point1.z,
+  }
+  const vector2 = {
+    x:point2.x-point1.x,
+    y:point2.y-point1.y,
+    z:point2.z-point1.z,
+  }
+  const dotProd = this.dotProduct(vector1,vector2);
+  const magA = this.magnitude(vector1);
+  const magB = this.magnitude(vector2);
+
+  const cosTheta = dotProd / (magA * magB);
+  const angleInRadians = Math.acos(cosTheta);
+
+  return angleInRadians;
+}
+private dotProduct(A:any, B:any) {
+  return A.x * B.x + A.y * B.y + A.z * B.z;
+}
+
+private magnitude(vector:any) {
+  return Math.sqrt(vector.x**2 + vector.y**2 + vector.z**2);
+}
 }
