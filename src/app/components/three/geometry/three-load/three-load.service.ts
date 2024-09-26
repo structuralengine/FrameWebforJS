@@ -1345,7 +1345,8 @@ export class ThreeLoadService {
             load.L2,
             P1,
             P2,
-            load.row
+            load.row,
+            gDir.includes('g') ? gDir : null
           );
         }
         arrow["row"] = load.row;
