@@ -368,7 +368,7 @@ export class ThreeLoadDistribute {
       );
       const XZ = new Vector2(lenXY, localAxis.x.z).normalize();
       group.rotateY(-Math.asin(XZ.y));
-      if(gDir != null && gDir !== direction){
+      if(gDir != null && gDir !== direction && gDir==="gx"){
         if((XZ.y== 1 && XY.x == 0)){
           group.rotateX(Math.PI);
         }
