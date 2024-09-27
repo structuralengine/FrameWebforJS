@@ -368,6 +368,11 @@ export class ThreeLoadDistribute {
       );
       const XZ = new Vector2(lenXY, localAxis.x.z).normalize();
       group.rotateY(-Math.asin(XZ.y));
+      if(gDir != null && gDir !== direction){
+        if((XZ.y== 1 && XY.x == 0)){
+          group.rotateX(Math.PI);
+        }
+      }
 
       if (localAxis.x.x === 0 && localAxis.x.y === 0) {
         // 鉛直の部材
