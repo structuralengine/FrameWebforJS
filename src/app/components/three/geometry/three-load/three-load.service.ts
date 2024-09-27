@@ -1232,7 +1232,6 @@ export class ThreeLoadService {
         j.z,
         m.cg
       );
-
       // リストに登録する
       const target =
         mNo in memberLoadList
@@ -1378,7 +1377,8 @@ export class ThreeLoadService {
               P2,
               load.row,
               n,
-              m.cg
+              m.cg,
+              gDir.includes('g') ? gDir : null
             );
             if(arrow !== null){
               arrow["row"] = load.row;

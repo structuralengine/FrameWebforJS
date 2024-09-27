@@ -50,7 +50,8 @@ export class ThreeLoadMemberPoint {
     P2: number,
     row: number,
     count: number,
-    cg?: number
+    cg?: number,
+    gDir?: string
   ): THREE.Group {
 
     const offset: number = 0;
@@ -90,7 +91,7 @@ export class ThreeLoadMemberPoint {
       return null;
 
     // 矢印
-    const arrow: THREE.Group = this.getArrow(direction, localAxis, P, L);
+    const arrow: THREE.Group = this.getArrow(direction, localAxis, P, L,gDir);
     // arrow.position.y = offset;
     const localGroup = this.calculatePointA(nodei,nodej,L)
     arrow.name = "arrowParent"
@@ -134,10 +135,10 @@ export class ThreeLoadMemberPoint {
     group['value'] = P; // 値を保存
 
     // 全体の向きを修正する
-    this.setRotate(direction, group, localAxis, cg,localGroup);
+    this.setRotate(direction, group, localAxis, cg,nodei,nodej,gDir);
 
     // 全体の位置を修正する
-    this.setPosition(direction, group, nodei, nodej, P1, P2);
+    this.setPosition(direction, group, nodei, nodej, P1, P2,gDir, localAxis);
 
     group.name = ThreeLoadMemberPoint.id + "-" + row.toString() + '-' + direction.toString();
 
@@ -215,7 +216,9 @@ export class ThreeLoadMemberPoint {
     direction: string,
     localAxis: any,
     value: number,
-    points: number): THREE.Group {
+    points: number,
+    gDir?:string
+  ): THREE.Group {
 
     const result: THREE.Group = new THREE.Group();
 
@@ -231,14 +234,14 @@ export class ThreeLoadMemberPoint {
     //6番目の代入値は不適切
     const arrow_1 = this.point.create(pos1, 0, Px, 1, key, 0);
 
-    if (direction === 'y') {
+    if (direction === 'y' && gDir === null) {
       if(!(localAxis.x.x < 0) && !(localAxis.y.y < 0)) {
       arrow_1.rotation.z += Math.PI;
       }
     } else if (direction === 'z') {
       arrow_1.rotation.x += Math.PI / 2;
     }
-    else if(direction === 'x'){
+    else if(direction === 'x' && gDir === null){
       if(localAxis.x.x < 0 && localAxis.y.y < 0) {
       arrow_1.rotation.z += Math.PI;
       }
@@ -343,7 +346,7 @@ export class ThreeLoadMemberPoint {
 
   // 全体の向きを修正する
   private setRotate( direction: string, group: any, 
-                     localAxis: { x:Vector3, y:Vector3, z:Vector3 }, cg?: number,localGroup?:any) {
+                     localAxis: { x:Vector3, y:Vector3, z:Vector3 }, cg?: number,nodei?:any,nodej?:any,gDir?:any) {
 
     if (!direction.includes('g')) {
       const XY = new Vector2(localAxis.x.x, localAxis.x.y).normalize();
@@ -363,18 +366,69 @@ export class ThreeLoadMemberPoint {
       //   }
       // }
       // else 
-      if (localAxis.x.x === 0 && localAxis.x.y === 0) {
-        // 鉛直の部材
-        if (direction === "z") {
-          group.rotateX(-Math.PI);
-        } else if (direction === "y") {
-          group.rotateX(Math.PI / 2);
+      if(gDir!==null && gDir !==direction){
+        if (localAxis.x.y === 0 && localAxis.x.z === 0) {
+          //console.log(load.m, m, 'は x軸に平行な部材です')
+          if(nodei.x > nodej.x){
+            if(direction === "y"){
+              group.rotateX(Math.PI);
+            }else if(direction === "x"){
+              group.rotateZ(Math.PI);
+            }else if(direction === "z"){
+              group.rotateX(-Math.PI / 2);
+            }
+          }else{
+            if (direction === "z") {
+              group.rotateX(-Math.PI / 2);
+            } 
+          }
+        }else if(localAxis.x.x === 0 && localAxis.x.z === 0){
+          //console.log(load.m, m, 'は y軸に平行な部材です')
+          if(nodei.y > nodej.y){
+            if(direction === "y"){
+              group.rotateX(Math.PI);
+            }else if(direction === "x"){
+              group.rotateZ(Math.PI);
+            }else if(direction === "z"){
+              group.rotateX(-Math.PI / 2);
+            }
+          }else{
+            if (direction === "z") {
+              group.rotateX(-Math.PI / 2);
+            } 
+          }
+        }else if(localAxis.x.x === 0 && localAxis.x.y === 0){
+          //console.log(load.m, m, 'は z軸に平行な部材です')
+          if(nodei.z < nodej.z){
+            if (direction === "z") {
+              group.rotateX(Math.PI);
+            } else if (direction === "y") {
+              group.rotateX(Math.PI / 2);
+            }else if (direction === "x"){
+              group.rotateY(Math.PI);
+            }
+          }else{
+            if(direction === "y"){
+              group.rotateX(-Math.PI/2);
+            }else if(direction === "z"){
+              group.rotateX(-Math.PI);
+            }
+          }
         }
-      } else {
-        if (direction === "z") {
-          group.rotateX(-Math.PI / 2);
-        } else if (direction === "y") {
-          group.rotateX(Math.PI);
+      }else{
+        if (localAxis.x.x === 0 && localAxis.x.y === 0) {
+          // 鉛直の部材
+          if (direction === "z") {
+            group.rotateX(-Math.PI);
+          } else if (direction === "y") {
+            group.rotateX(Math.PI / 2);
+          }
+        } else {
+          if (direction === "z") {
+            group.rotateX(-Math.PI / 2);
+          } else if (direction === "y") {
+            group.rotateX(Math.PI);
+          }
         }
       }
       group.rotateX(((cg ?? 0) * Math.PI) / 180);
@@ -401,10 +455,32 @@ export class ThreeLoadMemberPoint {
   // 
   private setPosition(direction: string, group: any, 
                       nodei: Vector3, nodej: Vector3, 
-                      P1: number, P2: number) {
+                      P1: number, P2: number , gDir?:any, localAxis?: any) {
 
     if (!direction.includes('g')) {
       group.position.set(nodei.x, nodei.y, nodei.z);
+      if (localAxis.x.y === 0 && localAxis.x.z === 0) {
+        //console.log(load.m, m, 'は x軸に平行な部材です')
+        if(nodei.x > nodej.x){
+          if (direction === "x" && gDir === "gx") {
+            group.position.set(nodej.x, nodej.y, nodej.z);
+          }
+        }
+      } else if (localAxis.x.x === 0 && localAxis.x.z === 0) {
+        //console.log(load.m, m, 'は y軸に平行な部材です')
+        if(nodei.y > nodej.y){
+          if (direction === "x" && gDir === "gy") {
+            group.position.set(nodej.x, nodej.y, nodej.z);
+          }
+        }
+      } else if (localAxis.x.x === 0 && localAxis.x.y === 0) {
+        //console.log(load.m, m, 'は z軸に平行な部材です')
+        if(nodei.z < nodej.z){
+          if (direction === "x" && gDir === "gz") {
+            group.position.set(nodej.x, nodej.y, nodej.z);
+          }
+        }
+      }
     } 
     // else if (direction === 'gx') {
     //   // nodeとPの関係によって、セットする位置(x座標)が異なる。
