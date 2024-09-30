@@ -359,7 +359,7 @@ export class ThreeLoadDistribute {
       }
       group.rotateZ(A);
       if(gDir != null && gDir !== direction){
-        if((XY.x == -1 && XY.y == 0)|| (XY.x == 0 && XY.y == -1)){
+        if(((XY.x == -1 && XY.y == 0)|| (XY.x == 0 && XY.y == -1)) && (gDir==="gx" || gDir==="gy")){
           group.rotateX(Math.PI);
         }
       }
