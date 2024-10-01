@@ -144,6 +144,8 @@ export class ThreeLoadMemberMoment {
       // }
    
     } 
+    if(gDir == null)
+      group.rotateX(((cg ?? 0) * Math.PI) / 180);
     group.name = ThreeLoadMemberMoment.id + "-" + row.toString() + '-' + direction.toString();
 
     return group;

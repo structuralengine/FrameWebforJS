@@ -453,7 +453,8 @@ export class ThreeLoadMemberPoint {
           }
         }
       }
-      group.rotateX(((cg ?? 0) * Math.PI) / 180);
+      if(gDir == null)
+        group.rotateX(((cg ?? 0) * Math.PI) / 180);
     } 
     // else if (direction === "gx") {
     //   if(!(localGroup.x !==0 && localGroup.y !==0 && localGroup.z !==0)){

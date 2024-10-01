@@ -388,7 +388,8 @@ export class ThreeLoadDistribute {
           group.rotateX(Math.PI);
         }
       }
-      group.rotateX(((cg ?? 0) * Math.PI) / 180);
+      if(gDir == null)
+        group.rotateX(((cg ?? 0) * Math.PI) / 180);
 
     } else if (direction === "gx") {
       group.rotateZ(Math.PI / 2);
