@@ -81,10 +81,8 @@ export class ThreeLoadMemberMoment {
     // 矢印
     const arrow: THREE.Group = this.getArrow(direction, P, L, gDir);
     //arrow.position.y = offset;
-    if (direction === "y" || direction === "z")
-    {
-      arrow.rotateX(((cg ?? 0) * Math.PI) / 180);
-    }   
+    if(gDir == null)
+      arrow.rotateX(((cg ?? 0) * Math.PI) / 180);  
     if(direction.includes('g')){
       let gPos = this.calculatePointA(nodei, nodej, L);   
       arrow.position.set(gPos.x, gPos.y, gPos.z)
@@ -144,8 +142,7 @@ export class ThreeLoadMemberMoment {
       // }
    
     } 
-    if(gDir == null)
-      group.rotateX(((cg ?? 0) * Math.PI) / 180);
+  
     group.name = ThreeLoadMemberMoment.id + "-" + row.toString() + '-' + direction.toString();
 
     return group;
