@@ -48,7 +48,9 @@ export class ThreeLoadMemberMoment {
     P1: number,
     P2: number,
     row: number,
-    count: number
+    count: number,
+    gDir?: string,
+    cg?: number
   ): THREE.Group {
 
     const offset: number = 0;
@@ -77,9 +79,23 @@ export class ThreeLoadMemberMoment {
     if(P===0)
       return null;
     // 矢印
-    const arrow: THREE.Group = this.getArrow(direction, P, L);
-    arrow.position.y = offset;
-
+    const arrow: THREE.Group = this.getArrow(direction, P, L, gDir);
+    //arrow.position.y = offset;
+    if(gDir == null)
+      arrow.rotateX(((cg ?? 0) * Math.PI) / 180);  
+    if(direction.includes('g')){
+      let gPos = this.calculatePointA(nodei, nodej, L);   
+      arrow.position.set(gPos.x, gPos.y, gPos.z)
+    }
+    if (direction === "gx") {    
+      arrow.rotation.y = -Math.asin(1);   
+    } else if (direction === "gy") {
+      arrow.rotation.x = Math.asin(-1);
+    }else if (direction === "gz") {
+      //arrow.rotation.x = Math.PI/2
+      arrow.rotation.y = - Math.PI
+      //arrow.rotation.y = Math.PI/2
+    }
     // 全体
     // child.name = "child";
     // child.position.y = offset;
@@ -103,11 +119,10 @@ export class ThreeLoadMemberMoment {
     group["editor"] = this;
     group['value'] = P; // 値を保存
 
-    group.position.set(nodei.x, nodei.y, nodei.z);
 
-    // 全体の向きを修正する
-
-    if (!direction.includes('g')) {
+    // 全体の向きを修正する    
+    if (!direction.includes('g')) {    
+      group.position.set(nodei.x, nodei.y, nodei.z);
       const XY = new Vector2(localAxis.x.x, localAxis.x.y).normalize();
       let A = Math.asin(XY.y);
 
@@ -118,16 +133,16 @@ export class ThreeLoadMemberMoment {
 
       const lenXY = Math.sqrt(Math.pow(localAxis.x.x, 2) + Math.pow(localAxis.x.y, 2));
       const XZ = new Vector2(lenXY, localAxis.x.z).normalize();
-      group.rotateY(-Math.asin(XZ.y));
-
-
-    } else if (direction === "gx") {
-      group.rotation.z = Math.asin(-Math.PI / 2);
-
-    } else if (direction === "gz") {
-      group.rotation.x = Math.asin(-Math.PI / 2);
-
-    }
+      group.rotateY(-Math.asin(XZ.y)); 
+      group.rotateX(Math.asin(XZ.y));       
+      
+      // if (direction === "y" || direction === "z")
+      // {
+      //   group.rotateX(((cg ?? 0) * Math.PI) / 180);
+      // }
+   
+    } 
+  
     group.name = ThreeLoadMemberMoment.id + "-" + row.toString() + '-' + direction.toString();
 
     return group;
@@ -150,13 +165,13 @@ export class ThreeLoadMemberMoment {
     let LL: number = len;
 
     // 絶対座標系荷重の距離変換を行う
-    if (direction === "gx") {
-      LL = new THREE.Vector2(nodei.z, nodei.y).distanceTo(new THREE.Vector2(nodej.z, nodej.y));
-    } else if (direction === "gy") {
-      LL = new THREE.Vector2(nodei.x, nodei.z).distanceTo(new THREE.Vector2(nodej.x, nodej.z));
-    } else if (direction === "gz") {
-      LL = new THREE.Vector2(nodei.x, nodei.y).distanceTo(new THREE.Vector2(nodej.x, nodej.y));
-    }
+    // if (direction === "gx") {
+    //   LL = new THREE.Vector2(nodei.z, nodei.y).distanceTo(new THREE.Vector2(nodej.z, nodej.y));
+    // } else if (direction === "gy") {
+    //   LL = new THREE.Vector2(nodei.x, nodei.z).distanceTo(new THREE.Vector2(nodej.x, nodej.z));
+    // } else if (direction === "gz") {
+    //   LL = new THREE.Vector2(nodei.x, nodei.y).distanceTo(new THREE.Vector2(nodej.x, nodej.y));
+    // }
     const L1 = pL1 * len / LL;
     const L2 = pL2 * len / LL;
 
@@ -192,7 +207,7 @@ export class ThreeLoadMemberMoment {
   private getArrow(
     direction: string,
     value: number,
-    points: number): THREE.Group {
+    points: number, gDir? :string): THREE.Group {
 
     const result: THREE.Group = new THREE.Group();
 
@@ -201,8 +216,17 @@ export class ThreeLoadMemberMoment {
     const Px = value;
 
     const pos1 = new THREE.Vector3(points, 0, 0);
-
-    const arrow_1 = this.moment.create(pos1, 0, Px, 1, key, 0)
+    let color: number = null
+    if(gDir != null){
+      if(gDir === "gx"){
+        color = 0xff0000
+      }else if(gDir === "gy"){
+        color = 0x00ff00
+      }else{
+        color = 0x0000ff
+      }
+    }
+    const arrow_1 = this.moment.create(pos1, 0, Px, 1, key, 0, color)
 
     //モーメントの作成時に向きまで制御しているので，制御不要
     //if (direction === 'y') {
@@ -210,10 +234,8 @@ export class ThreeLoadMemberMoment {
     //} else if (direction === 'z') {
     //arrow_1.rotation.x += Math.PI / 2;
     //}
-
     result.add(arrow_1);
-    result.name = "arrow";
-
+    result.name = "arrow";  
     return result;
 
   }
@@ -309,6 +331,10 @@ export class ThreeLoadMemberMoment {
     const L2: number = group.L2;
     const P1: number = group.P1;
     const P2: number = group.P2;
+    const localAxis = group.localAxis
+    const direction = group.direction
+    const codeAngle = Math.atan(localAxis.x.y / localAxis.x.x); 
+    const nodei = group.nodei;
     if (L2 === 0 && P2 === 0) {
       point[1].x = L
     }
@@ -384,9 +410,28 @@ export class ThreeLoadMemberMoment {
     dim.name = "Dimension";
     //center.visible = true;
     dim.rotateX(Math.PI)
-
+    if(direction.includes('g')){
+      dim.position.set(nodei.x, nodei.y, nodei.z);
+      dim.rotateZ(-Math.atan(localAxis.x.x / localAxis.x.y))
+    }
     group.add(dim);
     
+  }  
+  public calculatePointA(I, J, L) {
+    const distanceIJ = Math.sqrt(
+        Math.pow(J.x - I.x, 2) +
+        Math.pow(J.y - I.y, 2) +
+        Math.pow(J.z - I.z, 2)
+    );
 
+    const ux = (J.x - I.x) / distanceIJ;
+    const uy = (J.y - I.y) / distanceIJ;
+    const uz = (J.z - I.z) / distanceIJ;
+
+    const x = I.x + L * ux;
+    const y = I.y + L * uy;
+    const z = I.z + L * uz;
+
+    return { x, y, z };
   }
 }

@@ -283,6 +283,7 @@ export class ThreeLoadService {
     // 荷重の表示非表示を切り替える
     for (const key of Object.keys(this.AllCaseLoadList)) {
       const targetLoad = this.AllCaseLoadList[key];
+      console.log("targetLoad",targetLoad)
       const ThreeObject: THREE.Object3D = targetLoad.ThreeObject;
       ThreeObject.visible = key === id ? true : false;
     }
@@ -492,7 +493,7 @@ export class ThreeLoadService {
           }
           const oldMember = this.memberData[key];
           const newMember = this.newMemberData[key];
-          if (oldMember.ni !== newMember.ni || oldMember.nj !== newMember.nj) {
+          if (oldMember.ni !== newMember.ni || oldMember.nj !== newMember.nj || oldMember.cg !== newMember.cg) {
             changeMemberList[key] = "change";
           }
         }
@@ -1231,13 +1232,13 @@ export class ThreeLoadService {
         j.z,
         m.cg
       );
-
       // リストに登録する
       const target =
         mNo in memberLoadList
           ? memberLoadList[mNo]
-          : {
-              localAxis,
+          : 
+            {  
+             localAxis,
               x: [],
               y: [],
               z: [],
@@ -1252,11 +1253,17 @@ export class ThreeLoadService {
       let P1: number = load.P1;
       let P2: number = load.P2;
       let direction: string = load.direction;
+      const gDir = load.direction;
       if (direction === null || direction === undefined) {
         direction = "";
       } else {
         direction = direction.trim().toLowerCase();
       }
+      // if(localAxis.x.x < 0 && localAxis.y.y < 0) {
+      //   if (direction === "gx") direction = "x";
+      //   if (direction === "gy") direction = "y";
+      //   if (direction === "gz") direction = "z";
+      // } else 
       if (localAxis.x.y === 0 && localAxis.x.z === 0) {
         //console.log(load.m, m, 'は x軸に平行な部材です')
         if (direction === "gx") direction = "x";
@@ -1309,7 +1316,9 @@ export class ThreeLoadService {
             load.L2,
             P1,
             P2,
-            load.row
+            load.row,
+            m.cg,
+            gDir.includes('g') ? gDir : null
           );
         } else if (direction === "r") {
           // ねじり布荷重
@@ -1335,7 +1344,8 @@ export class ThreeLoadService {
             load.L2,
             P1,
             P2,
-            load.row
+            load.row,
+            gDir.includes('g') ? gDir : null
           );
         }
         arrow["row"] = load.row;
@@ -1366,7 +1376,9 @@ export class ThreeLoadService {
               P1,
               P2,
               load.row,
-              n
+              n,
+              m.cg,
+              gDir.includes('g') ? gDir : null
             );
             if(arrow !== null){
               arrow["row"] = load.row;
@@ -1388,8 +1400,13 @@ export class ThreeLoadService {
               P1,
               P2,
               load.row,
-              n
+              n,
+              gDir.includes("g") ? gDir : null,
+              m.cg
             );
+            // if(arrow !== null && m.cg != undefined && m.cg > 0 && gDir.includes(["x", "y", "z"])){
+            //   this.rotateAngle(arrow, m.cg)
+            // }
             if(arrow !== null){
               arrow["row"] = load.row;
               // arrow["name"] = "child";
@@ -1876,13 +1893,13 @@ export class ThreeLoadService {
             );
             editor.setSize(item, scale);
             // オフセットする
-            if (item.value > 0) {
-              editor.setGlobalOffset(item, offset1, k);
-              offset1 += scale * 1.0; // オフセット距離に高さを加算する
-            } else {
-              editor.setGlobalOffset(item, offset2, k);
-              offset2 -= scale * 1.0; // オフセット距離に高さを加算する
-            }
+            // if (item.value > 0) {
+            //   editor.setGlobalOffset(item, offset1, k);
+            //   offset1 += scale * 1.0; // オフセット距離に高さを加算する
+            // } else {
+            //   editor.setGlobalOffset(item, offset2, k);
+            //   offset2 -= scale * 1.0; // オフセット距離に高さを加算する
+            // }
           }
         });
       });
@@ -2043,5 +2060,9 @@ export class ThreeLoadService {
     }
 
     return this.getParent(item.parent);
+  }
+
+  public rotateAngle(group: THREE.Group, codeAngle: number){
+      group.rotateX((codeAngle * Math.PI) / 180)
   }
 }

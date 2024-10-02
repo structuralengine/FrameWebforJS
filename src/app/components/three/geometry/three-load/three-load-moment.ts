@@ -129,7 +129,7 @@ export class ThreeLoadMoment {
 
     const group0 = new THREE.Group();
 
-    child.position.z = offset;
+    //child.position.z = offset;
 
     // 向きを変更する
     if (direction === "rx") {
@@ -159,7 +159,9 @@ export class ThreeLoadMoment {
     group.name = ThreeLoadMoment.id + "-" + row.toString() + '-' + direction.toString();
 
     // 位置を修正する
+    if(!direction.includes('g')){
     group.position.set(node.x, node.y, node.z);
+    }
 
     return group;
   }

@@ -85,6 +85,7 @@ export class ThreeLoadDimension {
     const width = Math.abs(text.geometry.boundingBox.max.x - text.geometry.boundingBox.min.x);
     if (vartical === 'bottom') {
       text.position.y -= 0.5 * height;
+
     } else if (vartical === 'top') {
       text.position.y += 0.9 * height;
     }
@@ -93,9 +94,10 @@ export class ThreeLoadDimension {
     } else if (horizontal === 'right') {
       text.position.x -= 0.5 * width;
     }
-    // text.rotateX(Math.PI);
+    // text.rotateX(Math.PI*2);
+    
     // text.rotateZ(Math.PI);
-    // text.rotateY(Math.PI);
+    // text.rotateY(Math.PI*2);
     text.name = "text";
     text.scale.y = 2.0;
     text.scale.x = scaleX;

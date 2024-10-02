@@ -48,14 +48,15 @@ export class ThreeSectionForceMeshService {
     pL1: number,
     pL2: number,
     P1: number,
-    P2: number
+    P2: number,
+    cg?: number
   ): THREE.Group {
 
     const child = new THREE.Group();
 
     // 長さを決める
     const p  = this.getPoints(
-      nodei, nodej, direction, pL1, pL2, P1, P2);
+      nodei, nodej, direction, pL1, pL2, P1, P2, cg);
 
     const points: THREE.Vector3[] = p.points;
 
@@ -103,7 +104,7 @@ export class ThreeSectionForceMeshService {
   // 座標
   private getPoints(
     nodei: THREE.Vector3, nodej: THREE.Vector3, direction: string,
-    pL1: number, pL2: number, P1: number, P2: number ): any {
+    pL1: number, pL2: number, P1: number, P2: number, cg?: number ): any {
 
     const len = nodei.distanceTo(nodej);
 
@@ -132,21 +133,29 @@ export class ThreeSectionForceMeshService {
       x2 = L * pp1 / (pp1 + pp2) + x1;
       y2 = 0;
     }
+    
+    let testP = [
+      new THREE.Vector3(x1, 0, 0),  // 0
+      new THREE.Vector3(x1, -y1, 0), // 1
+      new THREE.Vector3(x2, -y2, 0), // 2
 
+      new THREE.Vector3(x2, -y2, 0), // 2
+      new THREE.Vector3(x3, -y3, 0), // 3
+      new THREE.Vector3(x3, 0, 0),  // 4
+
+      new THREE.Vector3(x1, 0, 0),  // 0
+      new THREE.Vector3(x2, -y2, 0), // 2
+      new THREE.Vector3(x3, 0, 0),  // 4
+    ];
+    if(cg != 0 && cg != undefined){
+      let angle = THREE.MathUtils.degToRad(cg);
+      let rotationMatrixX = new THREE.Matrix4().makeRotationX(angle);
+      testP.forEach(x => x.applyMatrix4(rotationMatrixX))
+    }
+ 
+   
     return {
-      points:[
-        new THREE.Vector3(x1, 0, 0),  // 0
-        new THREE.Vector3(x1, -y1, 0), // 1
-        new THREE.Vector3(x2, -y2, 0), // 2
-
-        new THREE.Vector3(x2, -y2, 0), // 2
-        new THREE.Vector3(x3, -y3, 0), // 3
-        new THREE.Vector3(x3, 0, 0),  // 4
-
-        new THREE.Vector3(x1, 0, 0),  // 0
-        new THREE.Vector3(x2, -y2, 0), // 2
-        new THREE.Vector3(x3, 0, 0),  // 4
-      ],
+      points: testP,
       L1,
       L,
       L2,
@@ -316,11 +325,11 @@ export class ThreeSectionForceMeshService {
 
   public change(
     target: any, nodei: THREE.Vector3, nodej: THREE.Vector3, localAxis: any,
-    direction: string, L1: number, L2: number, P1: number, P2: number ): THREE.Group {
+    direction: string, L1: number, L2: number, P1: number, P2: number, cg?: number ): THREE.Group {
 
     // 長さを決める
     const p  = this.getPoints(
-      nodei, nodej, direction, L1, L2, P1, P2);
+      nodei, nodej, direction, L1, L2, P1, P2, cg);
     const points: THREE.Vector3[] = p.points;
 
     const group: THREE.Group = target.getObjectByName("group");

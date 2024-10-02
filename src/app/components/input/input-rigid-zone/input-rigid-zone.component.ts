@@ -11,6 +11,7 @@ import { DocLayoutService } from "src/app/providers/doc-layout.service";
 import { InputRigidZoneService } from "./input-rigid-zone.service";
 import { InputNodesService } from "../input-nodes/input-nodes.service";
 import { ThreeRigidZoneService } from "../../three/geometry/three-rigid-zone.service";
+import { forEach } from "jszip";
 
 @Component({
   selector: 'app-input-rigid-zone',
@@ -208,7 +209,7 @@ export class InputRigidZoneComponent implements OnInit {
   private ROWS_COUNT = 15;
   private currentIndex: string;
   constructor(
-    private data: InputRigidZoneService,
+    public dataRigid: InputRigidZoneService,
     private member: InputMembersService,
     private node: InputNodesService,
     private element: InputElementsService,
@@ -262,7 +263,7 @@ export class InputRigidZoneComponent implements OnInit {
   }
   private loadData(row: number): void {
     for (let i = this.dataset.length + 1; i <= row; i++) {
-      const regid = this.data.getRigidZoneColums(i);
+      const regid = this.dataRigid.getRigidZoneColums(i);
       const m: string = regid["m"];
       const e = (regid.e !== null) ? regid.e : undefined;
       if (m !== "") {
@@ -359,6 +360,27 @@ export class InputRigidZoneComponent implements OnInit {
         this.three.selectChange("rigid_zone", row, column);
       //}
       this.currentIndex = row;
+    },     
+    change: (evt, ui) =>{
+      const changes = ui.updateList;
+      console.log(this.dataRigid.rigid_zone);
+      for (const target of changes) {
+        const row: number = target.rowIndx;     
+        Object.keys(target.newRow).forEach(element => {
+          this.dataRigid.rigid_zone[row][element] = target.newRow[element]
+        });              
+      }
+      this.three.changeData('rigid_zone')
+
+      const row = changes[0].rowIndx + 1;
+      let column: string; // 複数の時は左上に合わせる
+      for (const key of this.columnKeys) {
+        if (key in ui.updateList[0].newRow && key !== 'm') {
+          column = key;
+          break;
+        }
+      }     
+      this.three.selectChange("rigid_zone", row, column);
     },
   };
 

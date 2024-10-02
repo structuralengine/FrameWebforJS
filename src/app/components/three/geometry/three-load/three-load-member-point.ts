@@ -49,7 +49,9 @@ export class ThreeLoadMemberPoint {
     P1: number,
     P2: number,
     row: number,
-    count: number
+    count: number,
+    cg?: number,
+    gDir?: string
   ): THREE.Group {
 
     const offset: number = 0;
@@ -89,9 +91,22 @@ export class ThreeLoadMemberPoint {
       return null;
 
     // 矢印
-    const arrow: THREE.Group = this.getArrow(direction, length, P, L);
-    arrow.position.y = offset;
-    arrow.name = "arrow"
+    const arrow: THREE.Group = this.getArrow(direction, localAxis, P, L,gDir,nodei,nodej);
+    // arrow.position.y = offset;
+    const localGroup = this.calculatePointA(nodei,nodej,L)
+    arrow.name = "arrowParent"
+    if(direction==="gx"){
+      arrow.position.set(localGroup.x, localGroup.y, localGroup.z)
+      arrow.rotateZ(Math.PI/2);
+    }else if(direction==="gy"){
+      arrow.position.set(localGroup.x, localGroup.y, localGroup.z)
+      arrow.rotateZ(Math.PI);
+    }
+    else if(direction==="gz"){
+      arrow.position.set(localGroup.x, localGroup.y, localGroup.z)
+      arrow.rotation.z +=  Math.PI /2;
+      arrow.rotation.y -=  Math.PI /2;
+    }
 
      // 全体
     //child.name = "child";
@@ -120,7 +135,7 @@ export class ThreeLoadMemberPoint {
     group['value'] = P; // 値を保存
 
     // 全体の向きを修正する
-    this.setRotate(direction, group, localAxis);
+    this.setRotate(direction, group, localAxis, cg,nodei,nodej,gDir);
 
     // 全体の位置を修正する
     this.setPosition(direction, group, nodei, nodej, P1, P2);
@@ -199,9 +214,13 @@ export class ThreeLoadMemberPoint {
   // 両端の矢印
   private getArrow(
     direction: string,
-    length: number,
+    localAxis: any,
     value: number,
-    points: number): THREE.Group {
+    points: number,
+    gDir?:string,
+    nodei?:any,
+    nodej?:any
+  ): THREE.Group {
 
     const result: THREE.Group = new THREE.Group();
 
@@ -217,25 +236,59 @@ export class ThreeLoadMemberPoint {
     //6番目の代入値は不適切
     const arrow_1 = this.point.create(pos1, 0, Px, 1, key, 0);
 
-    if (direction === 'y') {
+    if (direction === 'y' && gDir === null) {
+      if(!(localAxis.x.x < 0) && !(localAxis.y.y < 0)) {
       arrow_1.rotation.z += Math.PI;
+      }
     } else if (direction === 'z') {
       arrow_1.rotation.x += Math.PI / 2;
-    } else if (direction === "gx") {
-      const arrowhelper = arrow_1.getObjectByName('arrow');
+    }
+    else if(direction === 'x' && gDir === null){
+      if(localAxis.x.x < 0 && localAxis.y.y < 0) {
+      arrow_1.rotation.z += Math.PI;
+      }
+    }
+    else if (direction === "gx") {
+      // const arrowhelper = arrow_1.getObjectByName('arrow');
       // 仕様の位置に届かせるための微調整
-      arrowhelper.position.y += 1;
+      // arrowhelper.position.y -= 1;
+      // arrowhelper.position.y += 1;
+      arrow_1.rotation.z -= Math.PI/2;
     } else if (direction === "gy" || direction === "gz") {
-      const arrowhelper = arrow_1.getObjectByName('arrow');
+      // const arrowhelper = arrow_1.getObjectByName('arrow');
       // 仕様の位置に届かせるための微調整
       // if (value[i] > 0) {
       if (value > 0) {
-        arrowhelper.position.x += 1;
+        // arrow_1.position.x -= 1;
+        // arrowhelper.position.x += 1;
       } else {
-        arrowhelper.position.x -= 1;
+        // arrow_1.position.x += 1;
+        // arrowhelper.position.x -= 1;
       }
     }
-    arrow_1.rotateX(Math.PI)
+    // arrow_1.rotateX(Math.PI)
+     if (localAxis.x.y === 0 && localAxis.x.z === 0) {
+        //console.log(load.m, m, 'は x軸に平行な部材です')
+        if(nodei.x > nodej.x){
+          if (direction === "x" && gDir === "gx") {
+            arrow_1.rotateY(Math.PI)
+          }
+        }
+      } else if (localAxis.x.x === 0 && localAxis.x.z === 0) {
+        //console.log(load.m, m, 'は y軸に平行な部材です')
+        if(nodei.y > nodej.y){
+          if (direction === "x" && gDir === "gy") {
+            arrow_1.rotateY(Math.PI)
+          }
+        }
+      } else if (localAxis.x.x === 0 && localAxis.x.y === 0) {
+        //console.log(load.m, m, 'は z軸に平行な部材です')
+        if(nodei.z < nodej.z){
+          if (direction === "x" && gDir === "gz") {
+            arrow_1.rotateY(Math.PI);
+          }
+        }
+      }
 
     result.add(arrow_1);
 
@@ -273,7 +326,8 @@ export class ThreeLoadMemberPoint {
     const group0 = group.getObjectByName("group");
     const child = group0.getObjectByName("child");
     for (const item of child.children) {
-      item.position.y = offset + 1;
+      // item.position.y = offset + 1;
+      item.position.y = offset;
     }
   }
 
@@ -316,7 +370,7 @@ export class ThreeLoadMemberPoint {
 
   // 全体の向きを修正する
   private setRotate( direction: string, group: any, 
-                     localAxis: { x:Vector3, y:Vector3, z:Vector3 }) {
+                     localAxis: { x:Vector3, y:Vector3, z:Vector3 }, cg?: number,nodei?:any,nodej?:any,gDir?:any) {
 
     if (!direction.includes('g')) {
       const XY = new Vector2(localAxis.x.x, localAxis.x.y).normalize();
@@ -330,33 +384,95 @@ export class ThreeLoadMemberPoint {
       const lenXY = Math.sqrt(Math.pow(localAxis.x.x, 2) + Math.pow(localAxis.x.y, 2));
       const XZ = new Vector2(lenXY, localAxis.x.z).normalize();
       group.rotateY(-Math.asin(XZ.y));
-
-      if (localAxis.x.x === 0 && localAxis.x.y === 0) {
-        // 鉛直の部材
-        if (direction === "z") {
-          group.rotateX(-Math.PI);
-        } else if (direction === "y") {
-          group.rotateX(Math.PI / 2);
+      // if(localAxis.x.x < 0 && localAxis.y.y < 0) {
+      //   if (direction === "x") {
+      //     group.rotateZ(Math.PI);
+      //   }
+      // }
+      // else 
+      if(gDir!==null && gDir !==direction){
+        if (localAxis.x.y === 0 && localAxis.x.z === 0) {
+          //console.log(load.m, m, 'は x軸に平行な部材です')
+          if(nodei.x > nodej.x){
+            if(direction === "y"){
+              group.rotateX(Math.PI);
+            }else if(direction === "x"){
+              group.rotateX(Math.PI);
+            }else if(direction === "z"){
+              group.rotateX(-Math.PI / 2);
+            }
+          }else{
+            if (direction === "z") {
+              group.rotateX(-Math.PI / 2);
+            } 
+          }
+        }else if(localAxis.x.x === 0 && localAxis.x.z === 0){
+          //console.log(load.m, m, 'は y軸に平行な部材です')
+          if(nodei.y > nodej.y){
+            if(direction === "y"){
+              group.rotateX(Math.PI);
+            }else if(direction === "x"){
+              group.rotateX(Math.PI);
+            }else if(direction === "z"){
+              group.rotateX(-Math.PI / 2);
+            }
+          }else{
+            if (direction === "z") {
+              group.rotateX(-Math.PI / 2);
+            } 
+          }
+        }else if(localAxis.x.x === 0 && localAxis.x.y === 0){
+          //console.log(load.m, m, 'は z軸に平行な部材です')
+          if(nodei.z < nodej.z){
+            if (direction === "z") {
+              group.rotateX(Math.PI);
+            } else if (direction === "y") {
+              group.rotateX(Math.PI / 2);
+            }
+          }else{
+            if(direction === "y"){
+              group.rotateX(-Math.PI/2);
+            }else if(direction === "z"){
+              group.rotateX(-Math.PI);
+            }
+          }
         }
-      } else {
-        if (direction === "z") {
-          group.rotateX(-Math.PI / 2);
-        } else if (direction === "y") {
-          group.rotateX(Math.PI);
+      }else{
+        if (localAxis.x.x === 0 && localAxis.x.y === 0) {
+          // 鉛直の部材
+          if (direction === "z") {
+            group.rotateX(-Math.PI);
+          } else if (direction === "y") {
+            group.rotateX(Math.PI / 2);
+          }
+        } else {
+          if (direction === "z") {
+            group.rotateX(-Math.PI / 2);
+          } else if (direction === "y") {
+            group.rotateX(Math.PI);
+          }
         }
       }
+      if(gDir == null)
+        group.rotateX(((cg ?? 0) * Math.PI) / 180);
+    } 
+    // else if (direction === "gx") {
+    //   if(!(localGroup.x !==0 && localGroup.y !==0 && localGroup.z !==0)){
+    //     group.rotation.x = (Math.atan( localAxis.x.z / localAxis.x.y ))
+    //   }
+    //   group.rotateZ(Math.PI / 2);
+    // } else if (direction === "gy") {
+    //   if(!(localGroup.x !==0 && localGroup.y !==0 && localGroup.z !==0)){
+    //     group.rotation.y = (Math.atan( localAxis.x.z / localAxis.x.x ))
+    //   }
+    //   group.rotateX(Math.PI);
+    // } else if (direction === "gz") {
+    //   if(!(localGroup.x !==0 && localGroup.y !==0 && localGroup.z !==0)){
+    //     group.rotation.z = (Math.atan( localAxis.x.y / localAxis.x.x ))
+    //   }
+    //   //group.rotateX(-Math.PI / 2);
 
-    } else if (direction === "gx") {
-      group.rotateZ(Math.PI / 2);
-      group.rotation.x = (Math.atan( localAxis.x.z / localAxis.x.y ))
-    } else if (direction === "gy") {
-      group.rotateX(Math.PI);
-      group.rotation.y = (Math.atan( localAxis.x.z / localAxis.x.x ))
-    } else if (direction === "gz") {
-      group.rotation.z = (Math.atan( localAxis.x.y / localAxis.x.x ))
-      group.rotateX(-Math.PI / 2);
-    }
-
+    // }
   }
 
   // 
@@ -366,52 +482,53 @@ export class ThreeLoadMemberPoint {
 
     if (!direction.includes('g')) {
       group.position.set(nodei.x, nodei.y, nodei.z);
-    } else if (direction === 'gx') {
-      // nodeとPの関係によって、セットする位置(x座標)が異なる。
-      if (P1 >= 0 && P2 >= 0) {
-        if (nodei.x >= nodej.x) {
-          group.position.set(nodej.x, nodei.y, nodei.z);
-        } else {
-          group.position.set(nodei.x, nodei.y, nodei.z);
-        }
-      } else {
-        if (nodei.x >= nodej.x) {
-          group.position.set(nodei.x, nodei.y, nodei.z);
-        } else {
-          group.position.set(nodej.x, nodei.y, nodei.z);
-        }
-      }
-    } else if (direction === 'gy') {
-      // nodeとPの関係によって、セットする位置(y座標)が異なる。
-      if (P1 >= 0 && P2 >= 0) {
-        if (nodei.y >= nodej.y) {
-          group.position.set(nodei.x, nodej.y, nodei.z);
-        } else {
-          group.position.set(nodei.x, nodei.y, nodei.z);
-        }
-      } else {
-        if (nodei.y >= nodej.y) {
-          group.position.set(nodei.x, nodei.y, nodei.z);
-        } else {
-          group.position.set(nodei.x, nodej.y, nodei.z);
-        }
-      }
-    } else if (direction === 'gz') {
-      // nodeとPの関係によって、セットする位置(z座標)が異なる。
-      if (P1 >= 0 && P2 >= 0) {
-        if (nodei.z >= nodej.z) {
-          group.position.set(nodei.x, nodei.y, nodej.z);
-        } else {
-          group.position.set(nodei.x, nodei.y, nodei.z);
-        }
-      } else {
-        if (nodei.z >= nodej.z) {
-          group.position.set(nodei.x, nodei.y, nodei.z);
-        } else {
-          group.position.set(nodei.x, nodei.y, nodej.z);
-        }
-      }
-    }
+    } 
+    // else if (direction === 'gx') {
+    //   // nodeとPの関係によって、セットする位置(x座標)が異なる。
+    //   if (P1 >= 0 && P2 >= 0) {
+    //     if (nodei.x >= nodej.x) {
+    //       group.position.set(nodej.x, nodei.y, nodei.z);
+    //     } else {
+    //       group.position.set(nodei.x, nodei.y, nodei.z);
+    //     }
+    //   } else {
+    //     if (nodei.x >= nodej.x) {
+    //       group.position.set(nodei.x, nodei.y, nodei.z);
+    //     } else {
+    //       group.position.set(nodej.x, nodei.y, nodei.z);
+    //     }
+    //   }
+    // } else if (direction === 'gy') {
+    //   // nodeとPの関係によって、セットする位置(y座標)が異なる。
+    //   if (P1 >= 0 && P2 >= 0) {
+    //     if (nodei.y >= nodej.y) {
+    //       group.position.set(nodei.x, nodej.y, nodei.z);
+    //     } else {
+    //       group.position.set(nodei.x, nodei.y, nodei.z);
+    //     }
+    //   } else {
+    //     if (nodei.y >= nodej.y) {
+    //       group.position.set(nodei.x, nodei.y, nodei.z);
+    //     } else {
+    //       group.position.set(nodei.x, nodej.y, nodei.z);
+    //     }
+    //   }
+    // } else if (direction === 'gz') {
+    //   // nodeとPの関係によって、セットする位置(z座標)が異なる。
+    //   if (P1 >= 0 && P2 >= 0) {
+    //     if (nodei.z >= nodej.z) {
+    //       group.position.set(nodei.x, nodei.y, nodej.z);
+    //     } else {
+    //       group.position.set(nodei.x, nodei.y, nodei.z);
+    //     }
+    //   } else {
+    //     if (nodei.z >= nodej.z) {
+    //       group.position.set(nodei.x, nodei.y, nodei.z);
+    //     } else {
+    //       group.position.set(nodei.x, nodei.y, nodej.z);
+    //     }
+    //   }
+    // }
   }
 
   // 寸法線
@@ -424,10 +541,22 @@ export class ThreeLoadMemberPoint {
     const L2: number = group.L2;
     const P1: number = group.P1;
     const P2: number = group.P2;
+    const localAxis = group.localAxis
+    const direction = group.direction
+    const nodei = group.nodei
+    const nodej = group.nodej
+    const length = nodei.distanceTo(nodej)
+    const codeAngle = Math.atan(localAxis.x.y / localAxis.x.x)
+    const codeAngleY = Math.atan(localAxis.x.x / localAxis.x.y)
+    const codeAngleZ = Math.atan(Math.sqrt(localAxis.x.y * localAxis.x.y+ localAxis.x.x * localAxis.x.x) / localAxis.x.z)
+
+    const phi = this.calculatePhiAngle(nodei.x,nodei.y,nodei.z,nodej.x,nodej.y,nodej.z,)   
     if (L2 === 0) {
       point[1].x = L
-    }
-
+    } 
+    // if(codeAngle !== 0 && (direction === 'gx' || direction === 'gy')){
+    //   point[1].x = L / Math.cos(codeAngle)
+    // }
     const points: THREE.Vector3[] = [ new Vector3(point[0].x, 0, 0), 
                                       new Vector3(point[0].x, point[0].y, point[0].z),
                                       new Vector3(point[1].x, point[1].y, point[1].z),
@@ -454,16 +583,24 @@ export class ThreeLoadMemberPoint {
     const y3a = Math.abs(points[2].y);
     const y4a = Math.max(y1a, y3a) + (size * 10);
     const a = (y1a > y3a) ? Math.sign(points[1].y) : Math.sign(points[2].y);
-    const y4 = a * y4a;
-
+    const y4 = a * y4a; 
     if(L1 > 0){
-      const x0 = points[1].x - L1;
-      const p = [
+      let x0 = points[1].x - L1;
+      let p = [
         new THREE.Vector2(x0, 0),
         new THREE.Vector2(x0, y4),
         new THREE.Vector2(points[1].x, y4),
         new THREE.Vector2(points[1].x, points[1].y),
-      ];
+      ];    
+      // if(codeAngle !== 0 && (direction === 'gx' || direction === 'gy')){ 
+      //   x0 = x0 *  Math.cos(codeAngle) 
+      //   p = [
+      //     new THREE.Vector2(x0, 0),
+      //     new THREE.Vector2(x0, y4),
+      //     new THREE.Vector2(points[1].x * Math.cos(codeAngle) , y4 - points[1].x * Math.cos(codeAngle) /  Math.tan(codeAngle)),
+      //     new THREE.Vector2(points[1].x * Math.cos(codeAngle) , points[1].y),
+      //   ];       
+      // }
       const points0x = point[0].x.toString()
       dim1 = this.dim.create(p, Number(points0x).toFixed(3))
       dim1.visible = true;
@@ -471,35 +608,134 @@ export class ThreeLoadMemberPoint {
       dim.add(dim1);
     }
 
-    const p = [
+    let p = [
       new THREE.Vector2(points[1].x, points[1].y),
       new THREE.Vector2(points[1].x, y4),
       new THREE.Vector2(points[2].x, y4),
       new THREE.Vector2(points[2].x, points[2].y),
-    ];
-    dim2 = this.dim.create(p, (point[1].x - point[0].x).toFixed(3))
+    ];   
+    // if(codeAngle !== 0 && (direction === 'gx' || direction === 'gy')){ 
+    //   p = [
+    //     new THREE.Vector2(points[1].x * Math.cos(codeAngle), points[1].y),
+    //     new THREE.Vector2(points[1].x * Math.cos(codeAngle), y4 - points[1].x * Math.cos(codeAngle) /  Math.tan(codeAngle)),
+    //     new THREE.Vector2(points[2].x * Math.cos(codeAngle), y4 - points[2].x * Math.cos(codeAngle) /  Math.tan(codeAngle)),
+    //     new THREE.Vector2(points[2].x * Math.cos(codeAngle), -length * Math.sin(codeAngle) * Math.cos(phi)),
+    //   ];
+    //   if(y4 - points[2].x * Math.cos(codeAngle) /  Math.tan(codeAngle) < points[2].y){
+    //     p = [
+    //       new THREE.Vector2(points[1].x * Math.cos(codeAngle), points[1].y),
+    //       new THREE.Vector2(points[1].x * Math.cos(codeAngle), y4 - points[1].x * Math.cos(codeAngle) /  Math.tan(codeAngle)),
+    //       new THREE.Vector2(points[2].x * Math.cos(codeAngle), -length * Math.sin(codeAngle) * Math.cos(phi)),
+    //       new THREE.Vector2(points[2].x * Math.cos(codeAngle), y4 - points[2].x * Math.cos(codeAngle) /  Math.tan(codeAngle)),          
+    //     ];
+    //   }
+    // }
+    dim2 = this.dim.create(p,  (length - L1).toFixed(3))
     dim2.visible = true;
     dim2.name = "Dimension2";
     dim.add(dim2);
 
     if(L2 > 0){
       const x4 = L;
-      const p = [
+      let p = [
         new THREE.Vector2(points[2].x, points[2].y),
         new THREE.Vector2(points[2].x, y4),
         new THREE.Vector2(x4, y4),
         new THREE.Vector2(x4, 0),
-      ];
+      ];   
+      // if(codeAngle !== 0 && (direction === 'gx' || direction === 'gy')){ 
+      //   p = [
+      //     new THREE.Vector2(points[1].x * Math.cos(codeAngle), points[1].y),
+      //     new THREE.Vector2(points[1].x * Math.cos(codeAngle), y4),
+      //     new THREE.Vector2(x4, y4),
+      //     new THREE.Vector2(x4, 0),
+      //   ];
+      // }   
       dim3 = this.dim.create(p, (L - point[1].x).toFixed(3))
       dim3.visible = true;
       dim3.name = "Dimension3";
       dim.add(dim3);
     }
 
-    // 登録
+  //   // 登録
     dim.name = "Dimension";
-
     group.add(dim);
-
+    if (direction === "gx") {
+    
+      dim.rotation.x = (Math.atan( localAxis.x.z / localAxis.x.y ))
+      dim.rotateZ(Math.PI / 2);
+      if (P1 >= 0 && P2 >= 0) {
+        if (nodei.x >= nodej.x) {
+          dim.position.set(nodej.x, nodei.y, nodei.z);
+        } else {
+          dim.position.set(nodei.x, nodei.y, nodei.z);
+        }
+      } else {
+        if (nodei.x >= nodej.x) {
+          dim.position.set(nodei.x, nodei.y, nodei.z);
+        } else {
+          dim.position.set(nodej.x, nodei.y, nodei.z);
+        }
+      }
+    } else if (direction === "gy") {
+      
+      dim.rotation.y = (Math.atan( localAxis.x.z / localAxis.x.x ))
+      dim.rotateX(Math.PI);
+      if (P1 >= 0 && P2 >= 0) {
+        if (nodei.y >= nodej.y) {
+          dim.position.set(nodei.x, nodej.y, nodei.z);
+        } else {
+          dim.position.set(nodei.x, nodei.y, nodei.z);
+        }
+      } else {
+        if (nodei.y >= nodej.y) {
+          dim.position.set(nodei.x, nodei.y, nodei.z);
+        } else {
+          dim.position.set(nodei.x, nodej.y, nodei.z);
+        }
+      }
+    } else if (direction === "gz") {
+      
+      dim.rotation.z = (Math.atan( localAxis.x.y / localAxis.x.x ))
+      dim.rotateX(-Math.PI / 2);
+      if (P1 >= 0 && P2 >= 0) {
+        if (nodei.z >= nodej.z) {
+          dim.position.set(nodei.x, nodei.y, nodej.z);
+        } else {
+          dim.position.set(nodei.x, nodei.y, nodei.z);
+        }
+      } else {
+        if (nodei.z >= nodej.z) {
+          dim.position.set(nodei.x, nodei.y, nodei.z);
+        } else {
+          dim.position.set(nodei.x, nodei.y, nodej.z);
+        }
+      }
+    }   
   }
+  public calculatePointA(I, J, L) {
+    const distanceIJ = Math.sqrt(
+        Math.pow(J.x - I.x, 2) +
+        Math.pow(J.y - I.y, 2) +
+        Math.pow(J.z - I.z, 2)
+    );
+
+    const ux = (J.x - I.x) / distanceIJ;
+    const uy = (J.y - I.y) / distanceIJ;
+    const uz = (J.z - I.z) / distanceIJ;
+
+    const x = I.x + L * ux;
+    const y = I.y + L * uy;
+    const z = I.z + L * uz;
+
+    return { x, y, z };
+  }
+  public calculatePhiAngle(x1, y1, z1, x2, y2, z2) {  
+    const dx = x2 - x1;  
+    const dy = y2 - y1;  
+    const dz = z2 - z1;  
+    const distInXY = Math.sqrt(dx * dx + dy * dy);  
+    const phi = Math.abs(Math.atan2(dz, distInXY));  
+    return phi;  
+  }  
 }
