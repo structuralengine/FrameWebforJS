@@ -84,7 +84,7 @@ export class ThreeNoticePointsService {
 
   // データが変更された時の処理
   public changeData(): void {
-    
+    this.ClearData();
     // 格点データを入手
     const nodeData = this.node.getNodeJson(0);
     if (Object.keys(nodeData).length <= 0) {
@@ -98,7 +98,7 @@ export class ThreeNoticePointsService {
 
     // 着目点情報を入手
     const jsonData = this.noticePoint.getNoticePointsJson();
-    if (Object.keys(jsonData).length <= 0) {
+    if (Object.keys(jsonData).length <= 0) {     
       return;
     }
 
@@ -158,8 +158,10 @@ export class ThreeNoticePointsService {
     // }
     const jsonData = this.noticePoint.getNoticePointsJson();
     if (Object.keys(jsonData).length <= 0) {
+      this.memberThree.selectChange_clear_points();
+      this.scene.render();
       return;
-    }
+    }  
     const target = jsonData.find( (e) => e.row === index );
     const m_no = (target !== undefined) ? target.m: '0';
     this.memberThree.selectChange_points(m_no);

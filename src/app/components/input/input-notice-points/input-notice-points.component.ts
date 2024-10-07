@@ -255,13 +255,12 @@ export class InputNoticePointsComponent implements OnInit {
       const row = changes[0].rowIndx + 1;
       let column: string; // 複数の時は左上に合わせる
       for (const key of this.columnKeys) {
-        if (key in ui.updateList[0].newRow) {
+        if (key in ui.updateList[0].newRow && key !== 'm') {
           column = key;
           break;
         }
-      }
-      this.three.selectChange("notice-points", row, column);
-
+      }     
+      this.three.selectChange("notice-points", row, column);      
     },
   };
 }

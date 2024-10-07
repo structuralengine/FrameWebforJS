@@ -72,20 +72,21 @@ export class ThreeLoadDistribute {
   // scale: スケール
   public create(nodei: THREE.Vector3, nodej: THREE.Vector3, localAxis: any,
     direction: string, pL1: number, pL2: number, P1: number, P2: number,
-    row: number): THREE.Group {
+    row: number, cg?: number, gDir?: string): THREE.Group {
 
     const offset: number = 0;
+    // const offset: number = (direction === 'z' || direction === 'gz') ? 0 : -1;
     const height: number = 1;
 
     // 線の色を決める
-    const my_color = this.getColor(direction);
+    const my_color = this.getColor(gDir != null ? gDir : direction);
 
     const child = new THREE.Group();
 
     // 長さを決める
     const p = this.getPoints(nodei, nodej, direction, pL1, pL2, P1, P2, height);
     const points: THREE.Vector3[] = p.points;
-
+    // console.log("point",points);
     // 面
     child.add(this.getFace(my_color, points));
 
@@ -94,7 +95,9 @@ export class ThreeLoadDistribute {
 
     // 全体
     child.name = "child";
-    child.position.y = offset;
+    child.position.y = offset
+    // child.position.y = offset - 0.1 ;
+    // child.position.x = -0.2;
 
     const group0 = new THREE.Group();
     group0.add(child);
@@ -114,9 +117,9 @@ export class ThreeLoadDistribute {
     group["localAxis"] = localAxis;
     group["editor"] = this;
     group["value"] = p.Pmax; // 大きい方の値を保存
-
+    group["gDir"] = gDir;
     // 全体の向きを修正する
-    this.setRotate(direction, group, localAxis);
+    this.setRotate(direction, group, localAxis, cg, gDir);
 
     // 全体の位置を修正する
     this.setPosition(direction, group, nodei, nodej, P1, P2);
@@ -278,6 +281,7 @@ export class ThreeLoadDistribute {
   public setOffset(group: THREE.Group, offset: number): void {
     for (const item of group.children) {
       item.position.y = offset;
+      // item.position.y = 0
     }
     group['offset'] = offset;
   }
@@ -288,7 +292,12 @@ export class ThreeLoadDistribute {
     key: string
   ): void {
     for (const item of group.children) {
-      item.position.y = offset;
+      if(group["L"] < 1) {
+        item.position.y = offset- 0.5;
+      }else{
+        item.position.y = offset;
+      }
+      // item.position.y = 0
     }
     group['offset'] = offset;
   }
@@ -306,8 +315,10 @@ export class ThreeLoadDistribute {
 
     if (status === "clear") {
       //デフォルトのカラーに戻す
-      const direction: string = group.name.slice(-1);
-      if (direction === 'y') {
+      let direction: string = group.name.slice(-1);
+      const gDir = group.gDir
+      if(gDir != null && gDir != undefined ) direction = gDir
+      if (direction === 'y' || direction === 'gy') {
         face_color = this.face_mat_Green;
         line_color = this.line_mat_Green;
       } else if (direction === 'z') {
@@ -335,7 +346,7 @@ export class ThreeLoadDistribute {
   }
 
   private setRotate( direction: string, group: any, 
-    localAxis: { x:Vector3, y:Vector3, z:Vector3 }) {
+    localAxis: { x:Vector3, y:Vector3, z:Vector3 }, cg?: number, gDir?:any) {
 
     // 全体の向きを修正する
     if (!direction.includes("g")) {
@@ -347,12 +358,21 @@ export class ThreeLoadDistribute {
         A = Math.PI - A;
       }
       group.rotateZ(A);
-
+      if(gDir != null && gDir !== direction){
+        if(((XY.x == -1 && XY.y == 0)|| (XY.x == 0 && XY.y == -1)) && (gDir==="gx" || gDir==="gy")){
+          group.rotateX(Math.PI);
+        }
+      }
       const lenXY = Math.sqrt(
         Math.pow(localAxis.x.x, 2) + Math.pow(localAxis.x.y, 2)
       );
       const XZ = new Vector2(lenXY, localAxis.x.z).normalize();
       group.rotateY(-Math.asin(XZ.y));
+      if(gDir != null && gDir !== direction && gDir==="gx"){
+        if((XZ.y== 1 && XY.x == 0)){
+          group.rotateX(Math.PI);
+        }
+      }
 
       if (localAxis.x.x === 0 && localAxis.x.y === 0) {
         // 鉛直の部材
@@ -368,6 +388,8 @@ export class ThreeLoadDistribute {
           group.rotateX(Math.PI);
         }
       }
+      if(gDir == null)
+        group.rotateX(((cg ?? 0) * Math.PI) / 180);
 
     } else if (direction === "gx") {
       group.rotateZ(Math.PI / 2);
