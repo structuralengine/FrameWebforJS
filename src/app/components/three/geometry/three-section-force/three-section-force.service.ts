@@ -316,6 +316,7 @@ export class ThreeSectionForceService {
   }
 
   private changeMesh(): void {
+    this.memberData = this.member.getMemberJson(0);
     if (this.currentIndex === undefined) {
       return;
     }
@@ -424,12 +425,13 @@ export class ThreeSectionForceService {
       let P2: number = 0;
       let counter = 0;
       this.memSeForce = new Array();
+      let cg = 0    
       for (const fsec of fsecData) {
         if (fsec["m"] !== "" || fsec["n"] !== "") {
           if (!this.memSeForce.includes(fsec))
             this.memSeForce.push(fsec);
         }
-        const id = fsec["m"].trim();
+        const id = fsec["m"].trim();       
         if (id.length > 0) {
           // 節点データを集計する
           const m = this.memberData[id];
@@ -447,6 +449,7 @@ export class ThreeSectionForceService {
             nj.z,
             m.cg
           );
+          cg = m.cg
           len = new THREE.Vector3(
             nj.x - ni.x,
             nj.y - ni.y,
@@ -475,9 +478,10 @@ export class ThreeSectionForceService {
               L1,
               L2,
               P1,
-              P2
+              P2,
+              cg
             );
-            ThreeObject.add(mesh);
+            ThreeObject.add(mesh);           
           } else {
             this.mesh.change(
               item,
@@ -488,7 +492,8 @@ export class ThreeSectionForceService {
               L1,
               L2,
               P1,
-              P2
+              P2, 
+              cg
             );
           }
           P1 = P2;

@@ -43,7 +43,7 @@ export class ThreeLoadAxial {
 
   public create( nodei: THREE.Vector3, nodej: THREE.Vector3, localAxis: any,
     direction: string, L1: number, L2: number, P1: number, P2: number,
-    row: number ): THREE.Group {
+    row: number, gDir?:any): THREE.Group {
 
     const offset: number = 0.1;
 
@@ -126,7 +126,11 @@ export class ThreeLoadAxial {
       A = Math.PI - A;
     }
     group.rotateZ(A);
-
+    if(gDir != null && gDir !== direction){
+      if((XY.x == 0 && XY.y == 1)|| (XY.x == 1 && XY.y == 0)){
+        group.rotateX(Math.PI);
+      }
+    }
     const lenXY = Math.sqrt(Math.pow(localAxis.x.x, 2) + Math.pow(localAxis.x.y, 2));
     const XZ = new Vector2(lenXY, localAxis.x.z).normalize();
     group.rotateY(-Math.asin(XZ.y));

@@ -99,8 +99,9 @@ export class ThreeLoadPoint {
     }
 
     // 位置を修正する
-    group.position.set(position.x, position.y, position.z);
-
+    if(direction === "tx" || direction === "tz" ||direction === "ty" ){
+      group.position.set(position.x, position.y, position.z);
+    }
     return group;
   }
 
