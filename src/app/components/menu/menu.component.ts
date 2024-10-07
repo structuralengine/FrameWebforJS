@@ -1,4 +1,4 @@
-import { Component, HostListener, OnInit } from "@angular/core";
+import { Component, HostListener, Inject, OnInit } from "@angular/core";
 import { NgbModal, NgbModalRef } from "@ng-bootstrap/ng-bootstrap";
 import { AppComponent } from "../../app.component";
 import { HttpClient, HttpHeaders } from "@angular/common/http";
@@ -29,6 +29,12 @@ import { MenuService } from "./menu.service";
 import { AppService } from "src/app/app.service";
 import { Router } from "@angular/router";
 import { PresetService } from "../preset/preset.service";
+import { MSAL_GUARD_CONFIG, MsalGuardConfiguration, MsalService, MsalBroadcastService } from "@azure/msal-angular";
+import { EventMessage, InteractionStatus, EventType, RedirectRequest } from "@azure/msal-browser";
+import { Subject } from "rxjs";
+import { takeUntil, filter } from "rxjs/operators";
+import { environment } from "src/environments/environment";
+import { IPC_MESSAGES } from "src/electron/login/constants";
 
 @Component({
   selector: "app-menu",
@@ -38,7 +44,10 @@ import { PresetService } from "../preset/preset.service";
 export class MenuComponent implements OnInit {
   loginUserName: string;
   public version: string;
-  public userProfile: KeycloakProfile | null = null;
+  public userProfile: any | null = null;
+  isIframe = false;
+  loginDisplay = false;
+  private readonly _destroying$ = new Subject<void>();
 
   constructor(
     private router: Router,
@@ -62,7 +71,10 @@ export class MenuComponent implements OnInit {
     private readonly keycloak: KeycloakService,
     public menuService: MenuService,
     public appService: AppService,
-    public presetService : PresetService
+    public presetService: PresetService,
+    @Inject(MSAL_GUARD_CONFIG) private msalGuardConfig: MsalGuardConfiguration,
+    private authService: MsalService,
+    private msalBroadcastService: MsalBroadcastService
   ) {
     this.menuService.fileName = "";
     this.three.fileName = "";
@@ -77,20 +89,79 @@ export class MenuComponent implements OnInit {
 
     this.helper.isContentsDailogShow = false;
     this.menuService.setDimension(2);
-    const isLoggedIn = await this.keycloak.isLoggedIn();
-    if (isLoggedIn) {
-    const keycloakProfile = await this.keycloak.loadUserProfile();
-    if (keycloakProfile.id) {
-      const isOpenFirst = window.sessionStorage.getItem("openStart");
-      if(isOpenFirst === "1" || isOpenFirst === null){
-        this.router.navigate([{ outlets: { startOutlet: ["start"] } }]);
-        window.sessionStorage.setItem("openStart", "0");
-      }
+
+    if (this.electronService.isElectron) {
+      this.electronService.ipcRenderer.on(IPC_MESSAGES.GET_PROFILE, (event, profile) => {
+        if (profile.id) {
+          this.setUserProfile(profile)
+        } else {
+          this.openFile()
+        }
+      })
+    } else {
+      this.isIframe = window !== window.parent && !window.opener;
+      this.setLoginDisplay();
+
+      this.authService.instance.enableAccountStorageEvents();
+      this.msalBroadcastService.msalSubject$
+        .pipe(
+          filter((msg: EventMessage) => msg.eventType === EventType.ACCOUNT_ADDED || msg.eventType === EventType.ACCOUNT_REMOVED),
+        )
+        .subscribe((result: EventMessage) => {
+          if (this.authService.instance.getAllAccounts().length === 0) {
+            window.location.pathname = "/";
+          } else {
+            this.setLoginDisplay();
+          }
+        });
+
+      this.msalBroadcastService.inProgress$
+        .pipe(
+          filter((status: InteractionStatus) => status === InteractionStatus.None),
+          takeUntil(this._destroying$)
+        )
+        .subscribe(() => {
+          this.setLoginDisplay();
+          this.checkAndSetActiveAccount();
+          if (this.loginDisplay) {
+            this.http.get(environment.apiConfig.uri).subscribe((profile: any) => {
+              if (profile.id) {
+                this.setUserProfile(profile)
+              } else {
+                this.openFile()
+              }
+            })
+          }
+        })
     }
   }
-    else{
-      this.openFile();
+
+  setLoginDisplay() {
+    this.loginDisplay = this.authService.instance.getAllAccounts().length > 0;
+  }
+
+  checkAndSetActiveAccount() {
+    let activeAccount = this.authService.instance.getActiveAccount();
+
+    if (!activeAccount && this.authService.instance.getAllAccounts().length > 0) {
+      let accounts = this.authService.instance.getAllAccounts();
+      this.authService.instance.setActiveAccount(accounts[0]);
     }
+  }
+
+  setUserProfile(profile: any) {
+    const isOpenFirst = window.sessionStorage.getItem("openStart");
+    if (isOpenFirst === "1" || isOpenFirst === null) {
+      this.router.navigate([{ outlets: { startOutlet: ["start"] } }]);
+      window.sessionStorage.setItem("openStart", "0");
+    }
+    const userProfile = {
+      uid: profile.id,
+      email: profile.userPrincipalName,
+      firstName: profile.givenName,
+      lastName: profile.surname,
+    }
+    this.user.setUserProfile(userProfile);
   }
 
   @HostListener("window:beforeunload", ["$event"])
@@ -273,9 +344,39 @@ export class MenuComponent implements OnInit {
       this.app.dialogClose(); // 現在表示中の画面を閉じる
       this.modalService
         .open(LoginDialogComponent, { backdrop: false })
-        .result.then((result) => {});
+        .result.then((result) => { });
     } else {
       this.keycloak.login();
+    }
+  }
+
+  async login() {
+    if (this.electronService.isElectron) {
+      this.electronService.ipcRenderer.send(IPC_MESSAGES.LOGIN);
+    } else {
+      this.msalBroadcastService.inProgress$
+        .pipe(
+          filter((status: InteractionStatus) => status === InteractionStatus.None),
+        )
+        .subscribe(() => {
+          if (this.msalGuardConfig.authRequest) {
+            this.authService.loginRedirect({ ...this.msalGuardConfig.authRequest } as RedirectRequest);
+          } else {
+            this.authService.loginRedirect();
+          }
+        })
+    }
+  }
+
+  logout() {
+    if (this.electronService.isElectron) {
+      this.electronService.ipcRenderer.send(IPC_MESSAGES.LOGOUT)
+      this.user.setUserProfile(null);
+      window.sessionStorage.setItem("openStart", "1");
+    } else {
+      this.authService.logoutRedirect();
+      this.user.setUserProfile(null);
+      window.sessionStorage.setItem("openStart", "1");
     }
   }
 
@@ -362,7 +463,7 @@ export class MenuComponent implements OnInit {
     window.open("https://help-frameweb.malme.app/", "_blank");
   }
 
-  openFile(){
+  openFile() {
     this.helper.isContentsDailogShow = false;
     this.appService.addHiddenFromElements();
     this.InputData.clear();
@@ -371,7 +472,7 @@ export class MenuComponent implements OnInit {
     this.three.ClearData();
     // this.countArea.clear();
     const modalRef = this.modalService.open(WaitDialogComponent);
-    this.http.get('./assets/preset/サンプル（門型橋脚）.json', {responseType: 'text'}).subscribe(text => {
+    this.http.get('./assets/preset/サンプル（門型橋脚）.json', { responseType: 'text' }).subscribe(text => {
       this.menuService.fileName = 'サンプル（門型橋脚）.json';
       this.three.fileName = 'サンプル（門型橋脚）.json';
       this.printCustomFsecService.flg = undefined;
@@ -412,11 +513,10 @@ export class MenuComponent implements OnInit {
     this.app.dialogClose(); // 現在表示中の画面を閉じる
     this.scene.changeGui(this.helper.dimension);
   }
-  
-  handelClickChat(){
-   const elementChat = document.getElementById("chatplusheader");
-   console.log("elementChat",elementChat)
-   elementChat.click()
+
+  handelClickChat() {
+    const elementChat = document.getElementById("chatplusheader");
+    console.log("elementChat", elementChat)
+    elementChat.click()
   }
 }
- 
