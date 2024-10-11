@@ -105,7 +105,7 @@ export class MenuComponent implements OnInit {
       this.authService.instance.enableAccountStorageEvents();
       this.msalBroadcastService.msalSubject$
         .pipe(
-          filter((msg: EventMessage) => msg.eventType === EventType.ACCOUNT_ADDED || msg.eventType === EventType.ACCOUNT_REMOVED),
+          filter((msg: EventMessage) => msg.eventType === EventType.ACCOUNT_ADDED || msg.eventType === EventType.ACCOUNT_REMOVED || msg.eventType === EventType.LOGOUT_SUCCESS || msg.eventType === EventType.LOGOUT_END),
         )
         .subscribe((result: EventMessage) => {
           if (this.authService.instance.getAllAccounts().length === 0) {
