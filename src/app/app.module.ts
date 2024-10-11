@@ -135,7 +135,7 @@ export function MSALInstanceFactory(): IPublicClientApplication {
       clientId: environment.msalConfig.auth.clientId,
       authority: environment.msalConfig.auth.authority,
       redirectUri: redirectUri,
-      postLogoutRedirectUri: environment.apiConfig.uri
+      postLogoutRedirectUri:  redirectUri
     },
     cache: {
       cacheLocation: BrowserCacheLocation.LocalStorage

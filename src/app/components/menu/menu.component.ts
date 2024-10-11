@@ -158,8 +158,8 @@ export class MenuComponent implements OnInit {
     const userProfile = {
       uid: profile.id,
       email: profile.userPrincipalName,
-      firstName: profile.givenName,
-      lastName: profile.surname,
+      firstName: profile.givenName ?? "User",
+      lastName: profile.surname ?? "User",
     }
     this.user.setUserProfile(userProfile);
   }
@@ -359,7 +359,7 @@ export class MenuComponent implements OnInit {
           filter((status: InteractionStatus) => status === InteractionStatus.None),
         )
         .subscribe(() => {
-          if (confirm('Your work will be lost. Do you want to leave this site?', )) {
+          if (!this.loginDisplay && confirm('Your work will be lost. Do you want to leave this site?', )) {
             if (this.msalGuardConfig.authRequest) {
               this.authService.loginRedirect({ ...this.msalGuardConfig.authRequest } as RedirectRequest);
             } else {
@@ -376,8 +376,10 @@ export class MenuComponent implements OnInit {
       this.user.setUserProfile(null);
       window.sessionStorage.setItem("openStart", "1");
     } else {
-      this.authService.logoutRedirect();
       this.user.setUserProfile(null);
+      this.authService.logoutPopup({
+        mainWindowRedirectUri: "/"
+      });
       window.sessionStorage.setItem("openStart", "1");
     }
   }
