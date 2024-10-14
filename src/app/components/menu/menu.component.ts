@@ -377,9 +377,7 @@ export class MenuComponent implements OnInit {
       window.sessionStorage.setItem("openStart", "1");
     } else {
       this.user.setUserProfile(null);
-      this.authService.logoutPopup({
-        mainWindowRedirectUri: "/"
-      });
+      this.authService.logoutRedirect();
       window.sessionStorage.setItem("openStart", "1");
     }
   }
