@@ -105,7 +105,11 @@ export class MenuComponent implements OnInit {
       this.authService.instance.enableAccountStorageEvents();
       this.msalBroadcastService.msalSubject$
         .pipe(
-          filter((msg: EventMessage) => msg.eventType === EventType.ACCOUNT_ADDED || msg.eventType === EventType.ACCOUNT_REMOVED || msg.eventType === EventType.LOGOUT_SUCCESS || msg.eventType === EventType.LOGOUT_END),
+          filter(
+            (msg: EventMessage) =>
+              msg.eventType === EventType.ACCOUNT_ADDED ||
+              msg.eventType === EventType.ACCOUNT_REMOVED
+          )
         )
         .subscribe((result: EventMessage) => {
           if (this.authService.instance.getAllAccounts().length === 0) {
@@ -370,15 +374,27 @@ export class MenuComponent implements OnInit {
     }
   }
 
-  logout() {
+  async logout() {
     if (this.electronService.isElectron) {
-      this.electronService.ipcRenderer.send(IPC_MESSAGES.LOGOUT)
+      this.electronService.ipcRenderer.send(IPC_MESSAGES.LOGOUT);
       this.user.setUserProfile(null);
       window.sessionStorage.setItem("openStart", "1");
     } else {
-      this.user.setUserProfile(null);
-      this.authService.logoutRedirect();
-      window.sessionStorage.setItem("openStart", "1");
+      this.authService.instance
+        .handleRedirectPromise()
+        .then((tokenResponse) => {
+          if (!tokenResponse) {
+            this.user.setUserProfile(null);
+            this.authService.logoutRedirect();
+            window.sessionStorage.setItem("openStart", "1");
+          } else {
+            // Do something with the tokenResponse
+          }
+        })
+        .catch((err) => {
+          // Handle error
+          console.error(err);
+        });
     }
   }
 
