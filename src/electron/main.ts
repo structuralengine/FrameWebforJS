@@ -4,14 +4,20 @@ import * as fs from 'fs';
 import log from 'electron-log';
 import isDev from 'electron-is-dev';
 import path from 'path'
+import { AuthProvider } from './login/authProvider';
+import { IPC_MESSAGES } from './login/constants';
+import { getGraphClient } from './login/graph';
+import { msalConfig } from './login/config';
 // 起動 --------------------------------------------------------------
 
 let mainWindow: BrowserWindow;
 let check = -1;
 let locale = 'ja';
+let authProvider : AuthProvider;
 autoUpdater.autoDownload = false
 async function createWindow() {
   check = -1;
+  authProvider = new AuthProvider(msalConfig);
   mainWindow = new BrowserWindow({
     webPreferences: {
       nodeIntegration: true,
@@ -20,7 +26,7 @@ async function createWindow() {
   });
   mainWindow.maximize();
   mainWindow.setMenuBarVisibility(false);
-  //mainWindow.webContents.openDevTools();`
+  // mainWindow.webContents.openDevTools();
   mainWindow.on('close', function (e) {
     if (check == -1) {
       let langText = require(`../assets/i18n/${locale}.json`)
@@ -181,3 +187,25 @@ ipcMain.on(
   'change-lang', (event, lang) => {
     locale = lang;
   })
+
+// Event handlers
+ipcMain.on(IPC_MESSAGES.LOGIN, async () => {
+  const account = await authProvider.login();
+  await mainWindow.loadFile(path.join(__dirname, "./index.html"));
+
+  const tokenRequest = {
+    account: account,
+    scopes: ["User.Read"]
+  };
+
+  const tokenResponse = await authProvider.getToken(tokenRequest);
+  const graphResponse = await getGraphClient(tokenResponse.accessToken)
+    .api("https://graph.microsoft.com/v1.0/me").get();
+
+  mainWindow.webContents.send(IPC_MESSAGES.GET_PROFILE, graphResponse);
+});
+
+ipcMain.on(IPC_MESSAGES.LOGOUT, async () => {
+  await authProvider.logout();
+  await mainWindow.loadFile(path.join(__dirname, "./index.html"));
+});
