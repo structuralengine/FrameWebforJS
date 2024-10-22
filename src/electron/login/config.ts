@@ -2,8 +2,8 @@ import { LogLevel } from '@azure/msal-browser';
 import { environment } from '../../environments/environment'
 export const msalConfig = {
     auth: {
-        clientId: environment.msalConfig.auth.clientId,
-        authority: environment.msalConfig.auth.authority,
+        clientId: environment.msalConfig.authElectron.clientIdElectron,
+        authority: environment.msalConfig.authElectron.authorityElectron,
     },
     system: {
         loggerOptions: {
