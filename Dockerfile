@@ -16,7 +16,7 @@ COPY . /usr/src/app
 # ビルドエラー "FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory" の対応
 ENV NODE_OPTIONS="--max-old-space-size=8192"
 
-RUN npm install -g @angular/cli@12.2.7 && npm install
+RUN npm install -g @angular/cli@12.2.7 && npm install --legacy-peer-deps && npm install rxfire@6.0.3 --legacy-peer-deps
 
 # Angular App のビルド
 RUN npm run $BUILD_SCRIPT
