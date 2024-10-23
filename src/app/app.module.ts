@@ -1,7 +1,7 @@
 import { BrowserModule } from "@angular/platform-browser";
 import { APP_INITIALIZER, NgModule } from "@angular/core";
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
-import { HttpClientModule, HttpClient } from "@angular/common/http";
+import { HttpClientModule, HttpClient, HTTP_INTERCEPTORS } from "@angular/common/http";
 import { DragDropModule } from "@angular/cdk/drag-drop";
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import { BrowserAnimationsModule } from "@angular/platform-browser/animations";
@@ -11,11 +11,11 @@ import { NgbModule } from "@ng-bootstrap/ng-bootstrap";
 import { AppRoutingModule } from "./app-routing.module";
 import { AppComponent } from "./app.component";
 import { MatInputModule } from "@angular/material/input";
-import {MatExpansionModule} from '@angular/material/expansion';
+import { MatExpansionModule } from '@angular/material/expansion';
 
 import { initializeApp, provideFirebaseApp } from "@angular/fire/app";
 import { getAuth, provideAuth } from '@angular/fire/auth';
-import { getFirestore, provideFirestore } from '@angular/fire/firestore';
+import { getFirestore, LogLevel, provideFirestore } from '@angular/fire/firestore';
 import { environment } from "../environments/environment";
 
 import { KeycloakAngularModule, KeycloakService } from 'keycloak-angular';
@@ -36,7 +36,7 @@ import { InputMembersComponent } from "./components/input/input-members/input-me
 import { InputMembersService } from "./components/input/input-members/input-members.service";
 
 import { InputMemberDetailComponent } from "./components/input/input-members/input-member-detail/input-member-detail.component";
-import { InputMemberDetailService }from "./components/input/input-members/input-member-detail/input-member-detail.service";
+import { InputMemberDetailService } from "./components/input/input-members/input-member-detail/input-member-detail.service";
 
 import { InputFixNodeComponent } from "./components/input/input-fix-node/input-fix-node.component";
 import { InputFixNodeService } from "./components/input/input-fix-node/input-fix-node.service";
@@ -110,152 +110,197 @@ import { OptionalHeaderComponent } from "./components/optional-header/optional-h
 import { ActivateSessionComponent } from './components/activate-session/activate-session.component';
 import { InputRigidZoneComponent } from "./components/input/input-rigid-zone/input-rigid-zone.component";
 
-import {MatIconModule} from '@angular/material/icon'
+import { MatIconModule } from '@angular/material/icon'
 import { AppService } from "./app.service";
+import { IPublicClientApplication, PublicClientApplication, InteractionType, BrowserCacheLocation } from '@azure/msal-browser';
+import { MsalGuard, MsalInterceptor, MsalBroadcastService, MsalInterceptorConfiguration, MsalModule, MsalService, MSAL_GUARD_CONFIG, MSAL_INSTANCE, MSAL_INTERCEPTOR_CONFIG, MsalGuardConfiguration, MsalRedirectComponent } from '@azure/msal-angular';
+import { LogLevel as LogLevelMasl } from "@azure/msal-browser";
+
 const httpLoaderFactory = (http: HttpClient): TranslateHttpLoader =>
   new TranslateHttpLoader(http, "./assets/i18n/", ".json");
 
-function initializeKeycloak(keycloak: KeycloakService) {
-    console.log("initializaing keycloak");
-    return () => keycloak.init({
-        config: {
-            url: 'https://auth.malme.app',
-            realm: 'structural-engine',
-            clientId: 'malme-mypage'
-        },
-        initOptions: {
-            onLoad: 'check-sso',
-        }
-    }).catch((error) => {
-        const elVer = window?.process?.versions["electron"];
-        if (elVer) {
-          return;
-        } else {
-          window.alert("自動ログインに失敗しました。");
-        }
-      });
+export function loggerCallback(logLevel: LogLevelMasl, message: string) {
+  console.log(message);
+}
+
+export function MSALInstanceFactory(): IPublicClientApplication {
+
+  return new PublicClientApplication({
+    auth: {
+      clientId: environment.msalConfig.authWeb.clientId,
+      authority: environment.msalConfig.authWeb.authority,
+      redirectUri: environment.msalConfig.authWeb.redirectUri,
+      postLogoutRedirectUri: environment.msalConfig.authWeb.redirectUri
+    },
+    cache: {
+      cacheLocation: BrowserCacheLocation.LocalStorage
+    },
+    system: {
+      allowNativeBroker: false, // Disables WAM Broker
+      loggerOptions: {
+        loggerCallback,
+        logLevel: LogLevelMasl.Info,
+        piiLoggingEnabled: false
+      }
+    }
+  });
+}
+
+export function MSALInterceptorConfigFactory(): MsalInterceptorConfiguration {
+  const protectedResourceMap = new Map<string, Array<string>>();
+  protectedResourceMap.set(environment.apiConfig.uri, environment.apiConfig.scopes);
+
+  return {
+    interactionType: InteractionType.Redirect,
+    protectedResourceMap
+  };
+}
+
+export function MSALGuardConfigFactory(): MsalGuardConfiguration {
+  return {
+    interactionType: InteractionType.Redirect,
+    authRequest: {
+      scopes: [...environment.apiConfig.scopes]
+    },
+    loginFailedRoute: '/login-failed'
+  };
 }
 
 @NgModule({
-    imports: [
-        BrowserModule,
-        AppRoutingModule,
-        FormsModule,
-        ReactiveFormsModule,
-        HttpClientModule,
-        DragDropModule,
-        BrowserAnimationsModule,
-        NgbModule,
-        DataHelperModule,
-        MatInputModule,
-        MatRadioModule,
-        MatExpansionModule,
-        KeycloakAngularModule,
-        provideFirebaseApp(() => initializeApp(environment.firebase)),
-        provideAuth(() => getAuth()),
-        provideFirestore(() => getFirestore()),
-        TranslateModule.forRoot({
-            loader: {
-                provide: TranslateLoader,
-                useFactory: httpLoaderFactory,
-                deps: [HttpClient],
-            },
-        }),
-        ScrollingModule,
-        MatIconModule
-    ],
-    declarations: [
-        AppComponent,
-        MenuComponent,
-        LoginDialogComponent,
-        WaitDialogComponent,
-        AlertDialogComponent,
-        InputNodesComponent,
-        InputMembersComponent,
-        InputMemberDetailComponent,
-        InputFixNodeComponent,
-        InputElementsComponent,
-        InputJointComponent,
-        InputNoticePointsComponent,
-        InputFixMemberComponent,
-        InputLoadNameComponent,
-        InputLoadComponent,
-        InputDefineComponent,
-        InputCombineComponent,
-        InputPickupComponent,
-        ResultDisgComponent,
-        ResultReacComponent,
-        ResultFsecComponent,
-        ResultCombineDisgComponent,
-        ResultPickupDisgComponent,
-        ResultCombineReacComponent,
-        ResultPickupReacComponent,
-        ResultPickupFsecComponent,
-        ResultCombineFsecComponent,
-        ThreeComponent,
-        InputPanelComponent,
-        StartMenuComponent,
-        PrintComponent,
-        PresetComponent,
-        PrintLayoutComponent,
-        InvoiceComponent,
-        PagerComponent,
-        PagerDirectionComponent,
-        SheetComponent,
-        PrintThreeComponent,
-        PrintCustomFsecComponent,
-        PrintCustomThreeComponent,
-        PrintCustomComponent,
-        PrintCustomReacComponent,
-        PrintCustomDisgComponent,
-        MaxMinComponent,
-        ColorPaletteComponent,
-        ChatComponent,
-        DocLayoutComponent,
-        OptionalHeaderComponent,
-        ActivateSessionComponent,
-        InputRigidZoneComponent,
-    ],
-    providers: [
-        AppService,
-        InputDataService,
-        InputNodesService,
-        InputMembersService,
-        InputMemberDetailService,
-        InputFixNodeService,
-        InputElementsService,
-        InputJointService,
-        InputNoticePointsService,
-        InputFixMemberService,
-        InputLoadService,
-        InputDefineService,
-        InputCombineService,
-        InputPickupService,
-        PrintService,
-        PresetService,
-        ResultDataService,
-        ResultDisgService,
-        ResultReacService,
-        ResultFsecService,
-        ResultCombineDisgService,
-        ResultPickupDisgService,
-        ResultCombineReacService,
-        ResultPickupReacService,
-        ResultPickupFsecService,
-        ResultCombineFsecService,
-        UserInfoService,
-        SceneService,
-        ElectronService,
-        {
-          provide: APP_INITIALIZER,
-          useFactory: initializeKeycloak,
-          multi: true,
-          deps: [KeycloakService]
-        },
-    ],
-    bootstrap: [AppComponent]
+  imports: [
+    BrowserModule,
+    AppRoutingModule,
+    FormsModule,
+    ReactiveFormsModule,
+    HttpClientModule,
+    DragDropModule,
+    BrowserAnimationsModule,
+    NgbModule,
+    DataHelperModule,
+    MatInputModule,
+    MatRadioModule,
+    MatExpansionModule,
+    KeycloakAngularModule,
+    provideFirebaseApp(() => initializeApp(environment.firebase)),
+    provideAuth(() => getAuth()),
+    provideFirestore(() => getFirestore()),
+    TranslateModule.forRoot({
+      loader: {
+        provide: TranslateLoader,
+        useFactory: httpLoaderFactory,
+        deps: [HttpClient],
+      },
+    }),
+    ScrollingModule,
+    MatIconModule,
+    MsalModule
+  ],
+  declarations: [
+    AppComponent,
+    MenuComponent,
+    LoginDialogComponent,
+    WaitDialogComponent,
+    AlertDialogComponent,
+    InputNodesComponent,
+    InputMembersComponent,
+    InputMemberDetailComponent,
+    InputFixNodeComponent,
+    InputElementsComponent,
+    InputJointComponent,
+    InputNoticePointsComponent,
+    InputFixMemberComponent,
+    InputLoadNameComponent,
+    InputLoadComponent,
+    InputDefineComponent,
+    InputCombineComponent,
+    InputPickupComponent,
+    ResultDisgComponent,
+    ResultReacComponent,
+    ResultFsecComponent,
+    ResultCombineDisgComponent,
+    ResultPickupDisgComponent,
+    ResultCombineReacComponent,
+    ResultPickupReacComponent,
+    ResultPickupFsecComponent,
+    ResultCombineFsecComponent,
+    ThreeComponent,
+    InputPanelComponent,
+    StartMenuComponent,
+    PrintComponent,
+    PresetComponent,
+    PrintLayoutComponent,
+    InvoiceComponent,
+    PagerComponent,
+    PagerDirectionComponent,
+    SheetComponent,
+    PrintThreeComponent,
+    PrintCustomFsecComponent,
+    PrintCustomThreeComponent,
+    PrintCustomComponent,
+    PrintCustomReacComponent,
+    PrintCustomDisgComponent,
+    MaxMinComponent,
+    ColorPaletteComponent,
+    ChatComponent,
+    DocLayoutComponent,
+    OptionalHeaderComponent,
+    ActivateSessionComponent,
+    InputRigidZoneComponent,
+  ],
+  providers: [
+    AppService,
+    InputDataService,
+    InputNodesService,
+    InputMembersService,
+    InputMemberDetailService,
+    InputFixNodeService,
+    InputElementsService,
+    InputJointService,
+    InputNoticePointsService,
+    InputFixMemberService,
+    InputLoadService,
+    InputDefineService,
+    InputCombineService,
+    InputPickupService,
+    PrintService,
+    PresetService,
+    ResultDataService,
+    ResultDisgService,
+    ResultReacService,
+    ResultFsecService,
+    ResultCombineDisgService,
+    ResultPickupDisgService,
+    ResultCombineReacService,
+    ResultPickupReacService,
+    ResultPickupFsecService,
+    ResultCombineFsecService,
+    UserInfoService,
+    SceneService,
+    ElectronService,
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: MsalInterceptor,
+      multi: true,
+    },
+    {
+      provide: MSAL_INSTANCE,
+      useFactory: MSALInstanceFactory,
+    },
+    {
+      provide: MSAL_GUARD_CONFIG,
+      useFactory: MSALGuardConfigFactory,
+    },
+    {
+      provide: MSAL_INTERCEPTOR_CONFIG,
+      useFactory: MSALInterceptorConfigFactory,
+    },
+    MsalService,
+    MsalGuard,
+    MsalBroadcastService
+  ],
+  bootstrap: [AppComponent, MsalRedirectComponent]
 })
-export class AppModule {}
+export class AppModule { }
 
 export function HttpLoaderFactory(http: HttpClient) {
   return new TranslateHttpLoader(http);
