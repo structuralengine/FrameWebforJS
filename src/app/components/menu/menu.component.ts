@@ -23,8 +23,6 @@ import { ElectronService } from "src/app/providers/electron.service";
 import { TranslateService } from "@ngx-translate/core";
 import packageJson from '../../../../package.json';
 
-import { KeycloakService } from 'keycloak-angular';
-import { KeycloakProfile } from 'keycloak-js';
 import { MenuService } from "./menu.service";
 import { AppService } from "src/app/app.service";
 import { Router } from "@angular/router";
@@ -68,7 +66,6 @@ export class MenuComponent implements OnInit {
     public electronService: ElectronService,
     private translate: TranslateService,
     public printCustomFsecService: PrintCustomFsecService,
-    private readonly keycloak: KeycloakService,
     public menuService: MenuService,
     public appService: AppService,
     public presetService: PresetService,
@@ -163,7 +160,7 @@ export class MenuComponent implements OnInit {
       uid: profile.id,
       email: profile.userPrincipalName,
       firstName: profile.givenName ?? "User",
-      lastName: profile.surname ?? "User",
+      lastName: profile.surname,
     }
     this.user.setUserProfile(userProfile);
   }
@@ -342,7 +339,7 @@ export class MenuComponent implements OnInit {
     }
   }
 
-  // ログイン関係
+  // ログイン関係 : KeyCloak
   async logIn() {
     if (this.electronService.isElectron) {
       this.app.dialogClose(); // 現在表示中の画面を閉じる
@@ -350,7 +347,6 @@ export class MenuComponent implements OnInit {
         .open(LoginDialogComponent, { backdrop: false })
         .result.then((result) => { });
     } else {
-      this.keycloak.login();
     }
   }
 
@@ -404,7 +400,6 @@ export class MenuComponent implements OnInit {
       this.user.setUserProfile(null);
       window.sessionStorage.setItem("openStart", "1");
     } else {
-      this.keycloak.logout(window.location.origin);
       this.user.setUserProfile(null);
       window.sessionStorage.setItem("openStart", "1");
     }
