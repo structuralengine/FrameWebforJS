@@ -64,7 +64,7 @@ export class UserInfoService {
               uid: profile.id,
               email: profile.userPrincipalName,
               firstName: profile.givenName ?? "User",
-              lastName: profile.surname,
+              lastName: profile.surname?? "",
             });
           }
         })
