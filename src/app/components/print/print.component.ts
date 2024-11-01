@@ -837,6 +837,8 @@ export class PrintComponent implements OnInit, OnDestroy {
             initData[key] = this.printService.json[key];
           }
           json = { ...json, ...initData };
+          json["pageOrientation"] =
+            this.printService.pageOrientation;
           let keyScreen = "";
           for (let key of this.printService.printCases) {
             keyScreen = key;
