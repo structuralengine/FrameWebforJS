@@ -28,11 +28,16 @@ import { AppService } from "src/app/app.service";
 import { Router } from "@angular/router";
 import { PresetService } from "../preset/preset.service";
 import { MSAL_GUARD_CONFIG, MsalGuardConfiguration, MsalService, MsalBroadcastService } from "@azure/msal-angular";
-import { EventMessage, InteractionStatus, EventType, RedirectRequest } from "@azure/msal-browser";
+import { EventMessage, InteractionStatus, EventType, RedirectRequest, AuthenticationResult, AccountInfo, SsoSilentRequest, PopupRequest, PromptValue, IdTokenClaims } from "@azure/msal-browser";
 import { Subject } from "rxjs";
 import { takeUntil, filter } from "rxjs/operators";
 import { environment } from "src/environments/environment";
 import { IPC_MESSAGES } from "src/electron/login/constants";
+
+type IdTokenClaimsWithPolicyId = IdTokenClaims & {
+  acr?: string,
+  tfp?: string,
+};
 
 @Component({
   selector: "app-menu",
@@ -88,8 +93,14 @@ export class MenuComponent implements OnInit {
     this.menuService.setDimension(2);
 
     if (this.electronService.isElectron) {
-      this.electronService.ipcRenderer.on(IPC_MESSAGES.GET_PROFILE, (event, profile) => {
-        if (profile.id) {
+      this.electronService.ipcRenderer.on(IPC_MESSAGES.GET_PROFILE, (event, listClaims) => {
+        const profile = {
+          uid: listClaims.find(item => item.claim === "sub")?.value,
+          email: listClaims.find(item => item.claim === "emails")?.value[0],
+          givenName: listClaims.find(item => item.claim === "given_name")?.value,
+          surname: listClaims.find(item => item.claim === "family_name")?.value
+        };
+        if (profile.uid) {
           this.setUserProfile(profile)
         } else {
           this.openFile()
@@ -125,16 +136,91 @@ export class MenuComponent implements OnInit {
           this.setLoginDisplay();
           this.checkAndSetActiveAccount();
           if (this.loginDisplay) {
-            this.http.get(environment.apiConfig.uri).subscribe((profile: any) => {
-              if (profile.id) {
-                this.setUserProfile(profile)
-              } else {
-                this.openFile()
-              }
-            })
+            const listClaims = this.getClaims(this.authService.instance.getActiveAccount()?.idTokenClaims as Record<string, any>);
+            const profile = {
+              uid: listClaims.find(item => item.claim === "sub")?.value,
+              email: listClaims.find(item => item.claim === "emails")?.value[0],
+              givenName: listClaims.find(item => item.claim === "given_name")?.value,
+              surname: listClaims.find(item => item.claim === "family_name")?.value
+            };
+            this.setUserProfile(profile)
           }
         })
+
+      this.msalBroadcastService.msalSubject$
+        .pipe(
+          filter((msg: EventMessage) => msg.eventType === EventType.LOGIN_SUCCESS
+            || msg.eventType === EventType.ACQUIRE_TOKEN_SUCCESS
+            || msg.eventType === EventType.SSO_SILENT_SUCCESS),
+          takeUntil(this._destroying$)
+        )
+        .subscribe((result: EventMessage) => {
+
+          let payload = result.payload as AuthenticationResult;
+          let idtoken = payload.idTokenClaims as IdTokenClaimsWithPolicyId;
+
+          if (idtoken.acr === environment.b2cPolicies.names.signUpSignIn || idtoken.tfp === environment.b2cPolicies.names.signUpSignIn) {
+            this.authService.instance.setActiveAccount(payload.account);
+          }
+
+
+          if (idtoken.acr === environment.b2cPolicies.names.editProfile || idtoken.tfp === environment.b2cPolicies.names.editProfile) {
+
+            const originalSignInAccount = this.authService.instance.getAllAccounts()
+              .find((account: AccountInfo) =>
+                account.idTokenClaims?.oid === idtoken.oid
+                && account.idTokenClaims?.sub === idtoken.sub
+                && ((account.idTokenClaims as IdTokenClaimsWithPolicyId).acr === environment.b2cPolicies.names.signUpSignIn
+                  || (account.idTokenClaims as IdTokenClaimsWithPolicyId).tfp === environment.b2cPolicies.names.signUpSignIn)
+              );
+
+            let signUpSignInFlowRequest: SsoSilentRequest = {
+              authority: environment.b2cPolicies.authorities.signUpSignIn.authority,
+              account: originalSignInAccount
+            };
+
+            this.authService.ssoSilent(signUpSignInFlowRequest);
+          }
+
+          if (idtoken.acr === environment.b2cPolicies.names.resetPassword || idtoken.tfp === environment.b2cPolicies.names.resetPassword) {
+            let signUpSignInFlowRequest: RedirectRequest | PopupRequest = {
+              authority: environment.b2cPolicies.authorities.signUpSignIn.authority,
+              scopes: [...environment.apiConfig.scopes],
+              prompt: PromptValue.LOGIN 
+            };
+
+            this.login(signUpSignInFlowRequest);
+          }
+
+          return result;
+        });
+
+      this.msalBroadcastService.msalSubject$
+        .pipe(
+          filter((msg: EventMessage) => msg.eventType === EventType.LOGIN_FAILURE || msg.eventType === EventType.ACQUIRE_TOKEN_FAILURE),
+          takeUntil(this._destroying$)
+        )
+        .subscribe((result: EventMessage) => {
+          if (result.error && result.error.message.indexOf('AADB2C90118') > -1) {
+            let resetPasswordFlowRequest: RedirectRequest | PopupRequest = {
+              authority: environment.b2cPolicies.authorities.resetPassword.authority,
+              scopes: [],
+            };
+
+            this.login(resetPasswordFlowRequest);
+          };
+        });
     }
+  }
+
+  getClaims(claims: Record<string, any>) {
+    const listClaims = []
+    if (claims) {
+      Object.entries(claims).forEach((claim: [string, unknown], index: number) => {
+        listClaims.push({ id: index, claim: claim[0], value: claim[1] });
+      });
+    }
+    return listClaims;
   }
 
   setLoginDisplay() {
@@ -157,8 +243,8 @@ export class MenuComponent implements OnInit {
       window.sessionStorage.setItem("openStart", "0");
     }
     const userProfile = {
-      uid: profile.id,
-      email: profile.userPrincipalName,
+      uid: profile.uid,
+      email: profile.email,
       firstName: profile.givenName ?? "User",
       lastName: profile.surname,
     }
@@ -350,23 +436,14 @@ export class MenuComponent implements OnInit {
     }
   }
 
-  login() {
+  login(userFlowRequest?: RedirectRequest | PopupRequest) {
     if (this.electronService.isElectron) {
       this.electronService.ipcRenderer.send(IPC_MESSAGES.LOGIN);
     } else {
-      if (!this.loginDisplay && confirm('Your work will be lost. Do you want to leave this site?', )) {
-        this.msalBroadcastService.inProgress$
-        .pipe(
-          filter((status: InteractionStatus) => status === InteractionStatus.None),
-        )
-        .subscribe(async () => {
-          if (this.msalGuardConfig.authRequest) {
-            await this.authService.loginRedirect({ ...this.msalGuardConfig.authRequest } as RedirectRequest);
-            await this.authService.acquireTokenRedirect({ ...this.msalGuardConfig.authRequest } as RedirectRequest)
-          } else {
-            await this.authService.loginRedirect();
-          }
-        }) 
+      if (this.msalGuardConfig.authRequest) {
+        this.authService.loginRedirect({ ...this.msalGuardConfig.authRequest, ...userFlowRequest } as RedirectRequest);
+      } else {
+        this.authService.loginRedirect(userFlowRequest);
       }
     }
   }

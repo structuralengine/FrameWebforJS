@@ -16,7 +16,7 @@ export class AuthProvider {
 
     async login() {
         const tokenRequest: SilentFlowRequest = {
-            scopes: ['User.Read'],
+            scopes: [],
             account: null,
         };
         const authResponse = await this.getToken(tokenRequest);
@@ -26,7 +26,7 @@ export class AuthProvider {
     async logout() {
         if (!this.account) return;
         try {
-            await shell.openExternal(`${this.msalConfig.auth.authority}/oauth2/v2.0/logout`);
+            await shell.openExternal(`${this.msalConfig.auth.authority}/oauth2/v2.0/logout?post_logout_redirect_uri=${this.msalConfig.auth.postLogoutRedirectUri}`);
             await this.cache.removeAccount(this.account);
             this.account = null;
         } catch (error) {
