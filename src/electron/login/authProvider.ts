@@ -1,4 +1,5 @@
 import { AuthenticationResult, InteractionRequiredAuthError, PublicClientApplication, SilentFlowRequest } from '@azure/msal-node';
+import { policeResetPassword } from './config';
 import { shell } from 'electron';
 
 export class AuthProvider {
@@ -67,19 +68,41 @@ export class AuthProvider {
     async getTokenInteractive(tokenRequest) {
         try {
             const openBrowser = async (url) => {
-                console.log(url)
+                console.log("url --- ", url)
                 await shell.openExternal(url);
             };
 
             const authResponse = await this.clientApplication.acquireTokenInteractive({
                 ...tokenRequest,
                 openBrowser,
+                redirectUri: this.msalConfig.auth.redirectUri,
+                successTemplate: '<h1>Successfully signed in!</h1> <p>You can close this window now.</p>',
             });
 
             return authResponse;
         } catch (error) {
+            if (error.errorMessage && error.errorMessage.includes('AADB2C90118')) {
+                // User clicked "Forgot Password"
+                return await this.passwordReset();
+            }
             throw error;
         }
+    }
+
+    async passwordReset() {
+        const passwordResetRequest = {
+            scopes: [],
+            authority: policeResetPassword.resetPassword.authority,
+            redirectUri: this.msalConfig.auth.redirectUri,
+            openBrowser: async (url) => {
+                console.log("Password reset URL --- ", url);
+                await shell.openExternal(url);
+                
+            },
+        };
+    
+        const authResponse = await this.clientApplication.acquireTokenInteractive(passwordResetRequest);
+        return authResponse;
     }
 
     async handleResponse(response) {

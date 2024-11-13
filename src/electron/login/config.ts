@@ -18,3 +18,9 @@ export const msalConfig = {
         },
     },
 };
+
+export const policeResetPassword = {
+    resetPassword: {
+        authority: 'https://malmeapp.b2clogin.com/malmeapp.onmicrosoft.com/B2C_1_msal_forgot'
+      },
+};
