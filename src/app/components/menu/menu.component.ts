@@ -440,10 +440,20 @@ export class MenuComponent implements OnInit {
     if (this.electronService.isElectron) {
       this.electronService.ipcRenderer.send(IPC_MESSAGES.LOGIN);
     } else {
-      if (this.msalGuardConfig.authRequest) {
-        this.authService.loginRedirect({ ...this.msalGuardConfig.authRequest, ...userFlowRequest } as RedirectRequest);
-      } else {
-        this.authService.loginRedirect(userFlowRequest);
+      if (!this.loginDisplay && confirm('Your work will be lost. Do you want to leave this site?', )) {
+        this.msalBroadcastService.inProgress$
+        .pipe(
+          filter(
+            (status: InteractionStatus) => status === InteractionStatus.None
+          )
+        )
+        .subscribe(async () => {
+          if (this.msalGuardConfig.authRequest) {
+            this.authService.loginRedirect({ ...this.msalGuardConfig.authRequest, ...userFlowRequest } as RedirectRequest);
+          } else {
+            this.authService.loginRedirect(userFlowRequest);
+          }
+        });
       }
     }
   }
