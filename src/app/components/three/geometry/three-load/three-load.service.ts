@@ -20,7 +20,7 @@ import { ThreeLoadTemperature } from "./three-load-temperature";
 import { ThreeLoadMemberPoint } from "./three-load-member-point";
 import { ThreeLoadMemberMoment } from "./three-load-member-moment";
 import { DataHelperModule } from "src/app/providers/data-helper.module";
-import { connectableObservableDescriptor } from "rxjs/internal/observable/ConnectableObservable";
+// import { connectableObservableDescriptor } from "rxjs/internal/observable/ConnectableObservable";
 import { withLatestFrom } from "rxjs-compat/operator/withLatestFrom";
 import { forEach } from '@angular-devkit/schematics';
 import { LanguagesService } from "src/app/providers/languages.service";
