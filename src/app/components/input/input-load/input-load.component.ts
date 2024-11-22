@@ -103,16 +103,6 @@ export class InputLoadComponent implements OnInit, OnDestroy {
               dataIndx: this.columnKeys3D[4],
               sortable: false,
               width: 70,
-              format: (val) => {
-                const num = this.helper.toNumber(val);
-                if (num === null) return null;
-                const str = val.toString();
-                if (num === 0 && str.charAt(0) === "-") {
-                  return "-0.000";
-                } else {
-                  return num.toFixed(3);
-                }
-              },
             },
           ],
         },
@@ -331,16 +321,6 @@ export class InputLoadComponent implements OnInit, OnDestroy {
               dataIndx: this.columnKeys2D[4],
               sortable: false,
               width: 70,
-              format: (val) => {
-                const num = this.helper.toNumber(val);
-                if (num === null) return null;
-                const str = val.toString();
-                if (num === 0 && str.charAt(0) === "-") {
-                  return "-0.000";
-                } else {
-                  return num.toFixed(3);
-                }
-              },
             },
           ],
         },
@@ -520,16 +500,6 @@ export class InputLoadComponent implements OnInit, OnDestroy {
               dataIndx: this.columnKeys3D[4],
               sortable: false,
               width: 70,
-              format: (val) => {
-                const num = this.helper.toNumber(val);
-                if (num === null) return null;
-                const str = val.toString();
-                if (num === 0 && str.charAt(0) === "-") {
-                  return "-0.000";
-                } else {
-                  return num.toFixed(3);
-                }
-              },
             },
           ],
         },
@@ -645,16 +615,6 @@ export class InputLoadComponent implements OnInit, OnDestroy {
               dataIndx: this.columnKeys2D[4],
               sortable: false,
               width: 70,
-              format: (val) => {
-                const num = this.helper.toNumber(val);
-                if (num === null) return null;
-                const str = val.toString();
-                if (num === 0 && str.charAt(0) === "-") {
-                  return "-0.000";
-                } else {
-                  return num.toFixed(3);
-                }
-              },
             },
           ],
         },
@@ -806,17 +766,78 @@ export class InputLoadComponent implements OnInit, OnDestroy {
           return;
         }
 
+        // #region 入力制限
+
+        for (const range of [...ui.addList, ...ui.updateList]) {
+          // m1 自然数
+          if (!this.helper.isNaturalNumber(range.rowData.m1)) {
+            range.rowData.m1 = null;
+          }
+          // m2 0を除く整数
+          if (!this.helper.isNonZeroInteger(range.rowData.m2)) {
+            range.rowData.m2 = null;
+          }
+          // mark [1, 2, 9, 11]
+          if (!(range.rowData.mark === null || [1, 2, 9, 11].some((s) => s === range.rowData.mark))) {
+            range.rowData.mark = null;
+          }
+          // direction mark==1 or mark==11 ? [x, y, z, gx, gy, gz] : mark==9 ? null : [x, y, z, gx, gy, gz, r]
+          switch (range.rowData.mark) {
+            case 1:
+            case 11:
+              if (!(range.rowData.direction === null || ['x', 'y', 'z', 'gx', 'gy', 'gz'].some((s) => s === range.rowData.direction))) {
+                range.rowData.direction = null;
+              }
+              break;
+            case 2:
+            default:
+              if (!(range.rowData.direction === null || ['x', 'y', 'z', 'gx', 'gy', 'gz', 'r'].some((s) => s === range.rowData.direction))) {
+                range.rowData.direction = null;
+              }
+              break;
+            case 9:
+              range.rowData.direction = null;
+              break;
+          }
+          // L1 0以上の実数 mark=9では入力不可 -0なら-0.000を表示
+          if (range.rowData.L1 === null) {
+            // do nothing
+          } else if (range.rowData.mark === 9) {
+            range.rowData.L1 = null;
+          } else if (this.helper.isNegativeFloatZero(range.rowData.L1)) {
+            range.rowData.L1 = '-0.000';
+          } else if (/^-/.test(range.rowData.L1)) {
+            range.rowData.L1 = null;
+          } else {
+            const value = Number(range.rowData.L1);
+            range.rowData.L1 = isNaN(value) ? null : value.toFixed(3);
+          }
+          // L2 実数 mark=9では入力不可
+          if (range.rowData.mark === 9) {
+            range.rowData.L2 = null;
+          }
+          // P1 実数 (何もしなくてOK)
+          // P2 実数 mark=9では入力不可
+          if (range.rowData.mark === 9) {
+            range.rowData.P2 = null;
+          }
+
+          // n 正の整数
+          if (!this.helper.isPositiveInteger(range.rowData.n)) {
+            range.rowData.n = null;
+          }
+          // tx 実数 (何もしなくてOK)
+          // ty 実数 (何もしなくてOK)
+          // tz 実数 (何もしなくてOK)
+          // rx 実数 (何もしなくてOK)
+          // ry 実数 (何もしなくてOK)
+          // rz 実数 (何もしなくてOK)
+        }
+
+        // #endregion 入力制限
+
         const updatedRows = [];
         for (const range of ui.updateList) {
-          // L1行に 数字ではない入力がされていたら削除する
-          const L1 = this.helper.toNumber(range.rowData["L1"]);
-          if (L1 === null) {
-            range.rowData["L1"] = null;
-          }
-          const direction = range.rowData["direction"];
-          if (direction !== undefined && direction !== null) {
-            range.rowData["direction"] = direction.trim().toLowerCase();
-          }
           updatedRows.push(range.rowData.row);
           // const row = range.rowIndx + 1;
           // this.three.changeData("load_values", row);
@@ -828,15 +849,6 @@ export class InputLoadComponent implements OnInit, OnDestroy {
           const no: number = target.rowIndx;
           const newRow = target.newRow;
           const load = this.data.getLoadColumns(this.page, no + 1);
-          // 不適切をはじく処理
-          const L1 = this.helper.toNumber(newRow["L1"]);
-          if (L1 === null) {
-            newRow["L1"] = null;
-          }
-          const direction = newRow["direction"];
-          if (direction !== undefined && direction !== null) {
-            newRow["direction"] = direction.trim().toLowerCase();
-          }
           // this.datasetに代入
           load['m1'] = (newRow.m1 != undefined) ? newRow.m1 : '';
           load['m2'] = (newRow.m2 != undefined) ? newRow.m2 : '';
