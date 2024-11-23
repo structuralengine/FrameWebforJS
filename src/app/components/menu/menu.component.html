@@ -142,13 +142,13 @@
                     <a class="icon file" id="dropdownBasic1" class="menu-btn menu-item" ngbDropdownToggle
                         onfocus="this.blur();"><i class="far fa-user-circle"></i>{{ user.lastName + user.firstName }}</a>
                     <div ngbDropdownMenu aria-labelledby="dropdownBasic1">
-                        <a (click)="auth.signOut()" (click)="logOut()" class="menu-btn logOut menu-item dropdown-item" translate>menu.logout</a>
+                        <a (click)="auth.signOut()" (click)="logout()" class="menu-btn logOut menu-item dropdown-item" translate>menu.logout</a>
                     </div>
                 </div>
             </div>
         </div>
         <ng-template #showLogin>
-            <a (click)="logIn()" class="menu-btn">
+            <a (click)="login()" class="menu-btn">
                 <i class="fas fa-sign-in-alt"></i>
                 <p translate class="menu-item dropdown-item">menu.login</p>
             </a>
