@@ -323,6 +323,59 @@ export class InputFixNodeComponent implements OnInit, OnDestroy {
       this.currentColumn = column;
     },
     change: (evt, ui) => {
+      // #region 入力制限
+
+      for (const range of [...ui.addList, ...ui.updateList]) {
+        // n 正の整数
+        if (!this.helper.isNaturalNumber(range.rowData.n)) {
+          range.rowData.n = null;
+        }
+        // tx 0以上の実数
+        if (range.rowData.tx !== null) {
+          const value = Number(range.rowData.tx);
+          if (isNaN(value) || value < 0) {
+            range.rowData.tx = null;
+          }
+        }
+        // ty 0以上の実数
+        if (range.rowData.ty !== null) {
+          const value = Number(range.rowData.ty);
+          if (isNaN(value) || value < 0) {
+            range.rowData.ty = null;
+          }
+        }
+        // tz 0以上の実数
+        if (range.rowData.tz !== null) {
+          const value = Number(range.rowData.tz);
+          if (isNaN(value) || value < 0) {
+            range.rowData.tz = null;
+          }
+        }
+        // rx 0以上の実数
+        if (range.rowData.rx !== null) {
+          const value = Number(range.rowData.rx);
+          if (isNaN(value) || value < 0) {
+            range.rowData.rx = null;
+          }
+        }
+        // ry 0以上の実数
+        if (range.rowData.ry !== null) {
+          const value = Number(range.rowData.ry);
+          if (isNaN(value) || value < 0) {
+            range.rowData.ry = null;
+          }
+        }
+        // rz 0以上の実数
+        if (range.rowData.rz !== null) {
+          const value = Number(range.rowData.rz);
+          if (isNaN(value) || value < 0) {
+            range.rowData.rz = null;
+          }
+        }
+      }
+
+      // #endregion 入力制限
+
       // copy&pasteで入力した際、超過行が消えてしまうため、addListのループを追加.
       for (const target of ui.addList) {
         const no: number = target.rowIndx;
