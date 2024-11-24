@@ -259,6 +259,45 @@ export class InputFixMemberComponent implements OnInit, OnDestroy {
       this.currentColumn = column;
     },
     change: (evt, ui) => {
+      // #region 入力制限
+
+      for (const range of [...ui.addList, ...ui.updateList]) {
+        // m 正の整数
+        if (!this.helper.isNaturalNumber(range.rowData.m)) {
+          range.rowData.m = null;
+        }
+        // tx 0以上の実数
+        if (range.rowData.tx !== null) {
+          const value = Number(range.rowData.tx);
+          if (isNaN(value) || value < 0) {
+            range.rowData.tx = null;
+          }
+        }
+        // ty 0以上の実数
+        if (range.rowData.ty !== null) {
+          const value = Number(range.rowData.ty);
+          if (isNaN(value) || value < 0) {
+            range.rowData.ty = null;
+          }
+        }
+        // tz 0以上の実数
+        if (range.rowData.tz !== null) {
+          const value = Number(range.rowData.tz);
+          if (isNaN(value) || value < 0) {
+            range.rowData.tz = null;
+          }
+        }
+        // tr 0以上の実数
+        if (range.rowData.tr !== null) {
+          const value = Number(range.rowData.tr);
+          if (isNaN(value) || value < 0) {
+            range.rowData.tr = null;
+          }
+        }
+      }
+
+      // #endregion 入力制限
+
       // copy&pasteで入力した際、超過行が消えてしまうため、addListのループを追加.
       for (const target of ui.addList) {
         const no: number = target.rowIndx;
