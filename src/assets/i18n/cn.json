@@ -60,7 +60,8 @@
         "update_success": "更新成功",
         "select_preset": "选择预置",
         "preset": "预设",
-        "contact":"询问"
+        "contact":"询问",
+        "leave": "你的工作將會失去。您想離開這個網站嗎？"
     },
     "input": {
         "input-fix-node": {

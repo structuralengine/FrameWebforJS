@@ -440,7 +440,8 @@ export class MenuComponent implements OnInit {
     if (this.electronService.isElectron) {
       this.electronService.ipcRenderer.send(IPC_MESSAGES.LOGIN);
     } else {
-      if (!this.loginDisplay && confirm('Your work will be lost. Do you want to leave this site?', )) {
+      const message = this.translate.instant("menu.leave")
+      if (!this.loginDisplay && confirm(message)) {
         this.msalBroadcastService.inProgress$
         .pipe(
           filter(
