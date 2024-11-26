@@ -412,6 +412,7 @@
     },
     "window": {
         "closeTitle": "查看",
+        "leaveTitle": "所有输入将被丢弃",
         "closeMessage": "不会保存更改。 您确定要完成它吗?",
         "confirm": "您确定输入的数据将被销毁吗？"
     },

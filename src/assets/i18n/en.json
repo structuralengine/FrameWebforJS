@@ -417,6 +417,7 @@
     },
     "window": {
         "closeTitle": "Confirm",
+        "leaveTitle": "All input will be discarded",
         "closeMessage": "Changes may not to be saved. Are you sure you want to quit?",
         "confirm": "Information being entered is discarded."
     },
