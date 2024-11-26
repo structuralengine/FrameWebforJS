@@ -768,6 +768,16 @@ export class InputLoadComponent implements OnInit, OnDestroy {
 
         // #region 入力制限
 
+        let directions_1_11: string[];
+        let directions_2: string[];
+        if (this.helper.dimension === 3) {
+          directions_1_11 = ['x', 'y', 'z', 'gx', 'gy', 'gz'];
+          directions_2 = ['x', 'y', 'z', 'gx', 'gy', 'gz', 'r'];
+        } else {
+          directions_1_11 = ['x', 'y', 'gx', 'gy'];
+          directions_2 = ['x', 'y', 'gx', 'gy', 'r'];
+        }
+
         for (const range of [...ui.addList, ...ui.updateList]) {
           // m1 自然数
           if (!this.helper.isNaturalNumber(range.rowData.m1)) {
@@ -785,13 +795,13 @@ export class InputLoadComponent implements OnInit, OnDestroy {
           switch (range.rowData.mark) {
             case 1:
             case 11:
-              if (!(range.rowData.direction === null || ['x', 'y', 'z', 'gx', 'gy', 'gz'].some((s) => s === range.rowData.direction))) {
+              if (!(range.rowData.direction === null || directions_1_11.some((s) => s === range.rowData.direction))) {
                 range.rowData.direction = null;
               }
               break;
             case 2:
             default:
-              if (!(range.rowData.direction === null || ['x', 'y', 'z', 'gx', 'gy', 'gz', 'r'].some((s) => s === range.rowData.direction))) {
+              if (!(range.rowData.direction === null || directions_2.some((s) => s === range.rowData.direction))) {
                 range.rowData.direction = null;
               }
               break;
@@ -799,15 +809,16 @@ export class InputLoadComponent implements OnInit, OnDestroy {
               range.rowData.direction = null;
               break;
           }
-          // L1 0以上の実数 mark=9では入力不可 -0なら-0.000を表示
+          // L1 実数 mark=9では入力不可 -0なら-0.000を表示
           if (range.rowData.L1 === null) {
             // do nothing
           } else if (range.rowData.mark === 9) {
             range.rowData.L1 = null;
+          } else if (range.rowData.L1 === '') {
+            // 空文字に対してNumber()が0を返すので特別扱いしておく
+            range.rowData.L1 = null;
           } else if (this.helper.isNegativeFloatZero(range.rowData.L1)) {
             range.rowData.L1 = '-0.000';
-          } else if (/^-/.test(range.rowData.L1)) {
-            range.rowData.L1 = null;
           } else {
             const value = Number(range.rowData.L1);
             range.rowData.L1 = isNaN(value) ? null : value.toFixed(3);
