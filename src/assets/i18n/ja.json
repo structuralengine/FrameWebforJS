@@ -427,7 +427,8 @@
     "message":{
         "calc": "計算エラー",
         "print":"印刷エラー",
-        "print-max": "ファイルが大きすぎます。選択を減らして再出力してください。"
+        "print-max": "ファイルが大きすぎます。選択を減らして再出力してください。",
+        "transmission-error": "通信エラー"
     },
     "preset":{
         "ramen-viaduct" : "ラーメン構造",

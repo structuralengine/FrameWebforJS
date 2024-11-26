@@ -428,7 +428,8 @@
     "message":{
         "calc": "Computation error",
         "print": "Print Error",
-        "print-max": "The file is too large. Please reduce the selection and output again."
+        "print-max": "The file is too large. Please reduce the selection and output again.",
+        "transmission-error": "Transmission error"
     },
     "preset":{
         "ramen-viaduct" : "Ramen viaduct",
