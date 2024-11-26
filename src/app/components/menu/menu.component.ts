@@ -475,7 +475,11 @@ export class MenuComponent implements OnInit {
       this.user.setUserProfile(null);
       window.sessionStorage.setItem("openStart", "1");
     } else {
-      this.authService.instance
+      const isConfirm = await this.helper.confirm(
+        this.translate.instant("menu.leave"),  this.translate.instant("window.leaveTitle"),
+      );
+      if(isConfirm){
+        this.authService.instance
         .handleRedirectPromise()
         .then((tokenResponse) => {
           if (!tokenResponse) {
@@ -490,6 +494,7 @@ export class MenuComponent implements OnInit {
           // Handle error
           console.error(err);
         });
+      }
     }
   }
 
