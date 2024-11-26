@@ -37,6 +37,55 @@
           <hr class="hr" />
           <div class="btn-wrap">
             <a
+              routerLink="./input-elements"
+              (click)="contentsDailogShow(3)"
+              routerLinkActive="selected-item"
+              id="3"
+              class="btn-md btn-blue"
+            >
+              <div class="icon-img">
+                <svg
+                  width="32"
+                  height="32"
+                  viewBox="0 0 32 32"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M24 10L8.00021 10"
+                    stroke="black"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M16 21.5L16 10.5"
+                    stroke="black"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M24 22L8.00021 22"
+                    stroke="black"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </div>
+              <p translate>app.element</p>
+            </a>
+            <div class="explain-area" [style.transform]="translateY">
+              <div class="item-name" translate>app.element</div>
+              <div class="item-description" translate>
+                app.description.element
+              </div>
+              <a target="_blank" rel="noopener" href="https://fresh-tachometer-148.notion.site/FrameWeb-3b1432e6a03647bc85e20c55ade84e96#700a77e978eb4530839bbf06d0693e53" class="btn" translate>app.description.detail</a>
+            </div>
+          </div>
+          <div class="btn-wrap">
+            <a
               routerLink="./input-nodes"
               (click)="contentsDailogShow(0)"
               routerLinkActive="selected-item"
@@ -192,55 +241,6 @@
               <a target="_blank" rel="noopener" href="https://fresh-tachometer-148.notion.site/FrameWeb-3b1432e6a03647bc85e20c55ade84e96#9d2a70154643444492345136d9b6299d" class="btn" translate>app.description.detail</a>
             </div>
           </div>
-          <div class="btn-wrap">
-            <a
-              routerLink="./input-elements"
-              (click)="contentsDailogShow(3)"
-              routerLinkActive="selected-item"
-              id="3"
-              class="btn-md btn-blue"
-            >
-              <div class="icon-img">
-                <svg
-                  width="32"
-                  height="32"
-                  viewBox="0 0 32 32"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M24 10L8.00021 10"
-                    stroke="black"
-                    stroke-width="2.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                  <path
-                    d="M16 21.5L16 10.5"
-                    stroke="black"
-                    stroke-width="2.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                  <path
-                    d="M24 22L8.00021 22"
-                    stroke="black"
-                    stroke-width="2.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-              </div>
-              <p translate>app.element</p>
-            </a>
-            <div class="explain-area" [style.transform]="translateY">
-              <div class="item-name" translate>app.element</div>
-              <div class="item-description" translate>
-                app.description.element
-              </div>
-              <a target="_blank" rel="noopener" href="https://fresh-tachometer-148.notion.site/FrameWeb-3b1432e6a03647bc85e20c55ade84e96#700a77e978eb4530839bbf06d0693e53" class="btn" translate>app.description.detail</a>
-            </div>
-          </div>
           <ng-container *ngIf="helper.dimension == 3">
             <div class="btn-wrap">
               <a
@@ -284,7 +284,7 @@
             </div>
           </ng-container>
           <!-- Hide until FrameWeb structuralengine/FrameWeb#3 is finished -->
-          <!-- <div class="btn-wrap">
+          <div class="btn-wrap">
             <a
               routerLink="./input-joints"
               (click)="contentsDailogShow(5)"
@@ -347,7 +347,7 @@
               </div>
               <a target="_blank" rel="noopener" href="https://fresh-tachometer-148.notion.site/FrameWeb-3b1432e6a03647bc85e20c55ade84e96#f9f35a3c9ee2417fa39b6bbc46b0bb58" class="btn" translate>app.description.detail</a>
             </div>
-          </div> -->
+          </div>
           <div class="btn-wrap">
             <a
               routerLink="./input-notice_points"
