@@ -38,7 +38,7 @@ export class DataHelperModule {
   }
 
   // Yes/Noのダイアログを表示する
-  public async confirm(message: string): Promise<boolean> {
+  public async confirm(message: string, title?: string | undefined): Promise<boolean> {
     if (this.electronService.isElectron) {
       return window.confirm(message);
     } else {
@@ -46,9 +46,10 @@ export class DataHelperModule {
         centered: true,
         backdrop: true,
         keyboard: true,
-        size: "sm",
+        size: "md",
         windowClass: "confirm-modal",
       });
+      modalRef.componentInstance.title = title;
       modalRef.componentInstance.message = message;
       modalRef.componentInstance.dialogMode = "confirm";
 

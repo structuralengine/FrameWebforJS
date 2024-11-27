@@ -61,7 +61,8 @@
         "update_success": "Update success!!",
         "select_preset": "Select Preset",
         "preset": "Preset",
-        "contact":"Contact"
+        "contact":"Contact",
+        "leave": "Your work will be lost. Do you want to leave this site?"
     },
     "input": {
         "input-fix-node": {
@@ -416,6 +417,7 @@
     },
     "window": {
         "closeTitle": "Confirm",
+        "leaveTitle": "All input will be discarded",
         "closeMessage": "Changes may not to be saved. Are you sure you want to quit?",
         "confirm": "Information being entered is discarded."
     },

@@ -60,7 +60,8 @@
         "update_success": "更新成功",
         "select_preset": "选择预置",
         "preset": "预设",
-        "contact":"询问"
+        "contact":"询问",
+        "leave": "你的工作將會失去。您想離開這個網站嗎？"
     },
     "input": {
         "input-fix-node": {
@@ -411,6 +412,7 @@
     },
     "window": {
         "closeTitle": "查看",
+        "leaveTitle": "所有输入将被丢弃",
         "closeMessage": "不会保存更改。 您确定要完成它吗?",
         "confirm": "您确定输入的数据将被销毁吗？"
     },
