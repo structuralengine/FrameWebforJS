@@ -3,12 +3,33 @@ import { RouterLink } from "@angular/router";
 import { DataHelperModule } from "../../../providers/data-helper.module";
 import { InputMembersService } from "../input-members/input-members.service";
 
+export type LoadColumns = {
+  row: number,
+  m1: string,
+  m2: string,
+  direction: string,
+  mark: string,
+  L1: string,
+  L2: string,
+  P1: string,
+  P2: string,
+  n: string,
+  tx: string,
+  ty: string,
+  tz: string,
+  rx: string,
+  ry: string,
+  rz: string,
+};
+
 @Injectable({
   providedIn: "root",
 })
 export class InputLoadService {
   public load_name: any[];
-  public load: {};
+  public load: {
+    [key: string]: LoadColumns[]
+  };
 
   constructor(
     private member: InputMembersService,
@@ -56,11 +77,10 @@ export class InputLoadService {
     return result;
   }
 
-  public getLoadColumns( index: number, row: number): any {
+  public getLoadColumns( index: number, row: number): LoadColumns {
     const typNo: string = index.toString();
 
-    let target: any;
-    let result: any = undefined;
+    let target: LoadColumns[];
 
     // タイプ番号を探す
     if (!this.load[typNo]) {
@@ -70,9 +90,7 @@ export class InputLoadService {
     }
 
     // 行を探す
-    result = target.find((tmp) => {
-      return tmp.row === row;
-    });
+    let result = target.find((tmp) => tmp.row === row);
 
     // 対象行が無かった時に処理
     if (result === undefined) {

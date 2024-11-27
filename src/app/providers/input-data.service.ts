@@ -139,9 +139,9 @@ export class InputDataService {
           const direction = load_value['direction'];  // 'y'
           if (direction !== 'x' && direction !== 'r'){
             const P1 = this.helper.toNumber(load_value['P1']); // -17.2
-            if ( P1 !== null) load_value.P1 = -1 * P1;
+            if ( P1 !== null) load_value.P1 = (-1 * P1).toString();
             const P2 = this.helper.toNumber(load_value['P2']); // -17.2
-            if ( P2 !== null) load_value.P2 = -1 * P2;
+            if ( P2 !== null) load_value.P2 = (-1 * P2).toString();
           }
         }
 
@@ -149,17 +149,17 @@ export class InputDataService {
         // const n = load_value['n']; // '1'
         // const row = load_value['row']; // 1
         const rx = this.helper.toNumber(load_value['rx']); // ''
-        if ( rx !== null) load_value.rx = -1 * rx;
+        if ( rx !== null) load_value.rx = (-1 * rx).toString();
         const ry = this.helper.toNumber(load_value['ry']); // ''
-        if ( ry !== null) load_value.ry = -1 * ry;
+        if ( ry !== null) load_value.ry = (-1 * ry).toString();
         const rz = this.helper.toNumber(load_value['rz']); // ''
-        if ( rz !== null) load_value.rz = -1 * rz;
+        if ( rz !== null) load_value.rz = (-1 * rz).toString();
         // const tx = this.helper.toNumber(load_value['tx']); // 0
         // if ( tx !== null) load_value.tx = -1 * tx;
         const ty = this.helper.toNumber(load_value['ty']); // ''
-        if ( ty !== null) load_value.ty = -1 * ty;
+        if ( ty !== null) load_value.ty = (-1 * ty).toString();
         const tz = this.helper.toNumber(load_value['tz']); // ''
-        if ( tz !== null) load_value.tz = -1 * tz;
+        if ( tz !== null) load_value.tz = (-1 * tz).toString();
 
         console.log(load_id, load_value['row'], load_value);
       }

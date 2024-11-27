@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit, ViewChild } from "@angular/core";
-import { InputFixNodeService } from "./input-fix-node.service";
+import { FixNodeColumns, InputFixNodeService } from "./input-fix-node.service";
 import { DataHelperModule } from "../../../providers/data-helper.module";
 import { ThreeService } from "../../three/three.service";
 import { SheetComponent } from "../sheet/sheet.component";
@@ -23,7 +23,7 @@ export class InputFixNodeComponent implements OnInit, OnDestroy {
   private subscription: Subscription;
   private ROWS_COUNT = 15;
   private page = 1;
-  private dataset = [];
+  private dataset: FixNodeColumns[] = [];
 
   private columnKeys3D: string[] = ["n", "tx", "ty", "tz", "rx", "ry", "rz"];
   private columnKeys2D: string[] = ["n", "tx", "ty", "rz"];
@@ -49,21 +49,24 @@ export class InputFixNodeComponent implements OnInit, OnDestroy {
       colModel: [
         {
           title: this.translate.instant("input.input-fix-node.x_direction"),
-          dataType: "float",
+          dataType: "string",
+          align: "right",
           dataIndx: this.columnKeys3D[1],
           sortable: false,
           width: 100,
         },
         {
           title: this.translate.instant("input.input-fix-node.y_direction"),
-          dataType: "float",
+          dataType: "string",
+          align: "right",
           dataIndx: this.columnKeys3D[2],
           sortable: false,
           width: 100,
         },
         {
           title: this.translate.instant("input.input-fix-node.z_direction"),
-          dataType: "float",
+          dataType: "string",
+          align: "right",
           dataIndx: this.columnKeys3D[3],
           sortable: false,
           width: 100,
@@ -76,21 +79,24 @@ export class InputFixNodeComponent implements OnInit, OnDestroy {
       colModel: [
         {
           title: this.translate.instant("input.input-fix-node.x_around"),
-          dataType: "float",
+          dataType: "string",
+          align: "right",
           dataIndx: this.columnKeys3D[4],
           sortable: false,
           width: 100,
         },
         {
           title: this.translate.instant("input.input-fix-node.y_around"),
-          dataType: "float",
+          dataType: "string",
+          align: "right",
           dataIndx: this.columnKeys3D[5],
           sortable: false,
           width: 100,
         },
         {
           title: this.translate.instant("input.input-fix-node.z_around"),
-          dataType: "float",
+          dataType: "string",
+          align: "right",
           dataIndx: this.columnKeys3D[6],
           sortable: false,
           width: 100,
@@ -120,14 +126,16 @@ export class InputFixNodeComponent implements OnInit, OnDestroy {
       colModel: [
         {
           title: this.translate.instant("input.input-fix-node.x_direction"),
-          dataType: "float",
+          dataType: "string",
+          align: "right",
           dataIndx: this.columnKeys2D[1],
           sortable: false,
           width: 100,
         },
         {
           title: this.translate.instant("input.input-fix-node.y_direction"),
-          dataType: "float",
+          dataType: "string",
+          align: "right",
           dataIndx: this.columnKeys2D[2],
           sortable: false,
           width: 100,
@@ -140,7 +148,8 @@ export class InputFixNodeComponent implements OnInit, OnDestroy {
       colModel: [
         {
           title: " (kN・m/rad)",
-          dataType: "float",
+          dataType: "string",
+          align: "right",
           dataIndx: this.columnKeys2D[3],
           sortable: false,
           width: 100,
@@ -231,7 +240,8 @@ export class InputFixNodeComponent implements OnInit, OnDestroy {
   loadPage(currentPage: number, row: number) {
     for (let i = this.dataset.length + 1; i <= row; i++) {
       const fix_node = this.data.getFixNodeColumns(currentPage, i);
-      this.dataset.push(fix_node);
+      const fixed = this.fixRowData(fix_node);
+      this.dataset.push(fixed);
     }
     this.page = currentPage;
   }
@@ -323,58 +333,10 @@ export class InputFixNodeComponent implements OnInit, OnDestroy {
       this.currentColumn = column;
     },
     change: (evt, ui) => {
-      // #region 入力制限
-
+      // 入力制限
       for (const range of [...ui.addList, ...ui.updateList]) {
-        // n 正の整数
-        if (!this.helper.isNaturalNumber(range.rowData.n)) {
-          range.rowData.n = null;
-        }
-        // tx 0以上の実数
-        if (range.rowData.tx !== null) {
-          const value = Number(range.rowData.tx);
-          if (isNaN(value) || value < 0) {
-            range.rowData.tx = null;
-          }
-        }
-        // ty 0以上の実数
-        if (range.rowData.ty !== null) {
-          const value = Number(range.rowData.ty);
-          if (isNaN(value) || value < 0) {
-            range.rowData.ty = null;
-          }
-        }
-        // tz 0以上の実数
-        if (range.rowData.tz !== null) {
-          const value = Number(range.rowData.tz);
-          if (isNaN(value) || value < 0) {
-            range.rowData.tz = null;
-          }
-        }
-        // rx 0以上の実数
-        if (range.rowData.rx !== null) {
-          const value = Number(range.rowData.rx);
-          if (isNaN(value) || value < 0) {
-            range.rowData.rx = null;
-          }
-        }
-        // ry 0以上の実数
-        if (range.rowData.ry !== null) {
-          const value = Number(range.rowData.ry);
-          if (isNaN(value) || value < 0) {
-            range.rowData.ry = null;
-          }
-        }
-        // rz 0以上の実数
-        if (range.rowData.rz !== null) {
-          const value = Number(range.rowData.rz);
-          if (isNaN(value) || value < 0) {
-            range.rowData.rz = null;
-          }
-        }
+        range.rowData = this.fixRowData(range.rowData);
       }
-
-      // #endregion 入力制限
 
       // copy&pasteで入力した際、超過行が消えてしまうため、addListのループを追加.
       for (const target of ui.addList) {
@@ -404,6 +366,77 @@ export class InputFixNodeComponent implements OnInit, OnDestroy {
       this.three.selectChange("fix_nodes", row, column);
     },
   };
+
+  /**
+   * 指定されたデータ行に対して入力制限を適用した結果を返す。現状は入力行のデータを編集しているので入力データも更新されることに注意
+   * @param fixNode 処理対象のデータ行
+   * @returns 入力制限を適用した結果のデータ行
+   */
+  private fixRowData(fixNode: FixNodeColumns): FixNodeColumns {
+    // const result = structuredClone(fixNode);
+    const result = fixNode;
+
+    // n 正の整数
+    if (!this.helper.isNaturalNumber(result.n)) {
+      result.n = '';
+    }
+    // tx 0以上の実数
+    if (result.tx === '') {
+      // do nothing
+    } else if (result.tx === null) {
+      result.tx = '';
+    } else {
+      const value = Number(result.tx);
+      result.tx = (isNaN(value) || value < 0) ? '' : value.toString();
+    }
+    // ty 0以上の実数
+    if (result.ty === '') {
+      // do nothing
+    } else if (result.ty === null) {
+      result.ty = '';
+    } else {
+      const value = Number(result.ty);
+      result.ty = (isNaN(value) || value < 0) ? '' : value.toString();
+    }
+    // tz 0以上の実数
+    if (result.tz === '') {
+      // do nothing
+    } else if (result.tz === null) {
+      result.tz = '';
+    } else {
+      const value = Number(result.tz);
+      result.tz = (isNaN(value) || value < 0) ? '' : value.toString();
+    }
+    // rx 0以上の実数
+    if (result.rx === '') {
+      // do nothing
+    } else if (result.rx === null) {
+      result.rx = '';
+    } else {
+      const value = Number(result.rx);
+      result.rx = (isNaN(value) || value < 0) ? '' : value.toString();
+    }
+    // ry 0以上の実数
+    if (result.ry === '') {
+      // do nothing
+    } else if (result.ry === null) {
+      result.ry = '';
+    } else {
+      const value = Number(result.ry);
+      result.ry = (isNaN(value) || value < 0) ? '' : value.toString();
+    }
+    // rz 0以上の実数
+    if (result.rz === '') {
+      // do nothing
+    } else if (result.rz === null) {
+      result.rz = '';
+    } else {
+      const value = Number(result.rz);
+      result.rz = (isNaN(value) || value < 0) ? '' : value.toString();
+    }
+
+    return result;
+  }
 
   width = this.helper.dimension === 3 ? 712 : 412;
 
