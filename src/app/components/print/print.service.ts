@@ -606,7 +606,7 @@ export class PrintService {
       let kk = 0;
       let body1 = new Array();
       let body2 = {};
-      let basic: boolean = true;
+      let basic: boolean = false;
       this.priCount += 2;
 
       // let i = 0;
@@ -624,6 +624,7 @@ export class PrintService {
         // key：
         // 各データ＝"1",軸方向別データ:"dx_max" 数値に変えられるかどうか
         if (isFinite(int0)) {
+          basic = true;
           // 部材番号が空の場合は部材番号が前のものと同じ
           const item = body4;
           kk = item.m === "" ? kk : Number(item.m) - 1;
@@ -641,7 +642,6 @@ export class PrintService {
 
         } else {
           let axisArr = new Array();
-          basic = false;
           if (axis[list] === true) {
             this.priCount += 2;
 
@@ -678,7 +678,7 @@ export class PrintService {
 
     //case毎
     for (const type_ of Object.keys(json)) {
-      let basic: boolean = true;
+      let basic: boolean = false;
 
       let body1 = new Array(); // 軸指定がないとき
       let body2 = {}; //LL,combine,pickup
@@ -694,12 +694,12 @@ export class PrintService {
         const body4 = body3[list];
 
         if (isFinite(int0)) {
+          basic = true;
           body1.push(body4);
           this.priCount += 1;
 
         } else {
           let axisArr = {};
-          basic = false;
 
           // LL,combine,Pickup用，反力か変位かをデータ形式から判断する
           // dx_maxがある時：変位量データ
