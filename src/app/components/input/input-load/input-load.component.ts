@@ -289,6 +289,7 @@ export class InputLoadComponent implements OnInit, OnDestroy {
             {
               title: "(x,y,z)",
               dataType: "string",
+              align: "center",
               dataIndx: this.columnKeys2D[2],
               sortable: false,
               width: 30,
@@ -468,6 +469,7 @@ export class InputLoadComponent implements OnInit, OnDestroy {
             {
               title: "(x,y,z)",
               dataType: "string",
+              align: "center",
               dataIndx: this.columnKeys3D[2],
               sortable: false,
               width: 30,
@@ -583,6 +585,7 @@ export class InputLoadComponent implements OnInit, OnDestroy {
             {
               title: "(x,y,z)",
               dataType: "string",
+              align: "center",
               dataIndx: this.columnKeys2D[2],
               sortable: false,
               width: 30,
@@ -875,7 +878,7 @@ export class InputLoadComponent implements OnInit, OnDestroy {
       directions_2 = ['x', 'y', 'z', 'gx', 'gy', 'gz', 'r'];
     } else {
       directions_1_11 = ['x', 'y', 'gx', 'gy'];
-      directions_2 = ['x', 'y', 'gx', 'gy', 'r'];
+      directions_2 = ['x', 'y', 'gx', 'gy'];
     }
 
     // const result = structuredClone(load);
