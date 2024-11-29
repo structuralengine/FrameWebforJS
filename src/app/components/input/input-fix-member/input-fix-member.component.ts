@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, ViewChild } from "@angular/core";
-import { InputFixMemberService } from './input-fix-member.service';
+import { FixMemberColumns, InputFixMemberService } from './input-fix-member.service';
 import { DataHelperModule } from '../../../providers/data-helper.module';
 import { ThreeService } from '../../three/three.service';
 import { SheetComponent } from '../sheet/sheet.component';
@@ -21,7 +21,7 @@ export class InputFixMemberComponent implements OnInit, OnDestroy {
   @ViewChild('grid') grid: SheetComponent;
 
   private subscription: Subscription;
-  private dataset = [];
+  private dataset: FixMemberColumns[] = [];
   private columnKeys3D = ['m', 'tx', 'ty', 'tz', 'tr'];
   private columnKeys2D = ['m', 'tx', 'ty'];
   private columnHeaders3D =[
@@ -38,19 +38,19 @@ export class InputFixMemberComponent implements OnInit, OnDestroy {
       align: 'center', colModel: [
       { 
         title: this.translate.instant("input.input-fix-member.v_axis"),
-        dataType: "float",   dataIndx: this.columnKeys3D[1], sortable: false, width: 100 },
+        dataType: "string", align: "right",   dataIndx: this.columnKeys3D[1], sortable: false, width: 100 },
       { 
         title: this.translate.instant("input.input-fix-member.y_axis"),
-        dataType: "float",   dataIndx: this.columnKeys3D[2], sortable: false, width: 100 },
+        dataType: "string", align: "right",   dataIndx: this.columnKeys3D[2], sortable: false, width: 100 },
       { 
         title: this.translate.instant("input.input-fix-member.z_axis"),
-        dataType: "float",   dataIndx: this.columnKeys3D[3], sortable: false, width: 100 },
+        dataType: "string", align: "right",   dataIndx: this.columnKeys3D[3], sortable: false, width: 100 },
     ]},
     { 
       title: this.translate.instant("input.input-fix-member.rotationalRestraint"),
       align: 'center', colModel: [
       { 
-        title: "(kNm/rad/m)",  dataType: "float",   dataIndx: this.columnKeys3D[4], sortable: false, width: 100 }
+        title: "(kNm/rad/m)",  dataType: "string", align: "right",   dataIndx: this.columnKeys3D[4], sortable: false, width: 100 }
     ]},
   ];
   private columnHeaders2D =[
@@ -64,12 +64,12 @@ export class InputFixMemberComponent implements OnInit, OnDestroy {
     { 
       title: this.translate.instant("input.input-fix-member.v_axis"),
       align: 'center', colModel: [
-      { title: "(kN/m/m)", dataType: "float",   dataIndx: this.columnKeys2D[1], sortable: false, width: 100 },
+      { title: "(kN/m/m)", dataType: "string", align: "right",   dataIndx: this.columnKeys2D[1], sortable: false, width: 100 },
     ]},
     { 
       title: this.translate.instant("input.input-fix-member.r_axis"),
       align: 'center', colModel: [
-      { title: "(kN/m/m)", dataType: "float",   dataIndx: this.columnKeys2D[2], sortable: false, width: 100 },
+      { title: "(kN/m/m)", dataType: "string", align: "right",   dataIndx: this.columnKeys2D[2], sortable: false, width: 100 },
     ]},
   ];
 
@@ -169,7 +169,8 @@ export class InputFixMemberComponent implements OnInit, OnDestroy {
 
     for (let i = this.dataset.length + 1; i <= row; i++) {
       const fix_node = this.data.getFixMemberColumns(currentPage, i);
-      this.dataset.push(fix_node);
+      const fixed = this.fixRowData(fix_node);
+      this.dataset.push(fixed);
     }
 
 
@@ -259,6 +260,11 @@ export class InputFixMemberComponent implements OnInit, OnDestroy {
       this.currentColumn = column;
     },
     change: (evt, ui) => {
+      // 入力制限
+      for (const range of [...ui.addList, ...ui.updateList]) {
+        range.rowData = this.fixRowData(range.rowData);
+      }
+
       // copy&pasteで入力した際、超過行が消えてしまうため、addListのループを追加.
       for (const target of ui.addList) {
         const no: number = target.rowIndx;
@@ -286,6 +292,59 @@ export class InputFixMemberComponent implements OnInit, OnDestroy {
       this.three.selectChange("fix_member", row, column);
     }
   };
+
+  /**
+   * 指定されたデータ行に対して入力制限を適用した結果を返す。現状は入力行のデータを編集しているので入力データも更新されることに注意
+   * @param fixMember 処理対象のデータ行
+   * @returns 入力制限を適用した結果のデータ行
+   */
+  private fixRowData(fixMember: FixMemberColumns): FixMemberColumns {
+    // const result = structuredClone(fixMember);
+    const result = fixMember;
+
+    // m 正の整数
+    if (!this.helper.isNaturalNumber(result.m)) {
+      result.m = '';
+    }
+    // tx 0以上の実数
+    if (result.tx === '') {
+      // do nothing
+    } else if (result.tx === null) {
+      result.tx = '';
+    } else {
+      const value = Number(result.tx);
+      result.tx = (isNaN(value) || value < 0) ? '' : value.toString();
+    }
+    // ty 0以上の実数
+    if (result.ty === '') {
+      // do nothing
+    } else if (result.ty === null) {
+      result.ty = '';
+    } else {
+      const value = Number(result.ty);
+      result.ty = (isNaN(value) || value < 0) ? '' : value.toString();
+    }
+    // tz 0以上の実数
+    if (result.tz === '') {
+      // do nothing
+    } else if (result.tz === null) {
+      result.tz = '';
+    } else {
+      const value = Number(result.tz);
+      result.tz = (isNaN(value) || value < 0) ? '' : value.toString();
+    }
+    // tr 0以上の実数
+    if (result.tr === '') {
+      // do nothing
+    } else if (result.tr === null) {
+      result.tr = '';
+    } else {
+      const value = Number(result.tr);
+      result.tr = (isNaN(value) || value < 0) ? '' : value.toString();
+    }
+
+    return result;
+  }
 
   width = (this.helper.dimension === 3) ? 510 : 410 ;
 
