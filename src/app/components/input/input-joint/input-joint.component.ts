@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, ViewChild } from "@angular/core";
-import { InputJointService } from "./input-joint.service";
+import { JointColumns, InputJointService } from "./input-joint.service";
 import { DataHelperModule } from "../../../providers/data-helper.module";
 import { ThreeService } from "../../three/three.service";
 import { SheetComponent } from "../sheet/sheet.component";
@@ -19,43 +19,99 @@ export class InputJointComponent implements OnInit, OnDestroy {
   @ViewChild("grid") grid!: SheetComponent;
 
   private subscription: Subscription;
-  private dataset = [];
+  private dataset: JointColumns[] = [];
   private columnKeys3D = ['m', 'xi', 'yi', 'zi', 'xj', 'yj', 'zj'];
   private columnKeys2D = ['m', 'zi', 'zj'];
   private columnHeaders3D =[
     { 
       title: this.translate.instant("input.input-joint.member"),
-      align: 'center', colModel: [
+      align: 'center',
+      colModel: [
       { 
         title: this.translate.instant("input.input-joint.No"),
-        dataType: "string", dataIndx: this.columnKeys3D[0], sortable: false },
+        align: "center",
+        dataType: "string",
+        dataIndx: this.columnKeys3D[0],
+        sortable: false
+      },
     ]},      
     { 
       title: this.translate.instant("input.input-joint.node_i"),
-      align: 'center', colModel: [
-      { title: "x", dataType: "integer", dataIndx: this.columnKeys3D[1], sortable: false },
-      { title: "y", dataType: "integer", dataIndx: this.columnKeys3D[2], sortable: false },
-      { title: "z", dataType: "integer", dataIndx: this.columnKeys3D[3], sortable: false },
-    ]},      
+      align: 'center',
+      colModel: [
+        {
+          title: "x",
+          dataType: "string",
+          align: "center",
+          dataIndx: this.columnKeys3D[1],
+          sortable: false
+        },
+        {
+          title: "y",
+          dataType: "string",
+          align: "center",
+          dataIndx: this.columnKeys3D[2],
+          sortable: false
+        },
+        {
+          title: "z",
+          dataType: "string",
+          align: "center",
+          dataIndx: this.columnKeys3D[3],
+          sortable: false
+        },
+      ]
+    },      
     { 
       title: this.translate.instant("input.input-joint.node_j"),
-      align: 'center', colModel: [
-      { title: "x", dataType: "integer", dataIndx: this.columnKeys3D[4], sortable: false },
-      { title: "y", dataType: "integer", dataIndx: this.columnKeys3D[5], sortable: false },
-      { title: "z", dataType: "integer", dataIndx: this.columnKeys3D[6], sortable: false }
-    ]},      
+      align: 'center',
+      colModel: [
+        {
+          title: "x",
+          dataType: "string",
+          align: "center",
+          dataIndx: this.columnKeys3D[4],
+          sortable: false
+        },
+        {
+          title: "y",
+          dataType: "string",
+          align: "center",
+          dataIndx: this.columnKeys3D[5],
+          sortable: false
+        },
+        {
+          title: "z",
+          dataType: "string",
+          align: "center",
+          dataIndx: this.columnKeys3D[6],
+          sortable: false
+        }
+      ]
+    },      
   ];
   private columnHeaders2D =[
     { 
       title: this.translate.instant("input.input-joint.memberNo"),
-      dataType: "string", dataIndx: this.columnKeys2D[0], sortable: false },
+      dataType: "string",
+      align: "center",
+      dataIndx: this.columnKeys2D[0],
+      sortable: false
+    },
     { 
       title: this.translate.instant("input.input-joint.node_i"),
-      dataType: "integer", dataIndx: this.columnKeys2D[1], sortable: false },
+      dataType: "string",
+      align: "center",
+      dataIndx: this.columnKeys2D[1],
+      sortable: false
+    },
     { 
       title: this.translate.instant("input.input-joint.node_j"),
-      dataType: "integer", dataIndx: this.columnKeys2D[2], sortable: false }
-
+      dataType: "string",
+      align: "center",
+      dataIndx: this.columnKeys2D[2],
+      sortable: false
+    }
   ];
 
   private ROWS_COUNT = 15;
@@ -108,8 +164,9 @@ export class InputJointComponent implements OnInit, OnDestroy {
 
   loadPage(currentPage: number, row: number) {
     for (let i = this.dataset.length + 1; i <= row; i++) {
-      const fix_node = this.data.getJointColumns(currentPage, i);
-      this.dataset.push(fix_node);
+      const jointData = this.data.getJointColumns(currentPage, i);
+      const jointDataFixed = this.fixRowData(jointData);  // 入力制限のチェック
+      this.dataset.push(jointDataFixed);
     }
 
     this.page = currentPage;
@@ -198,6 +255,11 @@ export class InputJointComponent implements OnInit, OnDestroy {
       this.currentColumn = column;
     },
     change: (evt, ui) => {
+      // 入力制限
+      for (const range of [...ui.addList, ...ui.updateList]) {
+        range.rowData = this.fixRowData(range.rowData);
+      }
+
       // copy&pasteで入力した際、超過行が消えてしまうため、addListのループを追加.
       for (const target of ui.addList) {
         const no: number = target.rowIndx;
@@ -236,5 +298,45 @@ export class InputJointComponent implements OnInit, OnDestroy {
     } else {
       return this.columnKeys2D;
     }
+  }
+
+  /**
+   * 指定されたデータ行に対して入力制限を適用した結果を返す。現状は入力行のデータを編集しているので入力データも更新されることに注意
+   * @param jointRowData 処理対象のデータ行
+   * @returns 入力制限を適用した結果のデータ行
+   */
+  private fixRowData(jointRowData: JointColumns): JointColumns {
+    const result = jointRowData
+
+    // 部材番号：自然数
+    if (!this.helper.isNaturalNumber(result.m)) {
+      result.m = "";
+    }
+    // i端x軸まわり材端条件
+    if (!this.helper.isZeroOrOne(result.xi)) {
+      result.xi = "";
+    }
+    // i端y軸まわり材端条件
+    if (!this.helper.isZeroOrOne(result.yi)) {
+      result.yi = "";
+    }
+    // i端z軸まわり材端条件
+    if (!this.helper.isZeroOrOne(result.zi)) {
+      result.zi = "";
+    }
+    // j端x軸まわり材端条件
+    if (!this.helper.isZeroOrOne(result.xj)) {
+      result.xj = "";
+    }
+    // j端y軸まわり材端条件
+    if (!this.helper.isZeroOrOne(result.yj)) {
+      result.yj = "";
+    }
+    // j端z軸まわり材端条件
+    if (!this.helper.isZeroOrOne(result.zj)) {
+      result.zj = "";
+    }
+
+    return result;
   }
 }
