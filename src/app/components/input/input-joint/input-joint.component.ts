@@ -117,8 +117,8 @@ export class InputJointComponent implements OnInit, OnDestroy {
   private ROWS_COUNT = 15;
   private page = 1;
 
-  private currentRow: string;
-  private currentColumn: string;
+  private currentRow: string | null;
+  private currentColumn: string | null;
 
   constructor(
     private data: InputJointService,
@@ -244,12 +244,12 @@ export class InputJointComponent implements OnInit, OnDestroy {
     },
     selectEnd: (evt, ui) => {
       const range = ui.selection.iCells.ranges;
-      const row = range[0].r1 + 1;
+      const row = (range[0].r1 + 1).toString();  // 行番号
       const columnList = this.getColumnList(this.helper.dimension);
-      const column = columnList[range[0].c1];
-      if (this.currentRow !== row && this.currentColumn !== column){
-        //選択行の変更があるとき，ハイライトを実行する
-        this.three.selectChange("joints", row, column);
+      const column = columnList[range[0].c1];  // xi, yi, zi, xj, yj, zj
+      if (this.currentRow !== row || this.currentColumn !== column){
+        //選択セルの変更があるとき，ハイライトを実行する
+        this.three.selectChange("joints", Number(row), column);
       }
       this.currentRow = row;
       this.currentColumn = column;
@@ -277,16 +277,16 @@ export class InputJointComponent implements OnInit, OnDestroy {
       this.three.changeData("joints", this.page);
 
       // ハイライトの処理を再度実行する
-      const row = ui.updateList[0].rowIndx + 1;
-      let column: string;
+      const row = (ui.updateList[0].rowIndx + 1).toString();  // 行番号
       const columnList = this.getColumnList(this.helper.dimension);
+      let column: string | null = null;
       for (const key of columnList) {
         if (key in ui.updateList[0].newRow) {
           column = key;
           break;
         }
       }
-      this.three.selectChange("joints", row, column);
+      this.three.selectChange("joints", Number(row), column);
     },
   };
 
