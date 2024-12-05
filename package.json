@@ -1,7 +1,7 @@
 {
   "name": "frame-web-for-js",
 
-  "version": "2.3.16",
+  "version": "2.3.17",
 
 
   "scripts": {
@@ -77,8 +77,9 @@
     "nanoid": "^4.0.2",
     "pako": "^2.0.2",
     "pqgrid": "file:./paramquery-9.0.1/",
+    "rxfire": "file:./rxfire-6.0.5/",
     "print-js": "^1.6.0",
-    "rxjs": "~6.6.2",
+    "rxjs": "^7.0.0",
     "rxjs-compat": "^6.5.3",
     "three": "^0.128.0",
     "troika-three-text": "^0.42.0",

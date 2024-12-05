@@ -1,12 +1,23 @@
 import { Injectable } from '@angular/core';
 import { DataHelperModule } from '../../../providers/data-helper.module';
 
+export type FixMemberColumns = {
+  row: number,
+  m: string,
+  tx: string,
+  ty: string,
+  tz: string,
+  tr: string,
+};
+
 @Injectable({
   providedIn: 'root'
 })
 export class InputFixMemberService {
   
-  public fix_member: any;
+  public fix_member: {
+    [key: string]: FixMemberColumns[]
+  };
 
   constructor(private helper: DataHelperModule) {
     this.clear();
@@ -16,12 +27,10 @@ export class InputFixMemberService {
     this.fix_member = {};
   }
   
-  public getFixMemberColumns(typNo: number, row: number): any {
-
-    let target: any = null;
-    let result: any = null;
+  public getFixMemberColumns(typNo: number, row: number): FixMemberColumns {
 
     // タイプ番号を探す
+    let target: FixMemberColumns[];
     if (!this.fix_member[typNo]) {
       target = new Array();
     } else {
@@ -29,6 +38,7 @@ export class InputFixMemberService {
     }
 
     // 行を探す
+    let result: FixMemberColumns;
     for (let i = 0; i < target.length; i++) {
       const tmp = target[i];
       if (tmp['row'] === row) {
