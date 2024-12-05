@@ -154,7 +154,7 @@ export class MenuComponent implements OnInit {
             || msg.eventType === EventType.SSO_SILENT_SUCCESS),
           takeUntil(this._destroying$)
         )
-        .subscribe((result: EventMessage) => {
+        .subscribe(async (result: EventMessage) => {
 
           let payload = result.payload as AuthenticationResult;
           let idtoken = payload.idTokenClaims as IdTokenClaimsWithPolicyId;
@@ -189,7 +189,7 @@ export class MenuComponent implements OnInit {
               prompt: PromptValue.LOGIN 
             };
 
-            this.login(signUpSignInFlowRequest);
+            await this.login(signUpSignInFlowRequest, true);
           }
 
           return result;
@@ -200,14 +200,14 @@ export class MenuComponent implements OnInit {
           filter((msg: EventMessage) => msg.eventType === EventType.LOGIN_FAILURE || msg.eventType === EventType.ACQUIRE_TOKEN_FAILURE),
           takeUntil(this._destroying$)
         )
-        .subscribe((result: EventMessage) => {
+        .subscribe(async (result: EventMessage) => {
           if (result.error && result.error.message.indexOf('AADB2C90118') > -1) {
             let resetPasswordFlowRequest: RedirectRequest | PopupRequest = {
               authority: environment.b2cPolicies.authorities.resetPassword.authority,
               scopes: [],
             };
 
-            this.login(resetPasswordFlowRequest);
+            await this.login(resetPasswordFlowRequest, true);
           };
         });
     }
@@ -246,7 +246,7 @@ export class MenuComponent implements OnInit {
       uid: profile.uid,
       email: profile.email,
       firstName: profile.givenName ?? "User",
-      lastName: profile.surname,
+      lastName: profile.surname ?? "",
     }
     this.user.setUserProfile(userProfile);
   }
@@ -436,14 +436,35 @@ export class MenuComponent implements OnInit {
     }
   }
 
-  login(userFlowRequest?: RedirectRequest | PopupRequest) {
+  async login(userFlowRequest?: RedirectRequest | PopupRequest, ignoreAlert?: boolean) {
     if (this.electronService.isElectron) {
       this.electronService.ipcRenderer.send(IPC_MESSAGES.LOGIN);
     } else {
-      if (this.msalGuardConfig.authRequest) {
-        this.authService.loginRedirect({ ...this.msalGuardConfig.authRequest, ...userFlowRequest } as RedirectRequest);
-      } else {
-        this.authService.loginRedirect(userFlowRequest);
+
+      //If you ignore the alert, it is considered as confirmation to leave the page.
+      let isConfirm = false;
+      if(ignoreAlert) isConfirm = true;
+      else
+      {
+        isConfirm = await this.helper.confirm(
+          this.translate.instant("menu.leave"),  this.translate.instant("window.leaveTitle"),
+        );
+      }
+
+      if (!this.loginDisplay && isConfirm) {
+        this.msalBroadcastService.inProgress$
+        .pipe(
+          filter(
+            (status: InteractionStatus) => status === InteractionStatus.None
+          )
+        )
+        .subscribe(async () => {
+          if (this.msalGuardConfig.authRequest) {
+            this.authService.loginRedirect({ ...this.msalGuardConfig.authRequest, ...userFlowRequest } as RedirectRequest);
+          } else {
+            this.authService.loginRedirect(userFlowRequest);
+          }
+        });
       }
     }
   }
@@ -454,7 +475,11 @@ export class MenuComponent implements OnInit {
       this.user.setUserProfile(null);
       window.sessionStorage.setItem("openStart", "1");
     } else {
-      this.authService.instance
+      const isConfirm = await this.helper.confirm(
+        this.translate.instant("menu.leave"),  this.translate.instant("window.leaveTitle"),
+      );
+      if(isConfirm){
+        this.authService.instance
         .handleRedirectPromise()
         .then((tokenResponse) => {
           if (!tokenResponse) {
@@ -469,6 +494,7 @@ export class MenuComponent implements OnInit {
           // Handle error
           console.error(err);
         });
+      }
     }
   }
 

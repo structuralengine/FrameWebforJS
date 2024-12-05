@@ -1,11 +1,24 @@
 import { Injectable } from "@angular/core";
 import { DataHelperModule } from "../../../providers/data-helper.module";
 
+export type FixNodeColumns = {
+  row: number,
+  n: string,
+  tx: string,
+  ty: string,
+  tz: string,
+  rx: string,
+  ry: string,
+  rz: string,
+};
+
 @Injectable({
   providedIn: "root",
 })
 export class InputFixNodeService {
-  public fix_node: any;
+  public fix_node: {
+    [key: string]: FixNodeColumns[]
+  };
   public node: any;
 
   constructor(private helper: DataHelperModule) {
@@ -16,11 +29,10 @@ export class InputFixNodeService {
     this.fix_node = {};
   }
 
-  public getFixNodeColumns(typNo: number, row: number): any {
-    let target: any = null;
-    let result: any = null;
+  public getFixNodeColumns(typNo: number, row: number): FixNodeColumns {
 
     // タイプ番号を探す
+    let target: FixNodeColumns[];
     if (!this.fix_node[typNo]) {
       target = new Array();
     } else {
@@ -28,6 +40,7 @@ export class InputFixNodeService {
     }
 
     // 行を探す
+    let result: FixNodeColumns;
     for (let i = 0; i < target.length; i++) {
       const tmp = target[i];
       if (tmp["row"] === row) {

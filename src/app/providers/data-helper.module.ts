@@ -38,7 +38,7 @@ export class DataHelperModule {
   }
 
   // Yes/Noのダイアログを表示する
-  public async confirm(message: string): Promise<boolean> {
+  public async confirm(message: string, title?: string | undefined): Promise<boolean> {
     if (this.electronService.isElectron) {
       return window.confirm(message);
     } else {
@@ -46,15 +46,64 @@ export class DataHelperModule {
         centered: true,
         backdrop: true,
         keyboard: true,
-        size: "sm",
+        size: "md",
         windowClass: "confirm-modal",
       });
+      modalRef.componentInstance.title = title;
       modalRef.componentInstance.message = message;
       modalRef.componentInstance.dialogMode = "confirm";
 
       const result = await modalRef.result;
       return result === "yes";
     }
+  }
+
+  /**
+   * 文字列として与えられた数値が自然数(0を含まない正の整数)であるかを調べる
+   * @param str 文字列として与えられた数値
+   * @returns 自然数ならtrue、それ以外はfalse
+   */
+  isNaturalNumber(str: string | null): boolean {
+    if (str === null) {
+      return false;
+    }
+    return /^[1-9][0-9]*$/.test(str);
+  }
+  
+  /**
+   * 文字列として与えられた数値が0を除く整数であるかを調べる
+   * @param str 文字列として与えられた数値
+   * @returns 0を除く整数ならtrue、それ以外はfalse
+   */
+  isNonZeroInteger(str: string | null): boolean {
+    if (str === null) {
+      return false;
+    }
+    return /^-?[1-9][0-9]*$/.test(str);
+  }
+  
+  /**
+   * 文字列として与えられた数値が正の整数であるかを調べる
+   * @param str 文字列として与えられた数値
+   * @returns 正の整数ならtrue、それ以外はfalse
+   */
+  isPositiveInteger(str: string | null): boolean {
+    if (str === null) {
+      return false;
+    }
+    return /^[1-9][0-9]*$/.test(str);
+  }
+
+  /**
+   * 文字列として与えられた数値が負符号を持つ0.0であるかを調べる
+   * @param str 文字列として与えられた数値
+   * @returns 負符号を持つ0.0ならtrue、それ以外はfalse
+   */
+  isNegativeFloatZero(str: string | null): boolean {
+    if (str === null) {
+      return false;
+    }
+    return /^-0(\.0*)?$/.test(str);
   }
 
   // 文字列string を数値にする
