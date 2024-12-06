@@ -284,31 +284,40 @@ export class AppComponent implements OnInit, AfterViewInit {
             // 解析結果を集計する
             this.ResultData.loadResultData(_jsonData);
             this.ResultData.isCalculated = true;
-          } catch (e) {
-            if(e.message.includes("NaN")){
-              this.helper.alert(this.translate.instant("message.calc"));
-              check = false;
-            }
-              
-            else
-              this.helper.alert(e);
-          } finally {          
 
-            modalRef.close(); // モーダルダイアログを消す
-            if(check)
+          } catch (e) {
+            // "error" または "exceeded"を含む場合のエラー
+            check = false;  // 計算異常終了フラグ
+            if (e.includes("error") && this.language.browserLang == "ja") {
+              // "error" を含み言語設定が日本語の場合のみエラー内容を出力
+              const errJson = JSON.parse(e)
+              this.helper.alert(errJson.error)
+            } else {
+              // 上記以外は一律に計算エラーメッセージを出力
+              this.helper.alert(this.translate.instant("message.calc"));
+            }
+
+          } finally {          
+            // 終了処理
+            if (check) {
+              // 計算正常終了時のメッセージ出力
               this.helper.alert(
-                this.translate.instant("menu.calc_complete") // 一時的にポイント消費量の通知を削除
+                this.translate.instant("menu.calc_complete")
+              // ポイント消費量は現在使用していないためコメントアウト
               /*this.user.deduct_points
               + this.translate.instant("menu.deduct_points")
               + this.user.new_points
               + this.translate.instant("menu.new_points")*/
-            );
+              );
+            }
+            modalRef.close();  // モーダルダイアログを消す
           }
         },
         (error) => {
-          this.helper.alert(this.translate.instant("message.calc"));
-          console.error(error);
-          modalRef.close();
+          // 通信失敗時のエラー
+          this.helper.alert(this.translate.instant("message.transmission-error"));  // エラーメッセージの出力
+          console.error(error);  // コンソールへのログ出力
+          modalRef.close();  // モーダルダイアログを消す
         }
       );
   }

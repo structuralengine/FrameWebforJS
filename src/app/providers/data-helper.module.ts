@@ -106,6 +106,18 @@ export class DataHelperModule {
     return /^-0(\.0*)?$/.test(str);
   }
 
+  /**
+   * 文字列として与えられた数値が整数の1または0であるかを調べる
+   * @param str 文字列として与えられた数値
+   * @returns 整数の1または0ならtrue、それ以外はfalse
+   */
+  isZeroOrOne(str: string | null): boolean {
+    if (str === null) {
+      return false;
+    }
+    return /^(0|1)$/.test(str);
+  }
+
   // 文字列string を数値にする
   public toNumber(num: string, digit: number = null): number {
     let result: number = null;
