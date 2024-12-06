@@ -425,7 +425,8 @@
     "message":{
         "calc": "计算错误",
         "print": "打印错误",
-        "print-max": "文件太大。缩小选择范围并重新导出。"
+        "print-max": "文件太大。缩小选择范围并重新导出。",
+        "transmission-error": "通信错误"
     },
     "preset":{
         "ramen-viaduct" : "架构",

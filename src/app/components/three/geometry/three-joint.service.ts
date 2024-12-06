@@ -1,11 +1,9 @@
 import { SceneService } from '../scene.service';
 import { InputNodesService } from '../../input/input-nodes/input-nodes.service';
 import { InputMembersService } from '../../input/input-members/input-members.service';
-import { InputLoadService } from '../../input/input-load/input-load.service';
 import { InputJointService } from '../../input/input-joint/input-joint.service';
 import { ThreeNodesService } from './three-nodes.service';
 import { Injectable } from '@angular/core';
-
 import * as THREE from 'three';
 import { ThreeMembersService } from './three-members.service';
 
@@ -21,19 +19,31 @@ export class ThreeJointService {
 
   private selectionItem: THREE.Mesh;     // 選択中のアイテム
 
-  constructor(private scene: SceneService,
-              private nodeThree: ThreeNodesService,
-              private node: InputNodesService,
-              private member: InputMembersService,
-              private joint: InputJointService,
-              private three_member: ThreeMembersService){
-      this.jointList = new Array();
-      this.isVisible = null;
-    }
+  // 結合描画オブジェクトに色の定義
+  private jointColors = {
+    x: 0xFF0000,
+    y: 0x00FF00,
+    z: 0x0000FF,
+    black: 0X000000,
+    hilight: 0X00A5FF
+  };
+
+  constructor(
+    private scene: SceneService,
+    private nodeThree: ThreeNodesService,
+    private node: InputNodesService,
+    private member: InputMembersService,
+    private joint: InputJointService,
+    private three_member: ThreeMembersService
+  )
+  {
+    this.jointList = new Array();
+    this.isVisible = null;
+  }
 
   public visibleChange(flag: boolean): void {
 
-    this.selectChange(-1, -1)
+    this.selectChange(-1, null)
 
     if( this.isVisible === flag){
       return;
@@ -44,35 +54,36 @@ export class ThreeJointService {
     this.isVisible = flag;
   }
 
+  /**
+   * 異なる結合データページが表示される場合の処理
+   * @param index 結合ケース番号
+   */
   public changeData(index: number): void {
 
     this.ClearData();
 
-    // 格点データを入手
+    // 全節点データを入手
     const nodeData = this.node.getNodeJson(0);
     if (Object.keys(nodeData).length <= 0) {
       return;
     }
-    // 要素データを入手
+    // 全部材データを入手
     const memberData = this.member.getMemberJson(0);
     if (Object.keys(memberData).length <= 0) {
       return;
     }
     
-    const key: string = index.toString();
-    
-    // 結合データを入手
+    // 変更対象の結合ケースのデータを入手
+    const key: string = index.toString();  // 結合ケース番号
     const jointData = this.joint.getJointJson(1, key);
     if (Object.keys(jointData).length <= 0) {
       return;
     } 
-
-    // createJointLoadを実行させる
     const targetJoint = jointData[key];
 
+    // 各行の結合データに対して処理を実行
     for (const jo of targetJoint) {
-
-      // jointDataデータのに 要素番号 m を探す
+      // 結合データが設定されている部材を取得
       if(!(jo.m in memberData)){
         continue;
       }
@@ -81,122 +92,127 @@ export class ThreeJointService {
         continue;
       }
 
-      // memberDataデータに i端の格点番号
-      const i = nodeData[m.ni];
-      const j = nodeData[m.nj];
-      if (i === undefined || j === undefined) {
+      // 部材のi端、j端節点を取得
+      const iNode = nodeData[m.ni];
+      const jNode = nodeData[m.nj];
+      if (iNode === undefined || jNode === undefined) {
         continue;
       }
 
-      const localAxis = this.three_member.localAxis(i.x, i.y, i.z, j.x, j.y, j.z, m.cg);
+      // 要素座標系の取得
+      // localAxis.xが要素座標系x軸の単位ベクトル、以下y、z同様
+      const localAxis = this.three_member.localAxis(iNode.x, iNode.y, iNode.z, jNode.x, jNode.y, jNode.z, m.cg);
 
-      let position = {x:i.x, y:i.y, z:i.z};
-      let direction = {x:jo.xi, y:jo.yi, z:jo.zi};
-      this.createJoint(position, direction, localAxis, jo);
-
-      // memberDataデータに j端の格点番号
-      position = {x:j.x, y:j.y, z:j.z};
-      direction = {x:jo.xj, y:jo.yj, z:jo.zj};
-      this.createJoint(position, direction, localAxis, jo);
-
+      // ピン接合描画オブジェクトの作成
+      this.createJointObject(jo, iNode, jNode, localAxis);
     }
   }
 
-  //シートの選択行が指すオブジェクトをハイライトする
-  public selectChange(index_row, index_column): void{
-    
-    //数字(列数)を記号に変換
-    const column = index_column;
+  /**
+   * 選択セルの変更時および結合データの入力変更時にハイライトする処理
+   * @param rowNum 行番号
+   * @param columnTitle 列タイトルxi, yi, zi, xj, yj, zj, その他文字列またはnull
+   */
+  public selectChange(rowNum: number, columnTitle: string | null): void {
+    // ハイライトする結合描画オブジェクトの検索
+    const currentName = "joint" + rowNum.toString() + (columnTitle ?? "");
+    const hilightObj = this.jointList.find((tmp) => tmp.name === currentName);
 
-    //全てのハイライトを元に戻し，選択行のオブジェクトのみハイライトを適応する
-    for (let item of this.jointList){
-
-      item['material']['color'].setHex(0X000000); //処理の変更あり
-
-      if (item.name === 'joint' + index_row.toString() + column){
-
-        item['material']['color'].setHex(0X00A5FF); //処理の変更あり
+    // ハイライト処理
+    if (hilightObj === undefined) {
+      // ハイライトするべき描画オブジェクトが無い場合はデフォルトのカラーにリセット
+      for (const item of this.jointList) {
+        const dir: string = item.name[item.name.length - 2];  // オブジェクト名の後ろから2番目の文字x,y,z
+        if (dir === "x") {
+          item['material']['color'].setHex(this.jointColors.x);
+        } else if (dir === "y") {
+          item['material']['color'].setHex(this.jointColors.y);
+        } else if (dir === "z") {
+          item['material']['color'].setHex(this.jointColors.z);
+        }
       }
+    } else {
+      // 対象のオブジェクトをハイライトし、その他のオブジェクトのカラーを黒に変更
+      // いったん全ての結合オブジェクトを黒に変更
+      for (const item of this.jointList) {
+        item['material']['color'].setHex(this.jointColors.black);
+      }
+      // ハイライト対象のオブジェクトの色を変更
+      hilightObj['material']['color'].setHex(this.jointColors.hilight);
     }
 
+    // 表示の更新
     this.scene.render();
   }
 
-  // ピンを示すドーナッツを描く
-  private createJoint(position: any, direction: any, localAxis, Data): void {
+  /**
+   * ピン接合を示す描画オブジェクトを作成する
+   * @param joint 結合データ
+   * @param iNode i端節点データ
+   * @param jNode j端節点データ
+   * @param localAxis 要素座標系変換ベクトルデータ
+   */
+  private createJointObject(joint, iNode, jNode, localAxis): void {
+      // 描画オブジェクトのオフセット長の設定
+      const len = Math.sqrt((jNode.x - iNode.x) ** 2 + (jNode.y - iNode.y) ** 2 + (jNode.z - iNode.z) ** 2);  // 部材長
+      const offset = Math.min(0.1, len * 0.25);  // 基本は端部から0.1mの位置で部材が短い場合は部材長の1/4の位置
+      let offsetVec = localAxis.x;
+      offsetVec.x *= offset;
+      offsetVec.y *= offset;
+      offsetVec.z *= offset;
 
-      // x方向の結合
-
-      if(direction.x === 0 ){
-        const pin_x = this.createJoint_base(position, 0xFF0000);
-        const FocalSpot_X = position.x + localAxis.x.x;
-        const FocalSpot_Y = position.y + localAxis.x.y;
-        const FocalSpot_Z = position.z + localAxis.x.z;
-        pin_x.lookAt(FocalSpot_X, FocalSpot_Y, FocalSpot_Z);
-        if (direction.x === Data.xi && direction.y === Data.yi && direction.z === Data.zi){
-          //pin_x.name = "joint" + Data.m.toString() + "xi";
-          pin_x.name = "joint" + Data.row.toString() + "xi";
-        } else if (direction.x === Data.xj && direction.y === Data.yj && direction.z === Data.zj){
-          //pin_x.name = "joint" + Data.m.toString() + "xj";
-          pin_x.name = "joint" + Data.row.toString() + "xj";
+      // i端側⇒j端側
+      for (const side of ["i", "j"]) {
+        // 描画位置の設定と材端条件の取得
+        let position;  // 描画位置用
+        let freefix;  // 材端条件用
+        if (side == "i") {
+          position = {x:(iNode.x + offsetVec.x), y:(iNode.y + offsetVec.y), z:(iNode.z + offsetVec.z)};
+          freefix = {x:joint.xi, y:joint.yi, z:joint.zi};
         } else {
-
+          position = {x:(jNode.x - offsetVec.x), y:(jNode.y - offsetVec.y), z:(jNode.z - offsetVec.z)};
+          freefix = {x:joint.xj, y:joint.yj, z:joint.zj};
         }
-        this.jointList.push(pin_x);
-        this.scene.add(pin_x);
-      }
 
-      // y方向の結合
-
-      if(direction.y === 0 ){
-        const pin_y = this.createJoint_base(position, 0x00FF00);
-        const FocalSpot_X = position.x + localAxis.y.x;
-        const FocalSpot_Y = position.y + localAxis.y.y;
-        const FocalSpot_Z = position.z + localAxis.y.z;
-        pin_y.lookAt(FocalSpot_X, FocalSpot_Y, FocalSpot_Z);
-        if (direction.x === Data.xi && direction.y === Data.yi && direction.z === Data.zi){
-          //pin_y.name = "joint" + Data.m.toString() + "yi";
-          pin_y.name = "joint" + Data.row.toString() + "yi";
-        } else if (direction.x === Data.xj && direction.y === Data.yj && direction.z === Data.zj){
-          //pin_y.name = "joint" + Data.m.toString() + "yj";
-          pin_y.name = "joint" + Data.row.toString() + "yj";
-        } else {
-
+        // ローカルx⇒y⇒z軸まわり回転のピン接合
+        for (const dir of ["x", "y", "z"]) {
+          // 色と向きの設定
+          let color;  // 色用
+          let focalSpot;  // 向き用
+          if (dir == "x") {
+            if (freefix.x == 1) { continue; }  // 固定ならスキップ
+            color = this.jointColors.x;
+            focalSpot = {x:(position.x + localAxis.x.x), y:(position.y + localAxis.x.y), z:(position.z + localAxis.x.z)};
+          } else if (dir == "y") {
+            if (freefix.y == 1) { continue; }  // 固定ならスキップ
+            color = this.jointColors.y;
+            focalSpot = {x:(position.x + localAxis.y.x), y:(position.y + localAxis.y.y), z:(position.z + localAxis.y.z)};
+          } else {
+            if (freefix.z == 1) { continue; }  // 固定ならスキップ
+            color = this.jointColors.z;
+            focalSpot = {x:(position.x + localAxis.z.x), y:(position.y + localAxis.z.y), z:(position.z + localAxis.z.z)};
+          }
+          // 描画オブジェクトの作成
+          const pinObj = this.createJoint_base(position, color);
+          pinObj.lookAt(focalSpot.x, focalSpot.y, focalSpot.z);
+          pinObj.name = "joint" + joint.row.toString() + dir + side;
+          this.jointList.push(pinObj);
+          this.scene.add(pinObj);
         }
-        this.jointList.push(pin_y);
-        this.scene.add(pin_y);
-
       }
-
-      // z方向の結合
-
-      if(direction.z === 0 ){
-        const pin_z = this.createJoint_base(position, 0x0000FF);
-        const FocalSpot_X = position.x + localAxis.z.x;
-        const FocalSpot_Y = position.y + localAxis.z.y;
-        const FocalSpot_Z = position.z + localAxis.z.z;
-        pin_z.lookAt(FocalSpot_X, FocalSpot_Y, FocalSpot_Z);
-        if (direction.x === Data.xi && direction.y === Data.yi && direction.z === Data.zi){
-          //pin_z.name = "joint" + Data.m.toString() + "zi";
-          pin_z.name = "joint" + Data.row.toString() + "zi";
-        } else if (direction.x === Data.xj && direction.y === Data.yj && direction.z === Data.zj){
-          //pin_z.name = "joint" + Data.m.toString() + "zj";
-          pin_z.name = "joint" + Data.row.toString() + "zj";
-        }
-        this.jointList.push(pin_z);
-        this.scene.add(pin_z);
-
-      }
-
   }
 
-  private createJoint_base(position, color){
-
-    const pin_geometry = new THREE.TorusBufferGeometry(0.10, 0.01, 16, 64);
+  /**
+   * ドーナツ型描画オブジェクトの作成
+   * @param position 描画位置の座標データ
+   * @param color オブジェクトの描画色
+   * @returns 
+   */
+  private createJoint_base(position, color) {
+    const pin_geometry = new THREE.TorusBufferGeometry(0.05, 0.005, 16, 64);
     const pin_material = new THREE.MeshBasicMaterial({color: color , side: THREE.DoubleSide});
     const pin = new THREE.Mesh(pin_geometry, pin_material);
     pin.position.set(position.x, position.y, position.z);
-
     return pin;
   }
 
