@@ -1,13 +1,28 @@
 import { Injectable } from '@angular/core';
 import { DataHelperModule } from '../../../providers/data-helper.module';
 
+export type JointColumns = {
+  row: number,
+  m: string,
+  xi: string,
+  yi: string,
+  zi: string,
+  xj: string,
+  yj: string,
+  zj: string
+};
+
 @Injectable({
   providedIn: 'root'
 })
 export class InputJointService {
-  public joint: any;
+  public joint: {
+    [key: string]: JointColumns[]
+  };
 
-  constructor(private helper: DataHelperModule) {
+  constructor(
+    private helper: DataHelperModule
+  ) {
     this.clear();
   }
 
@@ -15,32 +30,34 @@ export class InputJointService {
     this.joint = {};
   }
 
-  public getJointColumns(typNo: number, row: number): any {
+  public getJointColumns(pageNo: number, row: number): JointColumns {
+    const pageID: string = pageNo.toString();
 
-    let target: any = null;
-    let result: any = null;
-
-    // タイプ番号を探す
-    if (!this.joint[typNo]) {
+    // 該当ページ（結合ケース）のデータ取得
+    let target: JointColumns[];
+    if (!this.joint[pageID]) {
       target = new Array();
     } else {
-      target = this.joint[typNo];
+      target = this.joint[pageID];
     }
 
-    // 行を探す
-    for (let i = 0; i < target.length; i++) {
-      const tmp = target[i];
-      if (tmp['row'] === row) {
-        result = tmp;
-        break;
-      }
-    }
+    // 該当行の結合データ取得
+    let result = target.find((tmp) => tmp.row === row)
 
-    // 対象行が無かった時に処理
-    if (result == null) {
-      result = { row: row, m: '', xi: '', yi: '', zi: '', xj: '', yj: '', zj: '' };
+    // 対象行が無かった時の処理
+    if (result === undefined) {
+      result = {
+        row: row,
+        m: "",
+        xi: "",
+        yi: "",
+        zi: "",
+        xj: "",
+        yj: "",
+        zj: ""
+      };
       target.push(result);
-      this.joint[typNo] = target;
+      this.joint[pageID] = target;
     }
 
     return result;
@@ -50,14 +67,19 @@ export class InputJointService {
     if (!('joint' in jsonData)) {
       return;
     }
+
+    this.clear();
+
     const json: {} = jsonData['joint'];
-    for (const typNo of Object.keys(json)) {
-      const js: any[] = json[typNo];
+
+    for (const caseID of Object.keys(json)) {
+      const js: any[] = json[caseID];
       const target = new Array();
+
       for (let i = 0; i < js.length; i++) {
         const item = js[i];
-        const row: string = ('row' in item) ? item['row'] : (i + 1).toString();
-        const result = {
+        const row: number = ('row' in item) ? item['row'] : (i + 1);
+        const result: JointColumns = {
           row: row,
           m: (item.m == null) ? '' : item.m.toString(),
           xi: (item.xi == null) ? '' : item.xi.toFixed(0),
@@ -69,7 +91,7 @@ export class InputJointService {
         };
         target.push(result);
       }
-      this.joint[typNo] = target;
+      this.joint[caseID] = target;
     }
   }
 

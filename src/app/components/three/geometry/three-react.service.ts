@@ -177,7 +177,7 @@ export class ThreeReactService {
       reac.ty = this.helper.toNumber(reac.ty);
       reac.tz = this.helper.toNumber(reac.tz);
       reac.mx = this.helper.toNumber(reac.mx);
-      reac.my = -this.helper.toNumber(reac.my);
+      reac.my = this.helper.toNumber(reac.my);
       reac.mz = this.helper.toNumber(reac.mz);
     }
     // スケールを決定する 最大の荷重を 1とする
@@ -242,7 +242,7 @@ export class ThreeReactService {
     }
   }
 
-  // 節点荷重の矢印を作成する
+  // 反力モーメントの矢印オブジェクトの作成
   private setMomentReact(value: number, mMax: number, node: any, color: number, name: string): THREE.Group {
 
     if (value === 0) {
@@ -277,23 +277,30 @@ export class ThreeReactService {
 
     group.position.set(node.x, node.y, node.z);
     group.scale.set(scale, scale, scale)
+    // この時点で全体Z軸に対して左ねじ回りの矢印が作成される
 
+    // 全体座標系に対して右ねじ方向が正となるよう矢印を回転させる
     switch (name) {
       case 'mx':
+        // ローカルy軸に対して右ねじ方向に90°回転（これで全体X軸に対して左ねじ回りの矢印となる）  
         group.rotateY(Math.PI / 2);
-        if(value < 0){
+        if(value > 0){
+          // 反力モーメントの値が正なら反転
           group.rotateX(Math.PI);
         }
         break;
       case 'my':
+        // ローカルx軸に対して右ねじ方向に90°回転（これで全体Y軸に対して右ねじ回りの矢印となる）
         group.rotateX(Math.PI / 2);
         if(value < 0){
+          // 反力モーメントの値が負なら反転
           group.rotateY(Math.PI);
         }
         break;
       case 'mz':
         if(value > 0){
-          group.rotateX(Math.PI); // 反転
+          // 反力モーメントの値が正なら反転
+          group.rotateX(Math.PI);
         }
         break;
     }
@@ -304,7 +311,7 @@ export class ThreeReactService {
 
   }
 
-  // 節点荷重の矢印を作成する
+  // 支点反力の矢印オブジェクトを作成する
   private setPointReact(value: number, pMax: number,
     node: any, name: string): THREE.Group {
 
