@@ -1,205 +1,331 @@
-import { Injectable } from '@angular/core';
 import * as THREE from "three";
-import { Vector2 } from 'three';
-import { ThreeLoadText } from "./three-load-text";
 
-import { ThreeLoadDimension } from './three-load-dimension';
+import {
+  LoadData,
+  MaxLoadDict,
+  OffsetDict,
+  OffsetDirection,
+} from "./three-load-common";
+import { ThreeLoadText3D } from "./three-load-text";
 
+/** 節点荷重データ */
+export class ThreeLoadPoint extends LoadData {
+  /** 荷重の種別 */
+  readonly loadType = "PointLoad";
 
-@Injectable({
-  providedIn: 'root'
-})
-export class ThreeLoadPoint {
-  
-  static id = 'PointLoad';
-  public id = ThreeLoadPoint.id;
+  /** 荷重図形の拡大倍率 */
+  readonly magnifier = 2.5; // 目立たないので少し大きめに描画
 
-  private line_mat_Red: THREE.LineBasicMaterial;
-  private line_mat_Green: THREE.LineBasicMaterial;
-  private line_mat_Blue: THREE.LineBasicMaterial;
-  private line_mat_Pick: THREE.LineBasicMaterial;  //ハイライトカラー
-  private arrow_mat_Red: THREE.MeshBasicMaterial;
-  private arrow_mat_Green: THREE.MeshBasicMaterial;
-  private arrow_mat_Blue: THREE.MeshBasicMaterial;
-  private arrow_mat_Pick: THREE.MeshBasicMaterial;  //ハイライトカラー
+  /** この荷重と関連を持つ節点の節点番号一覧 */
+  readonly correspondingNodeNoList: string[];
+  /** この荷重と関連を持つ部材の部材番号一覧 */
+  readonly correspondingMemberNoList: string[];
 
-  private text: ThreeLoadText;
-  private dim: ThreeLoadDimension;
+  /** 節点座標 */
+  readonly position: THREE.Vector3;
+  /** 方向 */
+  readonly direction: string;
+  /** 荷重値(kN) */
+  readonly value: number;
+  /** 荷重値の最大値(節点荷重と部材集中荷重) */
+  readonly pMax: number;
+  /** 荷重値の最大値(節点モーメントと部材集中モーメント) */
+  readonly mMax: number = 0;
+  /** 荷重値の最大値(部材分布荷重) */
+  readonly wMax: number = 0;
+  /** 荷重値の最大値(部材ねじりモーメント) */
+  readonly rMax: number = 0;
+  /** 荷重値の最大値(部材軸方向分布荷重) */
+  readonly qMax: number = 0;
+  /** 荷重描画方向を示す単位ベクトル */
+  readonly uLoad: THREE.Vector3;
+  /** 節点を起点とした場合の荷重描画方向を示す文字列 */
+  readonly offsetDirection: OffsetDirection;
+  /** 荷重テーブルの列情報(m=部材荷重、p=節点荷重) */
+  readonly col: "m" | "p" = "p";
+  /** 荷重テーブルの行番号 */
+  readonly row: number;
+  /** 荷重の積み上げ順を決める数値 */
+  readonly rank = 20;
 
-  constructor(text: ThreeLoadText) {
-    
-    this.text = text;
-    this.dim = new ThreeLoadDimension(text);
-    
-    this.line_mat_Red = new THREE.LineBasicMaterial({ color: 0xff0000 });
-    this.line_mat_Green = new THREE.LineBasicMaterial({ color: 0x00ff00 });
-    this.line_mat_Blue = new THREE.LineBasicMaterial({ color: 0x0000ff });
-    this.line_mat_Pick = new THREE.LineBasicMaterial({ color: 0xafeeee });  //ハイライトカラー
-    this.arrow_mat_Red = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-    this.arrow_mat_Green = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-    this.arrow_mat_Blue = new THREE.MeshBasicMaterial({ color: 0x0000ff });
-    this.arrow_mat_Pick = new THREE.MeshBasicMaterial({ color: 0xafeeee });  //ハイライトカラー
+  /** ハイライト表示状態を示すフラグ */
+  private isSelected: boolean = false;
+
+  // this.children["group"].children["child"].children["arrow"] - 矢印
+  // this.children["group"].children["child"].children["value"] - 荷重値
+
+  static readonly colorRed = 0xff0000;
+  static readonly colorGreen = 0x00ff00;
+  static readonly colorBlue = 0x0000ff;
+  static readonly colorPick = 0xafeeee;
+
+  /**
+   * 節点荷重の描画インスタンス生成
+   * @param no 節点番号
+   * @param mNoList この節点を一端とする部材の部材番号一覧
+   * @param position 節点座標
+   * @param direction 方向
+   * @param value 荷重値(kN)
+   * @param row 節点荷重データテーブルの行インデックス
+   * @returns 節点荷重の描画インスタンス
+   */
+  constructor(
+    no: string,
+    mNoList: string[],
+    position: THREE.Vector3,
+    direction: string,
+    value: number,
+    row: number
+  ) {
+    super();
+
+    this.correspondingNodeNoList = [no];
+    this.correspondingMemberNoList = [...mNoList];
+
+    this.position.copy(position);
+    this.direction = direction;
+    this.value = value;
+    this.pMax = Math.abs(value);
+
+    // 荷重線の向き(荷重値が負なら全体座標系プラス側に、正ならマイナス側に荷重線を描画する)
+    const uLoad = new THREE.Vector3();
+    let offsetdir: string;
+    switch (direction) {
+      case "tx":
+        uLoad.set(1, 0, 0);
+        offsetdir = "gx";
+        break;
+      case "ty":
+        uLoad.set(0, 1, 0);
+        offsetdir = "gy";
+        break;
+      case "tz":
+        uLoad.set(0, 0, 1);
+        offsetdir = "gz";
+        break;
+      default:
+        throw new Error();
     }
-
-  /// 節点荷重を編集する
-  // target: 編集対象の荷重,
-  // node: 基準点,
-  // offset: 配置位置（その他の荷重とぶつからない位置）
-  // value: 荷重値,
-  // length: 表示上の長さ,
-  // direction: 荷重の向き(tx, ty, tz)
-  public create( position: any, offset: number, value: number,
-    length: number, direction: string, row: number ): THREE.Group {
-
-    //線の色を決める
-    let line_color = 0xff0000;
-    if (direction === "ty" || direction === "tgy") {
-      line_color = 0x00ff00;
-    } else if (direction === "tz" || direction === "tgz") {
-      line_color = 0x0000ff;
+    let pm: string;
+    if (value < 0) {
+      pm = "+";
+    } else {
+      pm = "-";
+      uLoad.negate();
     }
+    this.uLoad = uLoad;
+    this.offsetDirection = `${offsetdir}${pm}` as OffsetDirection;
+
+    this.row = row;
+
+    this.name = `${this.loadType}-${row}-${direction}`;
+  }
+
+  /**
+   * 荷重図の再配置
+   * @param nodeOffsetDictMap key=節点番号、value=各接点のOffsetDict
+   * @param memberOffsetDictMap key=部材番号、value=各部材のOffsetDict
+   * @param maxLoadDict
+   * @param scale 描画スケール
+   * @param isSelected true=ハイライト表示、false=ハイライト表示解除、undefined=状態継続
+   */
+  relocate(
+    nodeOffsetDictMap: Map<string, OffsetDict>,
+    memberOffsetDictMap: Map<string, OffsetDict>,
+    maxLoadDict: MaxLoadDict,
+    scale: number,
+    isSelected: boolean | undefined
+  ): void {
+    isSelected ??= this.isSelected;
+
+    // この荷重に関連するOffsetDictの抽出
+    const correspondingOffsetDictList1: OffsetDict[] = []; // offset決定用(節点＋部材)
+    const correspondingOffsetDictList2: OffsetDict[] = []; // offset更新用(節点のみ)
+    this.correspondingNodeNoList.forEach((no) => {
+      const dict = nodeOffsetDictMap.get(no);
+      correspondingOffsetDictList1.push(dict);
+      correspondingOffsetDictList2.push(dict);
+    });
+    this.correspondingMemberNoList.forEach((no) => {
+      correspondingOffsetDictList1.push(memberOffsetDictMap.get(no));
+    });
+
+    // この荷重に適用するoffsetの決定
+    const offset = OffsetDict.getMax(
+      this.offsetDirection,
+      ...correspondingOffsetDictList1
+    );
+
+    // 矢印の向き(this.uLoadは矢印の向きではなくて矢印を描画する領域の向き)
+    const dir = this.uLoad.clone().negate();
+    // 矢印の長さ
+    const length =
+      (Math.abs(this.value) / maxLoadDict.pMax) * this.magnifier * scale;
+    // 矢印の基点
+    const origin = dir
+      .clone()
+      .negate()
+      .multiplyScalar(offset + length);
+    // 非選択時の矢印の色
+    let arrowColor: number;
+    switch (this.direction) {
+      case "tx":
+        arrowColor = ThreeLoadPoint.colorRed;
+        break;
+      case "ty":
+        arrowColor = ThreeLoadPoint.colorGreen;
+        break;
+      case "tz":
+        arrowColor = ThreeLoadPoint.colorBlue;
+        break;
+      default:
+        throw new Error();
+    }
+    const color = isSelected ? ThreeLoadPoint.colorPick : arrowColor;
+
+    // この荷重に関連するOffsetDictの更新
+    correspondingOffsetDictList2.forEach((dict) =>
+      dict.update(this.offsetDirection, offset + length)
+    );
+
+    const arrow = new THREE.ArrowHelper(dir, origin, length, color);
+    arrow.name = "arrow";
 
     const child = new THREE.Group();
+    child.add(arrow);
     child.name = "child";
 
-    // 色を変更する
-    const origin = new THREE.Vector3(-1, 0, 0);
-    const dir = new THREE.Vector3(1, 0, 0); // 矢印の方向（単位ベクトル）
-    const arrow = new THREE.ArrowHelper(dir, origin, 1, line_color);
-    arrow.name = "arrow";
-    child.add(arrow);
-
-    // 長さを修正する
-    if (value < 0) {
-      child.rotation.set(-Math.PI, 0, -Math.PI);
+    const old = this.getObjectByName("group");
+    if (old) {
+      this.remove(old);
     }
-    child.scale.set(length, length, length);
-
-    const group0 = new THREE.Group();
-
-    child.position.y = offset;
-
-    group0.add(child);
-    group0.name = "group";
 
     const group = new THREE.Group();
-    group.add(group0);
-    group["direction"] = direction;
-    group["editor"] = this;
-    group['value'] = value; //値を保存
+    group.add(child);
+    group.name = "group";
 
-    group.name = ThreeLoadPoint.id + "-" + row.toString() + '-' + direction.toString();
-    // 向きを変更する
-    if (direction === "ty") {
-      group.rotateZ(Math.PI / 2);
-    } else if (direction === "tz") {
-      group.rotation.set(-Math.PI / 2, 0, -Math.PI / 2);
-    } else if (direction === "tgy" || direction === "tgz") {
-      group.rotateZ(-Math.PI / 2);
-    }
+    this.add(group);
 
-    // 位置を修正する
-    if(direction === "tx" || direction === "tz" ||direction === "ty" ){
-      group.position.set(position.x, position.y, position.z);
+    // 荷重値の描画位置
+    this.userData["textPos"] = origin; // 矢印の根元
+    // 荷重値の描画方向(右)
+    this.userData["vx"] = dir.clone().negate().normalize(); // 荷重の逆向き
+    // 荷重線の描画方向(上)
+    switch (this.direction) {
+      case "tx":
+        this.userData["vy"] = new THREE.Vector3(0, -1, 0); // y軸負方向
+        break;
+      case "ty":
+      case "tz":
+        this.userData["vy"] = new THREE.Vector3(-1, 0, 0); // x軸負方向
+        break;
+      default:
+        throw new Error();
     }
-    return group;
+    // 非選択時の矢印の色
+    this.userData["arrowColor"] = arrowColor;
+
+    this.isSelected = isSelected;
+
+    this.setText(isSelected);
+    // this.setColor(isSelected); 呼び出し不要
   }
 
-   // 大きさを反映する
-  public setSize(group: any, size: number): void {
-    for (const item of group.children) {
-      item.scale.set(size, size, size);
+  /**
+   * 選択状態と非選択状態の切り替え
+   * @param isSelected true=選択状態、false=非選択状態
+   */
+  highlight(isSelected: boolean): void {
+    if (this.isSelected === isSelected) {
+      return;
     }
+    this.isSelected = isSelected;
+
+    this.setText(isSelected);
+    this.setColor(isSelected);
   }
 
-  // オフセットを反映する
-  public setOffset(group: THREE.Group, offset: number): void {
-    for (const item of group.children) {
-      item.position.x = offset;
-    }
-  }
+  /**
+   * 選択時は荷重値を描画し、非選択時は荷重値の描画をクリアする
+   * @param isSelected true=選択状態、false=非選択状態
+   */
+  private setText(isSelected: boolean): void {
+    const key = "value";
 
-  // スケールを反映する
-  public setScale(group: any, scale: number): void {
-    group.scale.set(scale, scale, scale);
-  }
-
-  // ハイライトを反映させる
-  public setColor(group: any, status: string): any {
-
-    //置き換えるマテリアルを生成 -> colorを設定し，対象オブジェクトのcolorを変える
-    const group0 = group.getObjectByName('group');
-    
-    for(const child of  group0.children){
-      if(child.name === 'child'){
-        for (let target of child.children[0].children) {
-          if (status === "clear") {
-            if (target.type === 'Line' && group.name.slice(-1) === 'x') {
-              target.material = this.line_mat_Red; //デフォルトのカラー
-            } else if (target.type === 'Line' && group.name.slice(-1) === 'y') {
-              target.material = this.line_mat_Green; //デフォルトのカラー
-            } else if (target.type === 'Line' && group.name.slice(-1) === 'z') {
-              target.material = this.line_mat_Blue; //デフォルトのカラー
-            } else if (target.type === 'Mesh' && group.name.slice(-1) === 'x') {
-              target.material = this.arrow_mat_Red; //デフォルトのカラー
-            } else if (target.type === 'Mesh' && group.name.slice(-1) === 'y') {
-              target.material = this.arrow_mat_Green; //デフォルトのカラー
-            } else if (target.type === 'Mesh' && group.name.slice(-1) === 'z') {
-              target.material = this.arrow_mat_Blue; //デフォルトのカラー
-            }
-          } else if (status === "select") {
-            if (target.type === 'Line') {
-              target.material = this.line_mat_Pick; //ハイライト用のカラー
-            } else if (target.type === 'Mesh' ) {
-              target.material = this.arrow_mat_Pick; //ハイライト用のカラー
-            }
-    
-          }
-        }
-      } else if(child.name === 'text'){
-        if (status === "clear"){
-          child.visible = false;  // 文字を非表示
-        } else if (status === "select"){
-          child.visible = true; // 文字を表示
-        }
-      }
-    }
-
-    // 文字
-    this.setText(group, status);
-
-  }
-
-  // 文字
-  private setText(group: any, status: string): void {
-    
     // 一旦削除
-    const key = 'value';
-    const child = group.getObjectByName("child"); 
+    const child = this.getObjectByName("child");
     const old = child.getObjectByName(key);
-    if(old !== undefined){
+    if (old) {
       child.remove(old);
     }
 
-    if (status !== "select") {
+    if (!isSelected) {
       return;
     }
 
-    const direction = group.direction;
-    const value: number = group[key];
-    const textString: string = value.toFixed(2) + " kN";
+    const textString = this.value.toFixed(2) + " kN";
+    const position = this.userData["textPos"] as THREE.Vector3;
+    const vx = this.userData["vx"] as THREE.Vector3;
+    const vy = this.userData["vy"] as THREE.Vector3;
 
-    const text = this.text.create(textString, new Vector2(-1, 0), 0.1);
-    // if (direction === 'tz') text.rotateX(Math.PI);
-    if (direction === 'ty') {
-      text.rotateZ(Math.PI);
-      //text.rotateX(Math.PI);
-    }
-    // if (direction === 'tx' && value < 0) text.rotateY(Math.PI);
-    text.rotateX(Math.PI);
+    const text = new ThreeLoadText3D(textString, position, 0.1, {
+      vx: vx,
+      vy: vy,
+      hAlign: "left",
+      vAlign: "center",
+    });
     text.name = key;
 
     child.add(text);
   }
-  
+
+  /**
+   * 選択状態と非選択状態とで矢印の色を切り替える
+   * @param isSelected true=選択状態、false=非選択状態
+   */
+  private setColor(isSelected: boolean): void {
+    const color = isSelected
+      ? ThreeLoadPoint.colorPick
+      : (this.userData["arrowColor"] as number);
+
+    const arrow = this.getObjectByName("arrow") as THREE.ArrowHelper;
+    if (!arrow) {
+      throw new Error();
+    }
+
+    arrow.setColor(color);
+  }
+
+  /**
+   * 節点荷重の描画インスタンス生成
+   * @param no 節点番号
+   * @param mNoList この節点を一端とする部材の部材番号一覧
+   * @param position 節点座標
+   * @param direction 方向
+   * @param value 荷重値(kN)
+   * @param row 節点荷重データテーブルの行インデックス
+   * @returns 節点荷重の描画インスタンス
+   */
+  static create(
+    no: string,
+    mNoList: string[],
+    position: THREE.Vector3,
+    direction: string,
+    value: number,
+    row: number
+  ): ThreeLoadPoint | undefined {
+    switch (direction) {
+      case "tx":
+      case "ty":
+      case "tz":
+        break;
+      default:
+        return undefined;
+    }
+    if (value === 0) {
+      return undefined;
+    }
+
+    return new ThreeLoadPoint(no, mNoList, position, direction, value, row);
+  }
 }

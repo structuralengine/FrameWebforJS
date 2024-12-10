@@ -1,240 +1,411 @@
-import { Injectable } from '@angular/core';
 import * as THREE from "three";
-import { Vector2 } from 'three';
 
-import { ThreeLoadDimension } from './three-load-dimension';
-import { ThreeLoadText } from "./three-load-text";
+import {
+  LoadData,
+  LocalAxis,
+  MaxLoadDict,
+  OffsetDict,
+  OffsetDirection,
+} from "./three-load-common";
+import { ThreeLoadDimension } from "./three-load-dimension";
+import { ThreeLoadText3D } from "./three-load-text";
 
-@Injectable({
-  providedIn: 'root'
-})
-export class ThreeLoadTemperature {
-  
-  static id = 'TemperatureLoad';
-  public id = ThreeLoadTemperature.id;
+/** 温度荷重データ */
+export class ThreeLoadTemperature extends LoadData {
+  /** 荷重の種別 */
+  readonly loadType = "TemperatureLoad";
 
-  private colors: number[];
-  private arrow_mat: THREE.MeshBasicMaterial;
+  /** 荷重図形の拡大倍率 */
+  readonly magnifier = 1;
 
-  private matLine: THREE.LineBasicMaterial;
+  /** この荷重と関連を持つ節点の節点番号一覧 */
+  readonly correspondingNodeNoList: string[];
+  /** この荷重と関連を持つ部材の部材番号一覧 */
+  readonly correspondingMemberNoList: string[];
 
-  private text: ThreeLoadText;
-  private dim: ThreeLoadDimension;
+  /** i端節点の座標(基準点はthis.position) */
+  readonly nodei: THREE.Vector3;
+  /** j端節点の座標(基準点はthis.position) */
+  readonly nodej: THREE.Vector3;
+  /** マーク */
+  readonly mark: number;
+  /** i端節点とj端節点の間の距離(m) */
+  readonly L: number;
+  /** 荷重値(°C) */
+  readonly P1: number;
+  /** 部材荷重系 */
+  readonly localAxis: LocalAxis;
+  /** 荷重値の最大値(節点荷重と部材集中荷重) */
+  readonly pMax: number = 0;
+  /** 荷重値の最大値(節点モーメントと部材集中モーメント) */
+  readonly mMax: number = 0;
+  /** 荷重値の最大値(部材分布荷重) */
+  readonly wMax: number = 0;
+  /** 荷重値の最大値(部材ねじりモーメント) */
+  readonly rMax: number = 0;
+  /** 荷重値の最大値(部材軸方向分布荷重) */
+  readonly qMax: number = 0;
+  /** 荷重描画方向を示す単位ベクトル */
+  readonly uLoad: THREE.Vector3;
+  /** 部材軸を起点とした場合の荷重描画方向を示す文字列 */
+  readonly offsetDirection: OffsetDirection;
+  /** 寸法線の描画方向を示す単位ベクトル */
+  readonly uDimension: THREE.Vector3;
+  /** 荷重テーブルの列情報(m=部材荷重、p=節点荷重) */
+  readonly col: "m" | "p" = "m";
+  /** 荷重テーブルの行番号 */
+  readonly row: number;
+  /** 荷重の積み上げ順を決める数値 */
+  readonly rank = 10;
 
-  constructor(text: ThreeLoadText) {
-    
-    this.text = text;
-    this.dim = new ThreeLoadDimension(text);
+  /** ハイライト表示状態を示すフラグ */
+  private isSelected: boolean = false;
 
-    this.arrow_mat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+  // this.children["group"].children["child"].children["line"] - 荷重線
+  // this.children["P"] - 荷重値テキスト
+  // this.children["Dimention"]
+  // this.children["Dimention"].children["Dimension1"]
+  // this.children["Dimention"].children["Dimension1"].children["line"] - i端の寸法補助線
+  // this.children["Dimention"].children["Dimension1"].children["line"] - i端とj端の間の寸法線
+  // this.children["Dimention"].children["Dimension1"].children["line"] - j端の寸法補助線
+  // this.children["Dimention"].children["Dimension1"].children["text"] - i端とj端の間の寸法テキスト
 
-    this.matLine = new THREE.LineBasicMaterial({
-      color: 0xff0000,
-      linewidth: 0.001, // in pixels
-      vertexColors: true,
-    });
-  }
-  public create(
+  private static readonly lineMaterial = new THREE.LineBasicMaterial({
+    color: 0xff0000,
+    linewidth: 0.001,
+    // vertexColors: true, // @TODO: これがあると黒線になってしまう
+  });
+  private static readonly lineMaterialSelected = new THREE.LineBasicMaterial({
+    color: 0x00ffff,
+    linewidth: 0.001,
+    // vertexColors: true, // TODO: これがあると黒線になってしまう
+  });
+
+  /**
+   * 温度荷重データインスタンスの生成
+   * @param mNo 部材番号
+   * @param niNo i端節点の節点番号
+   * @param njNo j端節点の節点番号
+   * @param nodei i端節点の座標
+   * @param nodej j端節点の座標
+   * @param mark マーク
+   * @param P1 L1点の荷重値(kN/m)
+   * @param localAxis 部材座標系
+   * @param row 部材荷重データテーブルの行インデックス
+   */
+  constructor(
+    mNo: string,
+    niNo: string,
+    njNo: string,
     nodei: THREE.Vector3,
     nodej: THREE.Vector3,
-    localAxis: any,
+    mark: number,
     P1: number,
+    localAxis: LocalAxis,
     row: number
-  ): THREE.Group {
+  ) {
+    super();
 
-    const offset: number = -0.1;
+    this.correspondingNodeNoList = [niNo, njNo];
+    this.correspondingMemberNoList = [mNo];
+
+    // 部材長
+    const len = nodei.distanceTo(nodej);
+
+    // 部材の基準点
+    const pBase = nodei.clone().lerp(nodej, 0.5); // nodeiとnodejの中点
+    // i端節点とj端節点の座標の基準点を原点からpBaseに移動
+    nodei = nodei.clone().sub(pBase);
+    nodej = nodej.clone().sub(pBase);
+
+    this.nodei = nodei;
+    this.nodej = nodej;
+    this.mark = mark;
+    this.L = len;
+    this.P1 = P1;
+    this.localAxis = localAxis.clone();
+
+    const uLoad = localAxis.y.clone().negate(); // 荷重描画方向は部材座標系y軸のマイナス側
+    this.uLoad = uLoad;
+
+    this.offsetDirection = "ly-";
+
+    this.uDimension = uLoad.clone().negate(); // 荷重描画方向の反対側
+
+    this.row = row;
+
+    this.name = `${this.loadType}-${row}-m`;
+    this.position.copy(pBase);
+  }
+
+  /**
+   * 荷重図の再配置
+   * @param nodeOffsetDictMap key=節点番号、value=各接点のOffsetDict
+   * @param memberOffsetDictMap key=部材番号、value=各部材のOffsetDict
+   * @param maxLoadDict
+   * @param scale 描画スケール
+   * @param isSelected true=ハイライト表示、false=ハイライト表示解除、undefined=状態継続
+   */
+  relocate(
+    nodeOffsetDictMap: Map<string, OffsetDict>,
+    memberOffsetDictMap: Map<string, OffsetDict>,
+    maxLoadDict: MaxLoadDict,
+    scale: number,
+    isSelected: boolean | undefined
+  ): void {
+    // この荷重に関連するOffsetDictの抽出
+    const correspondingOffsetDictList: OffsetDict[] = [];
+    this.correspondingMemberNoList.forEach((no) => {
+      correspondingOffsetDictList.push(memberOffsetDictMap.get(no));
+    });
+
+    // この荷重に適用するoffsetの決定
+    const offset = OffsetDict.getMax(
+      this.offsetDirection,
+      ...correspondingOffsetDictList
+    );
+
+    const oldGroup = this.getObjectByName("group");
+    if (oldGroup) {
+      this.remove(oldGroup);
+    }
+
+    isSelected ??= this.isSelected;
+
+    const gap = 0.1 * scale; // 部材軸と荷重矢印間の間隙の大きさ
+
+    const uOffset = this.uLoad.clone().multiplyScalar(offset + gap);
+    const pia = this.nodei.clone().add(uOffset); // 荷重線の始点
+    const pja = this.nodej.clone().add(uOffset); // 荷重線の終点
+
+    const geometry = new THREE.BufferGeometry().setFromPoints([pia, pja]);
+    const lineColor = isSelected
+      ? ThreeLoadTemperature.lineMaterialSelected
+      : ThreeLoadTemperature.lineMaterial;
+    const line = new THREE.Line(geometry, lineColor);
+    line.name = "line";
 
     const child = new THREE.Group();
-
-    const L = nodei.distanceTo(nodej);
-
-    // 線を描く
-    const points = [];
-    points.push(new THREE.Vector3(0, 0, 0));
-    points.push(new THREE.Vector3(L, 0, 0));
-
-    const geometry = new THREE.BufferGeometry().setFromPoints( points );
-
-    const line2 = new THREE.Line(geometry, this.matLine);
-    line2.computeLineDistances();
-    line2.name = 'line2';
-
-    child.add(line2);
-
-    // 矢印を描く
-    // const arrow_geo = new THREE.ConeBufferGeometry(0.05, 0.25, 3, 1, false);
-    // const arrow = new THREE.Mesh(arrow_geo, this.arrow_mat);
-    // arrow.rotation.z = -Math.PI / 2;
-    // arrow.name = "arrow";
-
-    // child.add(arrow);
     child.name = "child";
+    child.add(line);
 
-    // 全体
-    child.name = "child";
-    child.position.y = offset;
-
-    const group0 = new THREE.Group();
-    group0.add(child);
-    group0.name = "group";
-
-    // 全体の位置を修正する
     const group = new THREE.Group();
-    group.add(group0);
-    group["P1"] = P1;
-    group["nodei"] = nodei;
-    group["nodej"] = nodej;
-    group["localAxis"] = localAxis;
-    group["editor"] = this;
-    group['value'] = Math.abs(P1); // 大きい方の値を保存　
-    group["L"] = L;
+    group.name = "group";
+    group.add(child);
 
-    group.position.set(nodei.x, nodei.y, nodei.z);
+    // 荷重の外側の間隙の大きさ
+    const overGap = 0.1 * scale;
 
-    // 全体の向きを修正する
-    const XY = new Vector2(localAxis.x.x, localAxis.x.y).normalize();
-    group.rotateZ(Math.asin(XY.y));
+    // この荷重に関連するOffsetDictの更新(節点の情報も併せて更新する)
+    this.correspondingNodeNoList.forEach((no) =>
+      correspondingOffsetDictList.push(nodeOffsetDictMap.get(no))
+    );
+    correspondingOffsetDictList.forEach((dict) =>
+      dict.update(this.offsetDirection, offset + gap + overGap)
+    );
 
-    const lenXY = Math.sqrt(Math.pow(localAxis.x.x, 2) + Math.pow(localAxis.x.y, 2));
-    const XZ = new Vector2(lenXY, localAxis.x.z).normalize();
-    group.rotateY(-Math.asin(XZ.y));
+    this.add(group);
 
-    group.name = ThreeLoadTemperature.id + "-" + row.toString() + '-x';
-    return group;
+    // 荷重線の描画位置(荷重値の描画用データ)
+    this.userData["pia"] = pia;
+    this.userData["pja"] = pja;
+    // 荷重値の描画方向(右)
+    this.userData["vx"] = pja.clone().sub(pia); // i端からj端に向かう向き
+    // 荷重線の描画方向(上)
+    this.userData["vy"] = this.uLoad; // 荷重を描画する向き
+    // 寸法線関連の描画用データ
+    this.userData["scale"] = scale;
+
+    this.isSelected = isSelected;
+
+    // this.setColor(isSelected); // 呼び出し不要
+    this.setText(isSelected);
+    this.setDim(isSelected);
   }
 
-
-  // 大きさを反映する
-  public setSize(group: any, scale: number): void {
-    for (const item of group.children) {
-      item.scale.set(1, scale, scale);
+  /**
+   * 選択状態と非選択状態の切り替え
+   * @param isSelected true=選択状態、false=非選択状態
+   */
+  highlight(isSelected: boolean): void {
+    if (this.isSelected === isSelected) {
+      return;
     }
+    this.isSelected = isSelected;
+
+    this.setColor(isSelected);
+    this.setText(isSelected);
+    this.setDim(isSelected);
   }
 
-  // 大きさを反映する
-  public setScale(group: any, scale: number): void {
-    group.scale.set(1, scale, scale);
-  }
-
-  // ハイライトを反映させる
-  public setColor(group: any, status: string): void {
-
-    //置き換えるマテリアルを生成 -> colorを設定し，対象オブジェクトのcolorを変える
-    const matLine_Pick = new THREE.LineBasicMaterial({
-      color: 0x00ffff,
-      linewidth: 0.001, 
-      vertexColors: true,
-    })
-    const arrow_mat_Pick = new THREE.MeshBasicMaterial({ color: 0x00ffff });
-
-    for (let target of group.children[0].children[0].children) {
-      if (status === 'clear') {
-        if (target.name === 'line2') {
-          target.material = this.matLine; //デフォルトのカラー
-        } else if (target.name === 'arrow') {
-          target.material = this.arrow_mat //デフォルトのカラー
-        }
-      } else if (status === "select") {
-        if (target.name === 'line2') {
-          target.material = matLine_Pick; //ハイライト用のカラー
-        } else if (target.name === 'arrow') {
-          target.material = arrow_mat_Pick; //ハイライト用のカラー
-        }
-      }
-
-      // 文字
-      this.setText(group, status);
-
-      // 寸法線
-      this.setDim(group, status);
+  /**
+   * 選択時と非選択時の寸法面の色の切り替え
+   * @param isSelected true=選択状態、false=非選択状態
+   */
+  private setColor(isSelected: boolean): void {
+    const line = this.getObjectByName("line") as THREE.Line<
+      THREE.BufferGeometry,
+      THREE.LineBasicMaterial
+    >;
+    if (!line) {
+      throw new Error();
     }
+
+    line.material = isSelected
+      ? ThreeLoadTemperature.lineMaterialSelected
+      : ThreeLoadTemperature.lineMaterial;
   }
 
-
-  // 文字
-  private setText(group: any, status: string): void {
-    
+  /**
+   * 選択時は荷重値を描画し、非選択時は荷重値の描画をクリアする
+   * @param isSelected true=選択状態、false=非選択状態
+   */
+  private setText(isSelected: boolean): void {
     // 一旦削除
-    const key = 'P1';
-    const group0 = group.getObjectByName('group');
-    const child = group0.getObjectByName('child');
-    const old = child.getObjectByName(key);
-    if(old !== undefined){
-      child.remove(old);
+    const old = this.getObjectByName("P");
+    if (old) {
+      this.remove(old);
     }
 
-    if (status !== "select") {
+    if (!isSelected) {
       return;
     }
 
-    const localAxis = group.localAxis;
-    const pos = new Vector2(group.L / 2, child.position.y)
-    const vartical = ['bottom', 'top'];
+    const value = Math.round(this.P1 * 100) / 100;
+    const textString = value.toFixed(2) + " °C";
 
-    const textString: string = group[key].toFixed(2) + " °C";
-    const text = this.text.create(textString, pos, 0.1);
-    const height = Math.abs(text.geometry.boundingBox.max.y - text.geometry.boundingBox.min.y);
-    const width = Math.abs(text.geometry.boundingBox.max.x - text.geometry.boundingBox.min.x);
-    text.position.x += 0.5 * height;
-    text.position.y -= 0.5 * height;
-    text.rotateX(Math.PI);
-    text.name = key;
-    group.add(text);
+    const pia = this.userData["pia"] as THREE.Vector3;
+    const pja = this.userData["pja"] as THREE.Vector3;
+    const pos = pia.clone().lerp(pja, 0.5); // i端とj端の中央
+    const vx = this.userData["vx"] as THREE.Vector3;
+    const vy = this.userData["vy"] as THREE.Vector3;
 
+    const text = new ThreeLoadText3D(textString, pos, 0.1, {
+      vx: vx,
+      vy: vy,
+      hAlign: "center",
+      vAlign: "bottom",
+    });
+    text.name = "P";
+
+    this.add(text);
   }
 
-  // 寸法線
-  private setDim(group: any, status: string): void{
-    
-    const group0 = group.getObjectByName('group');
-    const child = group0.getObjectByName('child');
-
+  /**
+   * 選択時は寸法線関連を描画し、非選択時はクリアする
+   * @param isSelected true=選択状態、false=非選択状態
+   */
+  private setDim(isSelected: boolean): void {
     // 一旦削除
-    const text = group.getObjectByName('Dimension');
-    if(text !== undefined){
-      group.remove(text);
+    const old = this.getObjectByName("Dimension");
+    if (old) {
+      this.remove(old);
     }
 
-    if (status !== "select") {
+    if (!isSelected) {
       return;
     }
 
-    const points: THREE.Vector3[] = [
-      new THREE.Vector3(0, 0, 0),
-      new THREE.Vector3(0, child.position.y, 0),
-      new THREE.Vector3(group.L, child.position.y, 0),
-      new THREE.Vector3(group.L, 0, 0),
-    ];
+    const scale = this.userData["scale"] as number;
 
-    const L: number = group.L;
+    // const offset: number = (group.offset ?? 0) * scale; // @FIXME: 現状はundefinedで固定
+    const offset = 0;
+    const L = this.L;
+
+    const size = 1 * scale; // 寸法補助線の長さ(でっぱりを除く)
+    const protrude = 0.03 * scale; // 寸法補助線のでっぱりの長さ
 
     const dim = new THREE.Group();
 
-    let dim1: THREE.Group;
+    // 部材軸に直交しており、かつ荷重面に平行な単位ベクトル(寸法補助線の向き)
+    const uDimension = this.uDimension;
 
-    const size: number = 0.1; // 文字サイズ
+    // 部材i端の座標
+    const pi = this.nodei;
+    // 部材j端の座標
+    const pj = this.nodej;
 
-    const y4 = (size * 10);
+    // 寸法補助線の始点(i端)
+    const pia = pi.clone().add(uDimension.clone().multiplyScalar(offset));
+    // 寸法線の始点(i端)
+    const pib = pia.clone().add(uDimension.clone().multiplyScalar(size));
+    // 寸法補助線の終点(i端)
+    const pic = pib.clone().add(uDimension.clone().multiplyScalar(protrude));
 
-    const p = [
-      new THREE.Vector2(points[0].x, 0),
-      new THREE.Vector2(points[0].x, y4),
-      new THREE.Vector2(points[3].x, y4),
-      new THREE.Vector2(points[3].x, 0),
+    // 寸法補助線の始点(j端)
+    const pja = pj.clone().add(uDimension.clone().multiplyScalar(offset));
+    // 寸法線の始点(j端)
+    const pjb = pja.clone().add(uDimension.clone().multiplyScalar(size));
+    // 寸法補助線の終点(j端)
+    const pjc = pjb.clone().add(uDimension.clone().multiplyScalar(protrude));
+
+    const pp: THREE.Vector3[][] = [
+      [pia, pic], // 寸法補助線(i端)
+      [pja, pjc], // 寸法補助線(j端)
+      [pib, pjb], // 寸法線
     ];
-    dim1 = this.dim.create(p, L.toFixed(3))
+    const dim1 = new ThreeLoadDimension(pp, L.toFixed(3));
     dim1.visible = true;
-    dim1.name = "Dimension1";
+    dim1.name = "Dimentsion1";
     dim.add(dim1);
-
-    dim.rotateX(Math.PI)
 
     // 登録
     dim.name = "Dimension";
 
-    group.add(dim);
-    
-
+    this.add(dim);
   }
-  
+
+  /**
+   * 温度荷重の描画インスタンス生成
+   * @param mNo 部材番号
+   * @param niNo i端節点の節点番号
+   * @param njNo j端節点の節点番号
+   * @param nodei i端節点の座標
+   * @param nodej j端節点の座標
+   * @param mark マーク
+   * @param P1 荷重値(℃)
+   * @param localAxis 部材座標系
+   * @param row 部材荷重データテーブルの行インデックス
+   * @returns 温度荷重の描画インスタンス。対象外の荷重の場合はundefined
+   */
+  static create(
+    mNo: string,
+    niNo: string,
+    njNo: string,
+    nodei: THREE.Vector3,
+    nodej: THREE.Vector3,
+    mark: number,
+    P1: number | undefined,
+    localAxis: LocalAxis,
+    row: number
+  ): ThreeLoadTemperature | undefined {
+    switch (mark) {
+      case 9:
+        break;
+      default:
+        return undefined;
+    }
+
+    const L = nodei.distanceTo(nodej);
+    if (L === 0) {
+      return undefined;
+    }
+
+    const xP1 = P1 ?? 0;
+    if (xP1 === 0) {
+      return undefined;
+    }
+
+    return new ThreeLoadTemperature(
+      mNo,
+      niNo,
+      njNo,
+      nodei,
+      nodej,
+      mark,
+      xP1,
+      localAxis,
+      row
+    );
+  }
 }
