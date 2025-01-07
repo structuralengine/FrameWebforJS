@@ -6,9 +6,31 @@ import {
   OffsetDirection,
   OffsetDict,
   MaxLoadDict,
+  ConflictSection,
 } from "./three-load-common";
-import { ThreeLoadDimension } from "./three-load-dimension";
 import { ThreeLoadText3D, VAlign } from "./three-load-text";
+
+/** 荷重描画色データ */
+type SetColorParams = {
+  /** 面の描画色 */
+  faceColor: THREE.MeshBasicMaterial;
+  /** 線の描画色 */
+  lineColor: THREE.LineBasicMaterial;
+};
+
+/** 荷重値描画用データ */
+type SetTextParams = {
+  /** L1点の荷重値を描画する座標 */
+  pP1: THREE.Vector3;
+  /** L2点の荷重値を描画する座標 */
+  pP2: THREE.Vector3;
+  /** 荷重値の描画方向(上) */
+  vy: THREE.Vector3;
+  /** オイラー角 */
+  euler: THREE.Euler;
+  /** 描画スケール */
+  scale: number;
+};
 
 /** 部材分布荷重データ(軸方向、モーメント、温度分布を除く) */
 export class ThreeLoadDistribute extends LoadData {
@@ -17,6 +39,9 @@ export class ThreeLoadDistribute extends LoadData {
 
   /** 荷重図形の拡大倍率 */
   readonly magnifier = 1;
+
+  /** 部材番号 */
+  readonly memberNo: string;
 
   /** この荷重と関連を持つ節点の節点番号一覧 */
   readonly correspondingNodeNoList: string[];
@@ -69,8 +94,6 @@ export class ThreeLoadDistribute extends LoadData {
   readonly col: "m" | "p" = "m";
   /** 荷重テーブルの行番号 */
   readonly row: number;
-  /** 方向(非選択時の描画色の決定に使用) */
-  readonly originalDirection: string;
   /** 荷重の積み上げ順を決める数値 */
   readonly rank = 10;
 
@@ -153,7 +176,6 @@ export class ThreeLoadDistribute extends LoadData {
    * @param P2 L2点の荷重値(kN/m)
    * @param localAxis 部材座標系
    * @param row 部材荷重データテーブルの行インデックス
-   * @param originalDirection 方向(非選択時の描画色の決定に使用)
    */
   constructor(
     mNo: string,
@@ -168,10 +190,11 @@ export class ThreeLoadDistribute extends LoadData {
     P1: number,
     P2: number,
     localAxis: LocalAxis,
-    row: number,
-    originalDirection: string
+    row: number
   ) {
     super();
+
+    this.memberNo = mNo;
 
     this.correspondingNodeNoList = [niNo, njNo];
     this.correspondingMemberNoList = [mNo];
@@ -214,14 +237,23 @@ export class ThreeLoadDistribute extends LoadData {
         offsetdir = "lz";
         break;
       case "gx":
+        if (localAxis.x.y === 0 && localAxis.x.z === 0) {
+          throw new Error();
+        }
         uLoad.set(1, 0, 0);
         offsetdir = "gx";
         break;
       case "gy":
+        if (localAxis.x.x === 0 && localAxis.x.z === 0) {
+          throw new Error();
+        }
         uLoad.set(0, 1, 0);
         offsetdir = "gy";
         break;
       case "gz":
+        if (localAxis.x.x === 0 && localAxis.x.y === 0) {
+          throw new Error();
+        }
         uLoad.set(0, 0, 1);
         offsetdir = "gz";
         break;
@@ -237,7 +269,6 @@ export class ThreeLoadDistribute extends LoadData {
     this.uDimension = vOrth.normalize(); // uDim; // @TODO: 荷重描画面と寸法線関連が重なって見苦しいので直交させておく・・・
 
     this.row = row;
-    this.originalDirection = originalDirection;
 
     this.name = `${this.loadType}-${row}-m`;
     this.position.copy(pBase);
@@ -258,12 +289,16 @@ export class ThreeLoadDistribute extends LoadData {
     scale: number,
     isSelected: boolean | undefined
   ): void {
-    const oldGroup = this.getObjectByName("group");
-    if (oldGroup) {
-      this.remove(oldGroup);
+    const old = this.getObjectByName("group");
+    if (old) {
+      this.remove(old);
     }
 
-    isSelected ??= this.isSelected;
+    if (isSelected !== undefined) {
+      this.isSelected = isSelected;
+    } else {
+      isSelected = this.isSelected;
+    }
 
     const { pL1a, pL1b, pL2b, pL2a } = this.getLoadPoints(
       nodeOffsetDictMap,
@@ -285,24 +320,35 @@ export class ThreeLoadDistribute extends LoadData {
 
     this.add(group);
 
-    // 非選択時の荷重面の色
-    this.userData["faceColor"] = faceColor;
-    this.userData["lineColor"] = lineColor;
-    // 荷重値の描画位置
-    this.userData["P1Pos"] = pL1b;
-    this.userData["P2Pos"] = pL2b;
     // 荷重値の描画方向(右)
-    this.userData["vx"] = this.uLoad; // 荷重を描画する向き
-    // 荷重線の描画方向(上)
-    this.userData["vy"] = this.nodei.clone().sub(this.nodej).normalize(); // j端からi端に向かう向き
-    // 寸法線関連の描画用データ
-    this.userData["scale"] = scale;
+    const vx = this.uLoad; // 荷重を描画する向き
+    // 荷重値の描画方向(上)
+    const vy = this.nodei.clone().sub(this.nodej).normalize(); // j端からi端に向かう向き
+    // オイラー角
+    const euler = ThreeLoadText3D.getEuler(vx, vy);
 
-    this.isSelected = isSelected;
-
-    this.setColor(isSelected); // 非選択時の色で描画しているので呼び出し必須
-    this.setText(isSelected);
-    this.setDim(isSelected);
+    this.setColor(isSelected, {
+      faceColor: faceColor,
+      lineColor: lineColor,
+    });
+    this.setText(isSelected, {
+      pP1: pL1b,
+      pP2: pL2b,
+      vy: vy,
+      euler: euler,
+      scale: scale,
+    });
+    this.setDim(isSelected, {
+      scale: scale,
+      L1: this.L1,
+      L: this.L,
+      L2: this.L2,
+      pi: this.nodei,
+      pL1: this.pL1,
+      pL2: this.pL2,
+      pj: this.nodej,
+      uDimension: this.uDimension,
+    });
   }
 
   /**
@@ -331,22 +377,59 @@ export class ThreeLoadDistribute extends LoadData {
     pL2b: THREE.Vector3;
     pL2a: THREE.Vector3;
   } {
+    // この荷重の競合区間情報
+    const conflictSection = new ConflictSection({
+      start: this.L1,
+      end: this.L1 + this.L,
+    });
+
     // この荷重に関連するOffsetDictの抽出
-    const correspondingOffsetDictList: OffsetDict[] = [];
+    const correspondingOffsetDictList: {
+      offsetDict: OffsetDict;
+      conflictSection: ConflictSection;
+      pConflicted: boolean | undefined; // 正値の荷重の場合の干渉有無
+      nConflicted: boolean | undefined; // 負値の荷重の場合の干渉有無
+    }[] = [];
     this.correspondingMemberNoList.forEach((no) => {
-      correspondingOffsetDictList.push(memberOffsetDictMap.get(no));
+      if (no === this.memberNo) {
+        correspondingOffsetDictList.push({
+          offsetDict: memberOffsetDictMap.get(no),
+          conflictSection: conflictSection,
+          pConflicted: undefined, // 直後の処理で再設定する
+          nConflicted: undefined, // 直後の処理で再設定する
+        });
+      } else {
+        correspondingOffsetDictList.push({
+          offsetDict: memberOffsetDictMap.get(no),
+          conflictSection: ConflictSection.EndToEnd,
+          pConflicted: undefined, // 直後の処理で設定する
+          nConflicted: undefined, // 直後の処理で設定する
+        });
+      }
     });
 
     // 正値の荷重の描画方向のoffset
-    const pOffset = OffsetDict.getMax(
-      this.pOffsetDirection,
-      ...correspondingOffsetDictList
-    );
+    const pOffsetData = correspondingOffsetDictList
+      .map((dict) => {
+        const offsetData = dict.offsetDict.get(
+          this.pOffsetDirection,
+          dict.conflictSection
+        );
+        dict.pConflicted = offsetData.conflicted; // 干渉の有無
+        return offsetData;
+      })
+      .reduce((a, b) => (a.offset > b.offset ? a : b));
     // 負値の荷重の描画方向のoffset
-    const nOffset = OffsetDict.getMax(
-      this.nOffsetDirection,
-      ...correspondingOffsetDictList
-    );
+    const nOffsetData = correspondingOffsetDictList
+      .map((dict) => {
+        const offsetData = dict.offsetDict.get(
+          this.nOffsetDirection,
+          dict.conflictSection
+        );
+        dict.nConflicted = offsetData.conflicted; // 干渉の有無
+        return offsetData;
+      })
+      .reduce((a, b) => (a.offset > b.offset ? a : b));
 
     // 荷重の大きさの正規化
     const coef1 = (this.P1 / wMax) * this.magnifier * scale;
@@ -359,16 +442,16 @@ export class ThreeLoadDistribute extends LoadData {
         ? { aMax: coef2, aMin: coef1 }
         : { aMax: coef1, aMin: coef2 };
     if (aMax < 0) {
-      if (pOffset === 0 && nOffset === 0) {
+      if (pOffsetData.offset === 0 && nOffsetData.offset === 0) {
         offset = 0;
       } else {
-        offset = -nOffset - Math.max(0, aMin);
+        offset = -nOffsetData.offset - Math.max(0, aMin);
       }
     } else {
-      if (pOffset === 0 && nOffset === 0) {
+      if (pOffsetData.offset === 0 && nOffsetData.offset === 0) {
         offset = 0;
       } else {
-        offset = pOffset - Math.min(0, aMin);
+        offset = pOffsetData.offset - Math.min(0, aMin);
       }
     }
 
@@ -388,16 +471,31 @@ export class ThreeLoadDistribute extends LoadData {
 
     // この荷重に関連するOffsetDictの更新(節点の情報も併せて更新する)
     this.correspondingNodeNoList.forEach((no) =>
-      correspondingOffsetDictList.push(nodeOffsetDictMap.get(no))
+      correspondingOffsetDictList.push({
+        offsetDict: nodeOffsetDictMap.get(no),
+        conflictSection: ConflictSection.EndToEnd,
+        pConflicted: true,
+        nConflicted: true,
+      })
     );
     [offset + coef1, offset + coef2].forEach((nextOffset) => {
       if (nextOffset < 0) {
         correspondingOffsetDictList.forEach((dict) =>
-          dict.update(this.nOffsetDirection, -nextOffset)
+          dict.offsetDict.update(
+            this.nOffsetDirection,
+            -nextOffset,
+            dict.nConflicted,
+            dict.conflictSection
+          )
         );
       } else {
         correspondingOffsetDictList.forEach((dict) =>
-          dict.update(this.pOffsetDirection, nextOffset)
+          dict.offsetDict.update(
+            this.pOffsetDirection,
+            nextOffset,
+            dict.pConflicted,
+            dict.conflictSection
+          )
         );
       }
     });
@@ -415,7 +513,7 @@ export class ThreeLoadDistribute extends LoadData {
       faceColor.copy(ThreeLoadDistribute.faceMaterialSelected);
       lineColor.copy(ThreeLoadDistribute.lineMaterialSelected);
     } else {
-      switch (this.originalDirection) {
+      switch (this.direction) {
         case "gx":
           faceColor.copy(ThreeLoadDistribute.faceMaterialRed);
           lineColor.copy(ThreeLoadDistribute.lineMaterialRed);
@@ -523,11 +621,18 @@ export class ThreeLoadDistribute extends LoadData {
     return line;
   }
 
+  /** 荷重描画色データの退避先 */
+  private setColorParams: SetColorParams;
+
   /**
    * 選択時と非選択時の寸法面の色の切り替え
    * @param isSelected true=選択状態、false=非選択状態
+   * @param params relocate()から呼び出された時は荷重描画色データ、highlight()から呼び出された時はundefined
    */
-  private setColor(isSelected: boolean): void {
+  private setColor(
+    isSelected: boolean,
+    params: SetColorParams | undefined = undefined
+  ): void {
     const face = this.getObjectByName("face") as THREE.Mesh<
       THREE.BufferGeometry,
       THREE.MeshBasicMaterial
@@ -535,10 +640,6 @@ export class ThreeLoadDistribute extends LoadData {
     if (!face) {
       throw new Error();
     }
-
-    // face.material = isSelected
-    //   ? DistributedLoad.faceMaterialSelected
-    //   : (this.userData["faceColor"] as THREE.MeshBasicMaterial);
 
     const line = this.getObjectByName("line") as THREE.Line<
       THREE.BufferGeometry,
@@ -548,20 +649,33 @@ export class ThreeLoadDistribute extends LoadData {
       throw new Error();
     }
 
+    if (params) {
+      this.setColorParams = params;
+    } else {
+      params = this.setColorParams;
+    }
+
     if (isSelected) {
       face.material = ThreeLoadDistribute.faceMaterialSelected;
       line.material = ThreeLoadDistribute.lineMaterialSelected;
     } else {
-      face.material = this.userData["faceColor"] as THREE.MeshBasicMaterial;
-      line.material = this.userData["lineColor"] as THREE.LineBasicMaterial;
+      face.material = params.faceColor;
+      line.material = params.lineColor;
     }
   }
+
+  /** 荷重値描画用データの退避先 */
+  private setTextParams: SetTextParams;
 
   /**
    * 選択時は荷重値を描画し、非選択時は荷重値の描画をクリアする
    * @param isSelected true=選択状態、false=非選択状態
+   * @param params relocate()から呼び出された時は荷重値描画用データ、highlight()から呼び出された時はundefined
    */
-  private setText(isSelected: boolean): void {
+  private setText(
+    isSelected: boolean,
+    params: SetTextParams | undefined = undefined
+  ): void {
     // 一旦削除
     ["P1", "P2"].forEach((key) => {
       const old = this.getObjectByName(key);
@@ -570,144 +684,51 @@ export class ThreeLoadDistribute extends LoadData {
       }
     });
 
+    if (params) {
+      this.setTextParams = params;
+    }
+
     if (!isSelected) {
       return;
     }
 
-    const P1 = this.P1;
-    const P2 = this.P2;
-    const P1Pos = this.userData["P1Pos"] as THREE.Vector3;
-    const P2Pos = this.userData["P2Pos"] as THREE.Vector3;
-    const vx = this.userData["vx"] as THREE.Vector3;
-    const vy = this.userData["vy"] as THREE.Vector3;
+    params ??= this.setTextParams;
+
+    const scale = this.adjustTextScale(params.scale);
 
     [
-      { key: "P1", value: P1, pos: P1Pos, yOffset: -0.01, vAlign: "top" as VAlign },
-      { key: "P2", value: P2, pos: P2Pos, yOffset: 0.01, vAlign: "bottom" as VAlign },
+      {
+        key: "P1",
+        value: this.P1,
+        pos: params.pP1,
+        yOffset: -0.01,
+        vAlign: "top" as VAlign,
+      },
+      {
+        key: "P2",
+        value: this.P2,
+        pos: params.pP2,
+        yOffset: 0.01,
+        vAlign: "bottom" as VAlign,
+      },
     ].forEach(({ key, value, pos, yOffset, vAlign }) => {
       value = Math.round(value * 100) / 100;
       if (value === 0) {
         return;
       }
       const textString = value.toFixed(2) + " kN/m";
-      pos = pos.clone().add(vy.clone().multiplyScalar(yOffset)); // 荷重線とテキストの間を少し空ける
+      pos = pos.clone().add(params.vy.clone().multiplyScalar(yOffset)); // 荷重線とテキストの間を少し空ける
       const text = new ThreeLoadText3D(textString, pos, 0.1, {
-        vx: vx,
-        vy: vy,
+        euler: params.euler,
         hAlign: "center",
         vAlign: vAlign,
       });
       text.name = key;
 
+      text.scale.set(scale, scale, scale);
+
       this.add(text);
     });
-  }
-
-  /**
-   * 選択時は寸法線関連を描画し、非選択時はクリアする
-   * @param isSelected true=選択状態、false=非選択状態
-   */
-  private setDim(isSelected: boolean): void {
-    // 一旦削除
-    const old = this.getObjectByName("Dimension");
-    if (old) {
-      this.remove(old);
-    }
-
-    if (!isSelected) {
-      return;
-    }
-
-    const scale = this.userData["scale"] as number;
-
-    // const offset: number = (group.offset ?? 0) * scale; // @FIXME: 現状はundefinedで固定
-    const offset = 0;
-    const L1 = this.L1;
-    const L = this.L;
-    const L2 = this.L2;
-
-    const size = 1 * scale; // 寸法補助線の長さ(でっぱりを除く)
-    const protrude = 0.03 * scale; // 寸法補助線のでっぱりの長さ
-
-    const dim = new THREE.Group();
-
-    // L1点の座標
-    const pL1 = this.pL1;
-    // L2点の座標
-    const pL2 = this.pL2;
-    // 部材軸に直交しており、かつ荷重面に平行な単位ベクトル(寸法補助線の向き)
-    const uDimension = this.uDimension;
-
-    // 寸法補助線の始点(L1点)
-    const pL1a = pL1.clone().add(uDimension.clone().multiplyScalar(offset));
-    // 寸法線の始点(L1点)
-    const pL1b = pL1a.clone().add(uDimension.clone().multiplyScalar(size));
-    // 寸法補助線の終点(L1点)
-    const pL1c = pL1b.clone().add(uDimension.clone().multiplyScalar(protrude));
-
-    // 寸法補助線の始点(L2点)
-    const pL2a = pL2.clone().add(uDimension.clone().multiplyScalar(offset));
-    // 寸法線の始点(L2点)
-    const pL2b = pL2a.clone().add(uDimension.clone().multiplyScalar(size));
-    // 寸法補助線の終点(L2点)
-    const pL2c = pL2b.clone().add(uDimension.clone().multiplyScalar(protrude));
-
-    const pp: THREE.Vector3[][] = [
-      [pL1a, pL1c], // 寸法補助線(L1点)
-      [pL2a, pL2c], // 寸法補助線(L2点)
-      [pL1b, pL2b], // 寸法線
-    ];
-    const dim1 = new ThreeLoadDimension(pp, L.toFixed(3));
-    dim1.visible = true;
-    dim1.name = "Dimentsion1";
-    dim.add(dim1);
-
-    if (L1 > 0) {
-      // 部材i端の座標
-      const pi = this.nodei;
-
-      // 寸法補助線の始点(i端)
-      const pia = pi.clone().add(uDimension.clone().multiplyScalar(offset));
-      // 寸法線の始点(i端)
-      const pib = pia.clone().add(uDimension.clone().multiplyScalar(size));
-      // 寸法補助線の終点(i端)
-      const pic = pib.clone().add(uDimension.clone().multiplyScalar(protrude));
-
-      const pp: THREE.Vector3[][] = [
-        [pia, pic], // 寸法補助線(i端)
-        [pib, pL1b], // 寸法線
-      ];
-      const dim2 = new ThreeLoadDimension(pp, L1.toFixed(3));
-      dim2.visible = true;
-      dim2.name = "Dimentsion2";
-      dim.add(dim2);
-    }
-
-    if (L2 > 0) {
-      // 部材j端の座標
-      const pj: THREE.Vector3 = this.nodej;
-
-      // 寸法補助線の始点(j端)
-      const pja = pj.clone().add(uDimension.clone().multiplyScalar(offset));
-      // 寸法線の始点(j端)
-      const pjb = pja.clone().add(uDimension.clone().multiplyScalar(size));
-      // 寸法補助線の終点(j端)
-      const pjc = pjb.clone().add(uDimension.clone().multiplyScalar(protrude));
-
-      const pp: THREE.Vector3[][] = [
-        [pja, pjc], // 寸法補助線(j端)
-        [pL2b, pjb], // 寸法線
-      ];
-      const dim3 = new ThreeLoadDimension(pp, L2.toFixed(3));
-      dim3.visible = true;
-      dim3.name = "Dimentsion3";
-      dim.add(dim3);
-    }
-
-    // 登録
-    dim.name = "Dimension";
-
-    this.add(dim);
   }
 
   /**
@@ -725,7 +746,6 @@ export class ThreeLoadDistribute extends LoadData {
    * @param P2 L2点の荷重値(kN/m)
    * @param localAxis 部材座標系
    * @param row 部材荷重データテーブルの行インデックス
-   * @param originalDirection 方向(非選択時の描画色の決定に使用)
    * @returns 部材分布荷重の描画インスタンス。対象外の荷重の場合はundefined
    */
   static create(
@@ -741,8 +761,7 @@ export class ThreeLoadDistribute extends LoadData {
     P1: number | undefined,
     P2: number | undefined,
     localAxis: LocalAxis,
-    row: number,
-    originalDirection: string
+    row: number
   ): ThreeLoadDistribute | undefined {
     switch (mark) {
       case 2:
@@ -753,9 +772,21 @@ export class ThreeLoadDistribute extends LoadData {
     switch (direction) {
       case "y":
       case "z":
+        break;
       case "gx":
+        if (localAxis.x.y === 0 && localAxis.x.z === 0) {
+          return undefined;
+        }
+        break;
       case "gy":
+        if (localAxis.x.x === 0 && localAxis.x.z === 0) {
+          return undefined;
+        }
+        break;
       case "gz":
+        if (localAxis.x.x === 0 && localAxis.x.y === 0) {
+          return undefined;
+        }
         break;
       default:
         return undefined;
@@ -791,8 +822,7 @@ export class ThreeLoadDistribute extends LoadData {
       xP1,
       xP2,
       localAxis,
-      row,
-      originalDirection
+      row
     );
   }
 }

@@ -1,6 +1,7 @@
 import * as THREE from "three";
 
 import {
+  ConflictSection,
   LoadData,
   LocalAxis,
   MaxLoadDict,
@@ -8,7 +9,21 @@ import {
   OffsetDirection,
 } from "./three-load-common";
 import { ThreeLoadMoment } from "./three-load-moment";
-import { ThreeLoadDimension } from "./three-load-dimension";
+import { ThreeLoadText2D } from "./three-load-text";
+
+/** 荷重描画色データ */
+type SetColorParams = {
+  /** 矢尻の描画色 */
+  arrowColor: THREE.MeshBasicMaterial;
+  /** 矢柄の描画色 */
+  lineColor: THREE.LineBasicMaterial;
+};
+
+/** 荷重値描画用データ */
+type SetTextParams = {
+  /** 描画スケール */
+  scale: number;
+};
 
 /** 部材集中モーメント荷重データ */
 export class ThreeLoadMemberMoment extends LoadData {
@@ -65,8 +80,6 @@ export class ThreeLoadMemberMoment extends LoadData {
   readonly col: "m" | "p" = "m";
   /** 荷重テーブルの行番号 */
   readonly row: number;
-  /** 方向(非選択時の描画色の決定に使用) */
-  readonly originalDirection: string;
   /** 荷重の積み上げ順を決める数値 */
   readonly rank = 0;
 
@@ -75,9 +88,10 @@ export class ThreeLoadMemberMoment extends LoadData {
 
   // this.children["group"].children["arrow1"].children["child"].children["arrow"] - L1点の荷重矢印(矢尻)
   // this.children["group"].children["arrow1"].children["child"].children["line"] - L1点の荷重矢印(矢柄)
+  // this.children["group"].children["arrow1"].children["child"].children["P1"] - 荷重値
   // this.children["group"].children["arrow2"].children["child"].children["arrow"] - L2点の荷重矢印(矢尻)
   // this.children["group"].children["arrow2"].children["child"].children["line"] - L2点の荷重矢印(矢柄)
-  // (荷重値テキストの描画は未実装)
+  // this.children["group"].children["arrow2"].children["child"].children["P2"] - 荷重値
   // this.children["Dimention"]
   // this.children["Dimention"].children["Dimension1"]
   // this.children["Dimention"].children["Dimension1"].children["line"] - L1点の寸法補助線
@@ -132,7 +146,6 @@ export class ThreeLoadMemberMoment extends LoadData {
    * @param P1 L1点の荷重値(kNm)
    * @param P2 L2点の荷重値(kNm)
    * @param localAxis 部材座標系
-   * @param originalDirection 方向(非選択時の描画色の決定に使用)
    * @param row 部材荷重データテーブルの行インデックス
    */
   constructor(
@@ -148,8 +161,7 @@ export class ThreeLoadMemberMoment extends LoadData {
     P1: number,
     P2: number,
     localAxis: LocalAxis,
-    row: number,
-    originalDirection: string
+    row: number
   ) {
     super();
 
@@ -220,7 +232,6 @@ export class ThreeLoadMemberMoment extends LoadData {
     this.uDimension = localAxis.y.clone().negate();
 
     this.row = row;
-    this.originalDirection = originalDirection;
 
     this.name = `${this.loadType}-${row}-m`;
     this.position.copy(pBase);
@@ -241,25 +252,29 @@ export class ThreeLoadMemberMoment extends LoadData {
     scale: number,
     isSelected: boolean | undefined
   ): void {
+    const old = this.getObjectByName("group");
+    if (old) {
+      this.remove(old);
+    }
+
+    if (isSelected !== undefined) {
+      this.isSelected = isSelected;
+    } else {
+      isSelected = this.isSelected;
+    }
+
     // この荷重に関連するOffsetDictの抽出
     const correspondingOffsetDictList: OffsetDict[] = [];
     this.correspondingMemberNoList.forEach((no) => {
       correspondingOffsetDictList.push(memberOffsetDictMap.get(no));
     });
 
-    const old = this.getObjectByName("group");
-    if (old) {
-      this.remove(old);
-    }
-
-    isSelected ??= this.isSelected;
-
     const { arrowColor, lineColor } = this.getColor();
 
     const group = new THREE.Group();
     group.name = "group";
 
-    let largerRadius = 0;
+    const radiusList = new Array<number>();
     [
       { value: this.P1, pos: this.pL1, name: "arrow1" },
       { value: this.P2, pos: this.pL2, name: "arrow2" },
@@ -281,30 +296,43 @@ export class ThreeLoadMemberMoment extends LoadData {
 
       group.add(arrow);
 
-      largerRadius = Math.max(largerRadius, radius);
+      radiusList.push(radius);
     });
+    const largerRadius = Math.max(radiusList[0], radiusList[1]);
 
     // この荷重に関連するOffsetDictの更新(節点の情報も併せて更新する)
     this.correspondingNodeNoList.forEach((no) =>
       correspondingOffsetDictList.push(nodeOffsetDictMap.get(no))
     );
     correspondingOffsetDictList.forEach((dict) =>
-      dict.update(this.offsetDirection, largerRadius)
+      dict.update(
+        this.offsetDirection,
+        largerRadius,
+        true,
+        ConflictSection.EndToEnd
+      )
     );
 
     this.add(group);
 
-    // 非選択時の矢印と本体の色
-    this.userData["arrowColor"] = arrowColor;
-    this.userData["lineColor"] = lineColor;
-    // 寸法線関連の描画用データ
-    this.userData["scale"] = scale;
-
-    this.isSelected = isSelected;
-
-    this.setColor(isSelected); // 非選択時の色で描画しているので呼び出し必須
-    this.setText(isSelected);
-    this.setDim(isSelected);
+    this.setColor(isSelected, {
+      arrowColor: arrowColor,
+      lineColor: lineColor,
+    });
+    this.setText(isSelected, {
+      scale: scale,
+    });
+    this.setDim(isSelected, {
+      scale: scale,
+      L1: this.L1,
+      L: this.L,
+      L2: this.L2,
+      pi: this.nodei,
+      pL1: this.pL1,
+      pL2: this.pL2,
+      pj: this.nodej,
+      uDimension: this.uDimension,
+    });
   }
 
   /**
@@ -328,7 +356,7 @@ export class ThreeLoadMemberMoment extends LoadData {
   } {
     const arrowColor = new THREE.MeshBasicMaterial();
     const lineColor = new THREE.LineBasicMaterial();
-    switch (this.originalDirection) {
+    switch (this.direction) {
       case "x":
       case "gx":
         arrowColor.copy(ThreeLoadMemberMoment.arrowMaterialRed);
@@ -350,17 +378,30 @@ export class ThreeLoadMemberMoment extends LoadData {
     return { arrowColor, lineColor };
   }
 
+  /** 荷重描画色データの退避先 */
+  private setColorParams: SetColorParams;
+
   /**
    * 選択状態と非選択状態とで矢印の色を切り替える
    * @param isSelected true=選択状態、false=非選択状態
+   * @param params relocate()から呼び出された時は荷重描画色データ、highlight()から呼び出された時はundefined
    */
-  private setColor(isSelected: boolean): void {
+  private setColor(
+    isSelected: boolean,
+    params: SetColorParams | undefined = undefined
+  ): void {
+    if (params) {
+      this.setColorParams = params;
+    } else {
+      params = this.setColorParams;
+    }
+
     ["arrow1", "arrow2"].forEach((name) => {
       const group = this.getObjectByName(name);
       if (group) {
         const arrowColor = isSelected
           ? ThreeLoadMemberMoment.arrowMaterialPick
-          : (this.userData["arrowColor"] as THREE.MeshBasicMaterial);
+          : params.arrowColor;
         const arrow = group.getObjectByName("arrow") as THREE.Mesh;
         if (!arrow) {
           throw new Error();
@@ -369,7 +410,7 @@ export class ThreeLoadMemberMoment extends LoadData {
 
         const lineColor = isSelected
           ? ThreeLoadMemberMoment.lineMaterialPick
-          : (this.userData["lineColor"] as THREE.LineBasicMaterial);
+          : params.lineColor;
         const line = group.getObjectByName("line") as THREE.Line<
           THREE.BufferGeometry,
           THREE.LineBasicMaterial
@@ -382,119 +423,68 @@ export class ThreeLoadMemberMoment extends LoadData {
     });
   }
 
+  /** 荷重値描画用データの退避先 */
+  private setTextParams: SetTextParams;
+
   /**
    * 選択時は荷重値を描画し、非選択時は荷重値の描画をクリアする
    * @param isSelected true=選択状態、false=非選択状態
+   * @param params relocate()から呼び出された時は荷重値描画用データ、highlight()から呼び出された時はundefined
    */
-  private setText(isSelected: boolean): void {
-    // @TODO: オリジナルのFrameWebに荷重値の描画処理が定義されていないので、とりあえず割愛
-  }
-
-  /**
-   * 選択時は寸法線関連を描画し、非選択時はクリアする
-   * @param isSelected true=選択状態、false=非選択状態
-   */
-  private setDim(isSelected: boolean): void {
+  private setText(
+    isSelected: boolean,
+    params: SetTextParams | undefined = undefined
+  ): void {
     // 一旦削除
-    const old = this.getObjectByName("Dimension");
-    if (old) {
-      this.remove(old);
+    ["P1", "P2"].forEach((key) => {
+      const old = this.getObjectByName(key);
+      if (old) {
+        old.parent.remove(old);
+      }
+    });
+
+    if (params) {
+      this.setTextParams = params;
     }
 
     if (!isSelected) {
       return;
     }
 
-    const scale = this.userData["scale"] as number;
+    params ??= this.setTextParams;
 
-    // const offset: number = (group.offset ?? 0) * scale; // @FIXME: 現状はundefinedで固定
-    const offset = 0;
-    const L1 = this.L1;
-    const L = this.L;
-    const L2 = this.L2;
+    const scale = this.adjustTextScale(params.scale);
 
-    const size = 1 * scale; // 寸法補助線の長さ(でっぱりを除く)
-    const protrude = 0.03 * scale; // 寸法補助線のでっぱりの長さ
+    [
+      { key: "P1", value: this.P1, name: "arrow1" },
+      { key: "P2", value: this.P2, name: "arrow2" },
+    ].forEach(({ key, value, name }) => {
+      const arrow = this.getObjectByName(name);
+      const child = arrow.getObjectByName("child");
 
-    const dim = new THREE.Group();
+      // child.scale.xで除算しているのは、荷重値の大小に伴う荷重線のスケール調整がテキストの描画サイズに影響するのを防ぐため
+      const textSize = (0.1 / child.scale.x) * scale;
+      if (!isFinite(textSize)) {
+        return;
+      }
 
-    // L1点の座標
-    const pL1 = this.pL1;
-    // L2点の座標
-    const pL2 = this.pL2;
-    // 部材軸に直交しており、かつ荷重面に平行な単位ベクトル(寸法補助線の向き)
-    const uDimension = this.uDimension;
+      const textString: string = value.toFixed(2) + " kNm/m";
 
-    // 寸法補助線の始点(L1点)
-    const pL1a = pL1.clone().add(uDimension.clone().multiplyScalar(offset));
-    // 寸法線の始点(L1点)
-    const pL1b = pL1a.clone().add(uDimension.clone().multiplyScalar(size));
-    // 寸法補助線の終点(L1点)
-    const pL1c = pL1b.clone().add(uDimension.clone().multiplyScalar(protrude));
+      // テキストの描画位置は矢筈(ノック)の位置
+      const group_scale = 1;
+      const pi6 = -Math.PI / 6;
+      const sin30 = Math.sin(pi6);
+      const cos30 = Math.cos(pi6);
+      const position = new THREE.Vector2(
+        group_scale * cos30,
+        group_scale * sin30
+      );
+      const text = new ThreeLoadText2D(textString, position, textSize);
+      //   text.rotateX(Math.PI);
+      text.name = key;
 
-    // 寸法補助線の始点(L2点)
-    const pL2a = pL2.clone().add(uDimension.clone().multiplyScalar(offset));
-    // 寸法線の始点(L2点)
-    const pL2b = pL2a.clone().add(uDimension.clone().multiplyScalar(size));
-    // 寸法補助線の終点(L2点)
-    const pL2c = pL2b.clone().add(uDimension.clone().multiplyScalar(protrude));
-
-    const pp: THREE.Vector3[][] = [
-      [pL1a, pL1c], // 寸法補助線(L1点)
-      [pL2a, pL2c], // 寸法補助線(L2点)
-      [pL1b, pL2b], // 寸法線
-    ];
-    const dim1 = new ThreeLoadDimension(pp, L.toFixed(3));
-    dim1.visible = true;
-    dim1.name = "Dimentsion1";
-    dim.add(dim1);
-
-    if (L1 > 0) {
-      // 部材i端の座標
-      const pi = this.nodei;
-
-      // 寸法補助線の始点(i端)
-      const pia = pi.clone().add(uDimension.clone().multiplyScalar(offset));
-      // 寸法線の始点(i端)
-      const pib = pia.clone().add(uDimension.clone().multiplyScalar(size));
-      // 寸法補助線の終点(i端)
-      const pic = pib.clone().add(uDimension.clone().multiplyScalar(protrude));
-
-      const pp: THREE.Vector3[][] = [
-        [pia, pic], // 寸法補助線(i端)
-        [pib, pL1b], // 寸法線
-      ];
-      const dim2 = new ThreeLoadDimension(pp, L1.toFixed(3));
-      dim2.visible = true;
-      dim2.name = "Dimentsion2";
-      dim.add(dim2);
-    }
-
-    if (L2 > 0) {
-      // 部材j端の座標
-      const pj: THREE.Vector3 = this.nodej;
-
-      // 寸法補助線の始点(j端)
-      const pja = pj.clone().add(uDimension.clone().multiplyScalar(offset));
-      // 寸法線の始点(j端)
-      const pjb = pja.clone().add(uDimension.clone().multiplyScalar(size));
-      // 寸法補助線の終点(j端)
-      const pjc = pjb.clone().add(uDimension.clone().multiplyScalar(protrude));
-
-      const pp: THREE.Vector3[][] = [
-        [pja, pjc], // 寸法補助線(j端)
-        [pL2b, pjb], // 寸法線
-      ];
-      const dim3 = new ThreeLoadDimension(pp, L2.toFixed(3));
-      dim3.visible = true;
-      dim3.name = "Dimentsion3";
-      dim.add(dim3);
-    }
-
-    // 登録
-    dim.name = "Dimension";
-
-    this.add(dim);
+      child.add(text);
+    });
   }
 
   /**
@@ -512,7 +502,6 @@ export class ThreeLoadMemberMoment extends LoadData {
    * @param P2 L2点の荷重値(kNm)
    * @param localAxis 部材座標系
    * @param row 部材荷重データテーブルの行インデックス
-   * @param originalDirection 方向(非選択時の描画色の決定に使用)
    * @returns 部材集中モーメント荷重の描画インスタンス。対象外の荷重の場合はundefined
    */
   static create(
@@ -528,8 +517,7 @@ export class ThreeLoadMemberMoment extends LoadData {
     P1: number | undefined,
     P2: number | undefined,
     localAxis: LocalAxis,
-    row: number,
-    originalDirection: string
+    row: number
   ): ThreeLoadMemberMoment | undefined {
     switch (mark) {
       case 11:
@@ -579,8 +567,7 @@ export class ThreeLoadMemberMoment extends LoadData {
       xP1,
       xP2,
       localAxis,
-      row,
-      originalDirection
+      row
     );
   }
 }

@@ -2,12 +2,19 @@ import * as THREE from "three";
 
 import { ThreeLoadText3D } from "./three-load-text";
 
+/** 寸法線関連データ */
 export class ThreeLoadDimension extends THREE.Group {
+  /** 寸法線と寸法補助線の色 */
   private static readonly lineMaterial = new THREE.LineBasicMaterial({
     color: 0x000000,
   });
 
-  constructor(points: THREE.Vector3[][], textStr: string) {
+  /**
+   * @param points 寸法線と寸法補助線の描画用データ(直線の始点と終点の座標の組のリスト。リストの最後の要素が寸法線用、それ以外は寸法補助線用)
+   * @param textStr 寸法値テキスト
+   * @param textScale 寸法値テキストの描画スケール
+   */
+  constructor(points: THREE.Vector3[][], textStr: string, textScale: number) {
     super();
 
     // 寸法線と寸法補助線の描画
@@ -36,7 +43,8 @@ export class ThreeLoadDimension extends THREE.Group {
       vAlign: "bottom",
     });
     text.name = "text";
-    text.scale.set(1, 2, 0); // 縦長
+
+    text.scale.set(1 * textScale, 2 * textScale, 0); // 縦長
 
     this.add(text);
   }

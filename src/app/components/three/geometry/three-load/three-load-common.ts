@@ -1,5 +1,7 @@
 import * as THREE from "three";
 
+import { ThreeLoadDimension } from "./three-load-dimension";
+
 /** 部材座標系 */
 export class LocalAxis {
   readonly x: THREE.Vector3;
@@ -23,6 +25,74 @@ export class LocalAxis {
       z: this.z.clone(),
     });
   }
+}
+
+/** 他の部材の荷重と競合する可能性のある区間を示す情報 */
+export class ConflictSection {
+  private readonly list: { start: number; end: number }[] = [];
+
+  /**
+   * @param list startとendで表された競合区間データのリスト。startとendはいずれも部材のi端からの距離。「0 <= start <= end」の関係を満たす必要がある。
+   * 個々のリスト要素が示す区間に重複があってもよい。リスト要素の並び順は任意でよい
+   */
+  constructor(...list: { start: number; end: number }[]) {
+    list.forEach((elm) => {
+      this.list.push({ start: elm.start, end: elm.end });
+    });
+  }
+
+  /**
+   * 競合の判定
+   * @param target 他の部材の荷重の競合区間情報
+   * @returns true=競合する、false=競合しない
+   */
+  conflictsTo(target: ConflictSection): boolean {
+    for (const a of this.list) {
+      for (const b of target.list) {
+        if (a.start < b.end && a.end > b.start) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  /**
+   * 指定された競合区間情報を設定する
+   * @param target 設定対象の競合区間情報
+   */
+  copy(target: ConflictSection): void {
+    this.list.splice(0);
+    this.list.push(...target.list);
+  }
+
+  /**
+   * 指定された競合区間情報を追加する
+   * @param target 追加対象の競合区間情報
+   */
+  append(target: ConflictSection): void {
+    this.list.push(...target.list);
+    // (必須ではないが)重複する区間を一つにまとめる
+    this.list.sort((a, b) => a.start - b.start);
+    for (let i = this.list.length - 1; i > 0; i--) {
+      const ii = this.list[i];
+      for (let j = i - 1; j >= 0; j--) {
+        const jj = this.list[j];
+        if (ii.start <= jj.end && ii.end >= jj.start) {
+          const start = Math.min(ii.start, jj.start);
+          const end = Math.max(ii.end, jj.end);
+          this.list.splice(j, 1, { start: start, end: end });
+          this.list.splice(i, 1);
+        }
+      }
+    }
+  }
+
+  /** 部材全体が競合区間であることを示す情報 */
+  static readonly EndToEnd = new ConflictSection({
+    start: 0,
+    end: Number.MAX_VALUE,
+  });
 }
 
 const offsetDirectionList = [
@@ -53,7 +123,17 @@ export class OffsetDict {
   private localAxis: LocalAxis | undefined;
   /** オブセットの向き別オフセット情報 */
   private dict: {
-    [key: string]: number;
+    [
+      /** オフセットの向き */
+      key: string
+    ]: {
+      /** 上に描画される部材の荷重と競合する可能性のある部材の区間情報 */
+      conflictSection: ConflictSection;
+      /** 上に描画される部材の荷重が現在の荷重と競合*する*場合に使用されるオフセット値 */
+      currOffset: number;
+      /** 上に描画される部材の荷重が現在の荷重と競合*しない*場合に使用されるオフセット値 */
+      lastOffset: number;
+    };
   } = {};
 
   /**
@@ -67,7 +147,14 @@ export class OffsetDict {
 
   /** オフセット情報の初期化 */
   reset(): void {
-    offsetDirectionList.forEach((key) => (this.dict[key] = 0));
+    offsetDirectionList.forEach(
+      (key) =>
+        (this.dict[key] = {
+          conflictSection: new ConflictSection(), // @TODO: もしくは ConflictSection.EndToEnd
+          currOffset: 0,
+          lastOffset: 0,
+        })
+    );
   }
 
   private getParam_rlx(): Map<string, number> {
@@ -324,9 +411,16 @@ export class OffsetDict {
   /**
    * 指定されたオフセットの向きに対するオフセット値でオフセット情報を更新する
    * @param offsetdir オフセットの向き
-   * @param offset 更新用オフセット値
+   * @param newOffset 更新用オフセット値
+   * @param conflicted オフセット値の取得時に荷重の競合が検出されていたか
+   * @param conflictSection 対象の荷重の干渉区間データ
    */
-  update(offsetdir: OffsetDirection, offset: number): void {
+  update(
+    offsetdir: OffsetDirection,
+    newOffset: number,
+    conflicted: boolean,
+    conflictSection: ConflictSection
+  ): void {
     if (!this.coefDict[offsetdir]) {
       let map: Map<string, number>;
       switch (offsetdir) {
@@ -387,52 +481,79 @@ export class OffsetDict {
       this.coefDict[offsetdir] = map;
     }
     this.coefDict[offsetdir].forEach((coef, dir) => {
-      const actualOffset = offset * coef;
-      if (this.dict[dir] < actualOffset) {
-        this.dict[dir] = actualOffset;
+      const actualNewOffset = newOffset * coef;
+      const offsetData = this.dict[dir];
+      if (conflicted) {
+        offsetData.conflictSection.copy(conflictSection);
+        offsetData.lastOffset = offsetData.currOffset;
+        offsetData.currOffset = Math.max(
+          offsetData.currOffset,
+          actualNewOffset
+        );
+      } else {
+        offsetData.conflictSection.append(conflictSection);
+        // lastOffsetはそのまま
+        offsetData.currOffset = Math.max(
+          offsetData.currOffset,
+          actualNewOffset
+        );
       }
     });
   }
 
   /**
-   * 指定された向きのオフセット値を返す
+   * 指定された向きのオフセット値と荷重の競合の発生有無を返す
    * @param direction オフセットの向き
-   * @returns 指定された向きのオフセット値
+   * @param conflictSection 対象の荷重の競合区間情報
+   * @returns offset=指定された向きのオフセット値、conflicted=荷重の競合の発生有無
    */
-  get(direction: OffsetDirection): number {
-    return this.dict[direction];
-  }
-
-  /**
-   * 対象のオフセット情報の中で指定された向きの最大のオフセット値を返す
-   * @param direction オフセットの向き
-   * @param targets 対象のオフセット情報
-   * @returns 対象のオフセット情報の中で指定された向きの最大のオフセット値
-   */
-  static getMax(direction: OffsetDirection, ...targets: OffsetDict[]): number {
-    if (targets.length === 0) {
-      throw new Error();
+  get(
+    direction: OffsetDirection,
+    conflictSection: ConflictSection
+  ): { offset: number; conflicted: boolean } {
+    const offsetData = this.dict[direction];
+    if (offsetData.conflictSection.conflictsTo(conflictSection)) {
+      return { offset: offsetData.currOffset, conflicted: true };
+    } else {
+      return { offset: offsetData.lastOffset, conflicted: false };
     }
-    return targets
-      .map((t) => t.get(direction))
-      .reduce((v1, v2) => Math.max(v1, v2));
   }
 }
 
-/**
- * 各種荷重値の最大値
- * pMax: 節点荷重(t)と部材集中荷重(1)
- * mMax: 節点モーメント(r)と部材集中モーメント(11)
- * wMax: 部材分布荷重(2xと2rを除く)
- * rMax: 部材ねじりモーメント(2r)
- * qMax: 部材軸方向分布荷重(2x)
- */
+/** 各種荷重値の最大値 */
 export type MaxLoadDict = {
+  /** 節点荷重(t)と部材集中荷重(1)の最大値 */
   pMax: number;
+  /** 節点モーメント(r)と部材集中モーメント(11)の最大値 */
   mMax: number;
+  /** 部材分布荷重(2xと2rを除く)の最大値 */
   wMax: number;
+  /** 部材ねじりモーメント(2r)の最大値 */
   rMax: number;
+  /** 部材軸方向分布荷重(2x) */
   qMax: number;
+};
+
+/** 寸法線描画用データ */
+export type SetDimParams = {
+  /** 描画スケール */
+  scale: number;
+  /** i端節点とL1点の距離 */
+  L1: number;
+  /** L1点とL2点の距離 */
+  L: number;
+  /** j端節点とL2点の距離 */
+  L2: number;
+  /** i端節点の座標 */
+  pi: THREE.Vector3;
+  /** L1点の座標 */
+  pL1: THREE.Vector3;
+  /** L2点の座標 */
+  pL2: THREE.Vector3;
+  /** j端節点の座標 */
+  pj: THREE.Vector3;
+  /** 寸法線関連を描画する向きを表す単位ベクトル */
+  uDimension: THREE.Vector3;
 };
 
 /** 荷重データの基底クラス */
@@ -494,4 +615,143 @@ export abstract class LoadData extends THREE.Group {
 
   // this.name: string - 例：DistributeLoad-3-y
   // this.position: Vector3 - 部材基準点(i端節点とj端節点の中点)の座標
+
+  /**
+   * 荷重値や寸法値のテキスト描画スケール調整
+   * @param scale 描画スケール
+   * @returns 調整後の描画スケール
+   */
+  protected adjustTextScale(scale: number): number {
+    // 「0.2」が基準となる描画スケール
+    // テキストがあまり大きくならないように「2」を上限としておく
+    const adjusted = Math.min(scale / 0.2, 2);
+    return adjusted;
+  }
+
+  /** 寸法線描画用データの退避先 */
+  private setDimParams: SetDimParams;
+
+  /**
+   * 選択時は寸法線関連を描画し、非選択時はクリアする
+   * @param isSelected true=選択状態、false=非選択状態
+   * @param params relocate()から呼び出された時は寸法線描画用データ、highlight()から呼び出された時はundefined
+   */
+  protected setDim(
+    isSelected: boolean,
+    params: SetDimParams | undefined = undefined
+  ): void {
+    // 一旦削除
+    const old = this.getObjectByName("Dimension");
+    if (old) {
+      this.remove(old);
+    }
+
+    if (params) {
+      this.setDimParams = params;
+    }
+
+    if (!isSelected) {
+      return;
+    }
+
+    params ??= this.setDimParams;
+
+    // 部材L1点またはL2点から寸法補助線の始点までの距離
+    const offset = 0;
+
+    // i端節点とL1点の距離
+    const L1 = params.L1;
+    // L1点とL2点の距離
+    const L = params.L;
+    // j端節点とL2点の距離
+    const L2 = params.L2;
+
+    // 寸法補助線の長さ(でっぱりを除く)
+    const size = 1 * params.scale;
+    // 寸法補助線のでっぱりの長さ
+    const protrude = 0.03 * params.scale;
+
+    // テキストの描画スケール
+    const textScale = this.adjustTextScale(params.scale);
+
+    const dim = new THREE.Group();
+
+    // L1点の座標
+    const pL1 = params.pL1;
+    // L2点の座標
+    const pL2 = params.pL2;
+    // 部材軸に直交しており、かつ荷重面に平行な単位ベクトル(寸法補助線の向き)
+    const uDimension = params.uDimension;
+
+    // 寸法補助線の始点(L1点)
+    const pL1a = pL1.clone().add(uDimension.clone().multiplyScalar(offset));
+    // 寸法線の始点(L1点)
+    const pL1b = pL1a.clone().add(uDimension.clone().multiplyScalar(size));
+    // 寸法補助線の終点(L1点)
+    const pL1c = pL1b.clone().add(uDimension.clone().multiplyScalar(protrude));
+
+    // 寸法補助線の始点(L2点)
+    const pL2a = pL2.clone().add(uDimension.clone().multiplyScalar(offset));
+    // 寸法線の始点(L2点)
+    const pL2b = pL2a.clone().add(uDimension.clone().multiplyScalar(size));
+    // 寸法補助線の終点(L2点)
+    const pL2c = pL2b.clone().add(uDimension.clone().multiplyScalar(protrude));
+
+    const pp: THREE.Vector3[][] = [
+      [pL1a, pL1c], // 寸法補助線(L1点)
+      [pL2a, pL2c], // 寸法補助線(L2点)
+      [pL1b, pL2b], // 寸法線
+    ];
+    const dim1 = new ThreeLoadDimension(pp, L.toFixed(3), textScale);
+    dim1.visible = true;
+    dim1.name = "Dimentsion1";
+    dim.add(dim1);
+
+    if (L1 > 0) {
+      // 部材i端の座標
+      const pi = params.pi;
+
+      // 寸法補助線の始点(i端)
+      const pia = pi.clone().add(uDimension.clone().multiplyScalar(offset));
+      // 寸法線の始点(i端)
+      const pib = pia.clone().add(uDimension.clone().multiplyScalar(size));
+      // 寸法補助線の終点(i端)
+      const pic = pib.clone().add(uDimension.clone().multiplyScalar(protrude));
+
+      const pp: THREE.Vector3[][] = [
+        [pia, pic], // 寸法補助線(i端)
+        [pib, pL1b], // 寸法線
+      ];
+      const dim2 = new ThreeLoadDimension(pp, L1.toFixed(3), textScale);
+      dim2.visible = true;
+      dim2.name = "Dimentsion2";
+      dim.add(dim2);
+    }
+
+    if (L2 > 0) {
+      // 部材j端の座標
+      const pj: THREE.Vector3 = params.pj;
+
+      // 寸法補助線の始点(j端)
+      const pja = pj.clone().add(uDimension.clone().multiplyScalar(offset));
+      // 寸法線の始点(j端)
+      const pjb = pja.clone().add(uDimension.clone().multiplyScalar(size));
+      // 寸法補助線の終点(j端)
+      const pjc = pjb.clone().add(uDimension.clone().multiplyScalar(protrude));
+
+      const pp: THREE.Vector3[][] = [
+        [pja, pjc], // 寸法補助線(j端)
+        [pL2b, pjb], // 寸法線
+      ];
+      const dim3 = new ThreeLoadDimension(pp, L2.toFixed(3), textScale);
+      dim3.visible = true;
+      dim3.name = "Dimentsion3";
+      dim.add(dim3);
+    }
+
+    // 登録
+    dim.name = "Dimension";
+
+    this.add(dim);
+  }
 }

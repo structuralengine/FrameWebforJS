@@ -40,6 +40,27 @@ export type HAlign = "left" | "center" | "right";
 /** 垂直方向の配置指定 */
 export type VAlign = "top" | "center" | "bottom";
 
+/** 描画方向などを指定するパラメータ(2つのベクトルを指定するタイプ) */
+type Text3DParamsTypeA = {
+  /** テキストの左から右に向かう向きを指すベクトル */
+  vx: THREE.Vector3;
+  /** テキストの上向きを指すベクトル */
+  vy: THREE.Vector3;
+  /** 水平方向のテキスト配置指定(デフォルトは"center") */
+  hAlign: HAlign | undefined;
+  /** 垂直方向のテキスト配置指定(デフォルトは"center") */
+  vAlign: VAlign | undefined;
+};
+/** 描画方向などを指定するパラメータ(オイラー角を指定するタイプ) */
+type Text3DParamsTypeB = {
+  /** vxとvyから計算したオイラー角 */
+  euler: THREE.Euler;
+  /** 水平方向のテキスト配置指定(デフォルトは"center") */
+  hAlign: HAlign | undefined;
+  /** 垂直方向のテキスト配置指定(デフォルトは"center") */
+  vAlign: VAlign | undefined;
+};
+
 /** テキストデータ(3D用) */
 export class ThreeLoadText3D extends ThreeLoadTextBase {
   /**
@@ -48,24 +69,13 @@ export class ThreeLoadText3D extends ThreeLoadTextBase {
    * @param position 描画位置
    * @param size フォントサイズ
    * @param params 描画方向などを指定するパラメータ。
-   * vx=テキストの左から右に向かう向きを指すベクトル、
-   * vy=テキストの上向きを指すベクトル、
-   * hAlign=水平方向のテキスト配置指定(デフォルトは"center")、
-   * vAlign=垂直方向のテキスト配置指定(デフォルトは"center")。
    * 指定がない場合は、x軸正方向がテキストの左から右に向かう向き、y軸正方向がテキストの上向き、z軸正方向がテキストの表の向き、指定した描画位置がテキストの中央となる。
    */
   constructor(
     textString: string,
     position: THREE.Vector3,
     size: number,
-    params:
-      | {
-          vx: THREE.Vector3;
-          vy: THREE.Vector3;
-          hAlign: HAlign | undefined;
-          vAlign: VAlign | undefined;
-        }
-      | undefined = undefined
+    params: Text3DParamsTypeA | Text3DParamsTypeB | undefined = undefined
   ) {
     const textGeometry = new THREE.TextGeometry(textString, {
       font: ThreeLoadTextBase.fontLoader.font,
@@ -86,8 +96,29 @@ export class ThreeLoadText3D extends ThreeLoadTextBase {
 
     super(textGeometry, ThreeLoadTextBase.textMaterial);
 
+    // https://zenn.dev/tktcorporation/articles/8757400a6aa0b40e64bd
+    const isTypeA = (arg: unknown): arg is Text3DParamsTypeA =>
+      typeof arg === "object" &&
+      arg !== null &&
+      typeof (arg as Text3DParamsTypeA).vx === "object" &&
+      typeof (arg as Text3DParamsTypeA).vy === "object" &&
+      typeof (arg as Text3DParamsTypeB).euler === "undefined";
+    const isTypeB = (arg: unknown): arg is Text3DParamsTypeB =>
+      typeof arg === "object" &&
+      arg !== null &&
+      typeof (arg as Text3DParamsTypeA).vx === "undefined" &&
+      typeof (arg as Text3DParamsTypeA).vy === "undefined" &&
+      typeof (arg as Text3DParamsTypeB).euler === "object";
+
     if (params) {
-      const euler = ThreeLoadText3D.getEuler(params.vx, params.vy);
+      let euler: THREE.Euler;
+      if (isTypeA(params)) {
+        euler = ThreeLoadText3D.getEuler(params.vx, params.vy);
+      } else if (isTypeB(params)) {
+        euler = params.euler;
+      } else {
+        throw new Error();
+      }
       this.setRotationFromEuler(euler);
     }
 

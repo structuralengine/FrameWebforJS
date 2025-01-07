@@ -1,14 +1,28 @@
 import * as THREE from "three";
 
 import {
+  ConflictSection,
   LoadData,
   LocalAxis,
   MaxLoadDict,
   OffsetDict,
   OffsetDirection,
 } from "./three-load-common";
-import { ThreeLoadDimension } from "./three-load-dimension";
 import { ThreeLoadText3D } from "./three-load-text";
+
+/** 荷重値描画用データ */
+type SetTextParams = {
+  /** L1点の荷重値を描画する座標 */
+  pP1: THREE.Vector3;
+  /** L2点の荷重値を描画する座標 */
+  pP2: THREE.Vector3;
+  /** 荷重値の描画方向(上) */
+  vy: THREE.Vector3;
+  /** オイラー角 */
+  euler: THREE.Euler;
+  /** 描画スケール */
+  scale: number;
+};
 
 /** 部材軸方向分布荷重データ */
 export class ThreeLoadAxial extends LoadData {
@@ -157,6 +171,9 @@ export class ThreeLoadAxial extends LoadData {
     const uLoad = new THREE.Vector3();
     switch (direction) {
       case "x":
+      case "gx":
+      case "gy":
+      case "gz":
         uLoad.copy(localAxis.y);
         break;
       default:
@@ -165,8 +182,8 @@ export class ThreeLoadAxial extends LoadData {
     this.uLoad = uLoad;
     this.offsetDirection = "ly+" as OffsetDirection;
 
-    const uDim = this.uLoad.clone().negate(); // 矢印を描画する側の反対側
-    this.uDimension = uDim;
+    // 寸法関連は部材軸および矢印を描画する向きと直交する向きに描画
+    this.uDimension = this.localAxis.x.clone().cross(uLoad);
 
     this.row = row;
 
@@ -189,6 +206,17 @@ export class ThreeLoadAxial extends LoadData {
     scale: number,
     isSelected: boolean | undefined
   ): void {
+    const old = this.getObjectByName("group");
+    if (old) {
+      this.remove(old);
+    }
+
+    if (isSelected !== undefined) {
+      this.isSelected = isSelected;
+    } else {
+      isSelected = this.isSelected;
+    }
+
     // この荷重に関連するOffsetDictの抽出
     const correspondingOffsetDictList: OffsetDict[] = [];
     this.correspondingMemberNoList.forEach((no) => {
@@ -196,15 +224,9 @@ export class ThreeLoadAxial extends LoadData {
     });
 
     // この荷重に適用するoffsetの決定
-    const offset = OffsetDict.getMax(
-      this.offsetDirection,
-      ...correspondingOffsetDictList
-    );
-
-    const old = this.getObjectByName("group");
-    if (old) {
-      this.remove(old);
-    }
+    const offsetData = correspondingOffsetDictList
+      .map((dict) => dict.get(this.offsetDirection, ConflictSection.EndToEnd))
+      .reduce((a, b) => (a.offset > b.offset ? a : b));
 
     const gap = 0.1 * scale; // 部材軸と荷重矢印間の間隙の大きさ
 
@@ -214,8 +236,12 @@ export class ThreeLoadAxial extends LoadData {
     const pL2 = this.pL2; // L2点の座標
     const uLoad = this.uLoad; // 荷重を描画する向き
 
-    const pL1a = pL1.clone().add(uLoad.clone().multiplyScalar(offset + gap)); // 荷重矢印の始点
-    const pL2a = pL2.clone().add(uLoad.clone().multiplyScalar(offset + gap)); // 荷重矢印の始点
+    const pL1a = pL1
+      .clone()
+      .add(uLoad.clone().multiplyScalar(offsetData.offset + gap)); // 荷重矢印の始点
+    const pL2a = pL2
+      .clone()
+      .add(uLoad.clone().multiplyScalar(offsetData.offset + gap)); // 荷重矢印の始点
 
     // 矢印
     const origin = pL1a.clone();
@@ -245,26 +271,42 @@ export class ThreeLoadAxial extends LoadData {
       correspondingOffsetDictList.push(nodeOffsetDictMap.get(no))
     );
     correspondingOffsetDictList.forEach((dict) =>
-      dict.update(this.offsetDirection, offset + gap + overGap)
+      dict.update(
+        this.offsetDirection,
+        offsetData.offset + gap + overGap,
+        true,
+        ConflictSection.EndToEnd
+      )
     );
 
     this.add(group);
 
-    // 荷重値の描画位置
-    this.userData["P1Pos"] = pL1a;
-    this.userData["P2Pos"] = pL2a;
     // 荷重値の描画方向(右)
-    this.userData["vx"] = this.nodej.clone().sub(this.nodei).normalize(); // i端からj端に向かう向き
-    // 荷重線の描画方向(上)
-    this.userData["vy"] = this.uLoad;
-    // 描画スケール
-    this.userData["scale"] = scale;
-
-    isSelected ??= this.isSelected;
+    const vx = this.nodej.clone().sub(this.nodei).normalize(); // i端からj端に向かう向き
+    // 荷重値の描画方向(上)
+    const vy = this.uLoad;
+    // オイラー角
+    const euler = ThreeLoadText3D.getEuler(vx, vy);
 
     this.setColor(isSelected);
-    this.setText(isSelected);
-    this.setDim(isSelected);
+    this.setText(isSelected, {
+      pP1: pL1a,
+      pP2: pL2a,
+      vy: vy,
+      euler: euler,
+      scale: scale,
+    });
+    this.setDim(isSelected, {
+      scale: scale,
+      L1: this.L1,
+      L: this.L,
+      L2: this.L2,
+      pi: this.nodei,
+      pL1: this.pL1,
+      pL2: this.pL2,
+      pj: this.nodej,
+      uDimension: this.uDimension,
+    });
   }
 
   /**
@@ -297,11 +339,18 @@ export class ThreeLoadAxial extends LoadData {
     arrow.setColor(arrowColor);
   }
 
+  /** 荷重値描画用データの退避先 */
+  private setTextParams: SetTextParams;
+
   /**
    * 選択時は荷重値を描画し、非選択時は荷重値の描画をクリアする
    * @param isSelected true=選択状態、false=非選択状態
+   * @param params relocate()から呼び出された時は荷重値描画用データ、highlight()から呼び出された時はundefined
    */
-  private setText(isSelected: boolean): void {
+  private setText(
+    isSelected: boolean,
+    params: SetTextParams | undefined = undefined
+  ): void {
     // 一旦削除
     ["P1", "P2"].forEach((key) => {
       const old = this.getObjectByName(key);
@@ -310,144 +359,39 @@ export class ThreeLoadAxial extends LoadData {
       }
     });
 
+    if (params) {
+      this.setTextParams = params;
+    }
+
     if (!isSelected) {
       return;
     }
 
-    const P1 = this.P1;
-    const P2 = this.P2;
-    const P1Pos = this.userData["P1Pos"] as THREE.Vector3;
-    const P2Pos = this.userData["P2Pos"] as THREE.Vector3;
-    const vx = this.userData["vx"] as THREE.Vector3;
-    const vy = this.userData["vy"] as THREE.Vector3;
+    params ??= this.setTextParams;
+
+    const scale = this.adjustTextScale(params.scale);
 
     [
-      { key: "P1", value: P1, pos: P1Pos },
-      { key: "P2", value: P2, pos: P2Pos },
+      { key: "P1", value: this.P1, pos: params.pP1 },
+      { key: "P2", value: this.P2, pos: params.pP2 },
     ].forEach(({ key, value, pos }) => {
       value = Math.round(value * 100) / 100;
       if (value === 0) {
         return;
       }
       const textString = value.toFixed(2) + " kN/m";
-      pos = pos.clone().add(vy.clone().multiplyScalar(0.03)); // テキストと荷重線の間を少し空ける
+      pos = pos.clone().add(params.vy.clone().multiplyScalar(0.03)); // テキストと荷重線の間を少し空ける
       const text = new ThreeLoadText3D(textString, pos, 0.1, {
-        vx: vx,
-        vy: vy,
+        euler: params.euler,
         hAlign: "center",
         vAlign: "bottom",
       });
       text.name = key;
 
+      text.scale.set(scale, scale, scale);
+
       this.add(text);
     });
-  }
-
-  /**
-   * 選択時は寸法線関連を描画し、非選択時はクリアする
-   * @param isSelected true=選択状態、false=非選択状態
-   */
-  private setDim(isSelected: boolean): void {
-    // 一旦削除
-    const old = this.getObjectByName("Dimension");
-    if (old) {
-      this.remove(old);
-    }
-
-    if (!isSelected) {
-      return;
-    }
-
-    const scale = this.userData["scale"] as number;
-
-    // const offset: number = (group.offset ?? 0) * scale; // @FIXME: 現状はundefinedで固定
-    const offset = 0;
-    const L1 = this.L1;
-    const L = this.L;
-    const L2 = this.L2;
-
-    const size = 1 * scale; // 寸法補助線の長さ(でっぱりを除く)
-    const protrude = 0.03 * scale; // 寸法補助線のでっぱりの長さ
-
-    const dim = new THREE.Group();
-
-    // L1点の座標
-    const pL1 = this.pL1;
-    // L2点の座標
-    const pL2 = this.pL2;
-    // 寸法線関連を描画する向き
-    const uDimension = this.uDimension;
-
-    // 寸法補助線の始点(L1点)
-    const pL1a = pL1.clone().add(uDimension.clone().multiplyScalar(offset));
-    // 寸法線の始点(L1点)
-    const pL1b = pL1a.clone().add(uDimension.clone().multiplyScalar(size));
-    // 寸法補助線の終点(L1点)
-    const pL1c = pL1b.clone().add(uDimension.clone().multiplyScalar(protrude));
-
-    // 寸法補助線の始点(L2点)
-    const pL2a = pL2.clone().add(uDimension.clone().multiplyScalar(offset));
-    // 寸法線の始点(L2点)
-    const pL2b = pL2a.clone().add(uDimension.clone().multiplyScalar(size));
-    // 寸法補助線の終点(L2点)
-    const pL2c = pL2b.clone().add(uDimension.clone().multiplyScalar(protrude));
-
-    const pp: THREE.Vector3[][] = [
-      [pL1a, pL1c], // 寸法補助線(L1点)
-      [pL2a, pL2c], // 寸法補助線(L2点)
-      [pL1b, pL2b], // 寸法線
-    ];
-    const dim1 = new ThreeLoadDimension(pp, L.toFixed(3));
-    dim1.visible = true;
-    dim1.name = "Dimentsion1";
-    dim.add(dim1);
-
-    if (L1 > 0) {
-      // 部材i端の座標
-      const pi = this.nodei;
-
-      // 寸法補助線の始点(i端)
-      const pia = pi.clone().add(uDimension.clone().multiplyScalar(offset));
-      // 寸法線の始点(i端)
-      const pib = pia.clone().add(uDimension.clone().multiplyScalar(size));
-      // 寸法補助線の終点(i端)
-      const pic = pib.clone().add(uDimension.clone().multiplyScalar(protrude));
-
-      const pp: THREE.Vector3[][] = [
-        [pia, pic], // 寸法補助線(i端)
-        [pib, pL1b], // 寸法線
-      ];
-      const dim2 = new ThreeLoadDimension(pp, L1.toFixed(3));
-      dim2.visible = true;
-      dim2.name = "Dimentsion2";
-      dim.add(dim2);
-    }
-
-    if (L2 > 0) {
-      // 部材j端の座標
-      const pj: THREE.Vector3 = this.nodej;
-
-      // 寸法補助線の始点(j端)
-      const pja = pj.clone().add(uDimension.clone().multiplyScalar(offset));
-      // 寸法線の始点(j端)
-      const pjb = pja.clone().add(uDimension.clone().multiplyScalar(size));
-      // 寸法補助線の終点(j端)
-      const pjc = pjb.clone().add(uDimension.clone().multiplyScalar(protrude));
-
-      const pp: THREE.Vector3[][] = [
-        [pja, pjc], // 寸法補助線(j端)
-        [pL2b, pjb], // 寸法線
-      ];
-      const dim3 = new ThreeLoadDimension(pp, L2.toFixed(3));
-      dim3.visible = true;
-      dim3.name = "Dimentsion3";
-      dim.add(dim3);
-    }
-
-    // 登録
-    dim.name = "Dimension";
-
-    this.add(dim);
   }
 
   /**
@@ -490,6 +434,21 @@ export class ThreeLoadAxial extends LoadData {
     }
     switch (direction) {
       case "x":
+        break;
+      case "gx":
+        if (!(localAxis.x.y === 0 && localAxis.x.z === 0)) {
+          return undefined;
+        }
+        break;
+      case "gy":
+        if (!(localAxis.x.x === 0 && localAxis.x.z === 0)) {
+          return undefined;
+        }
+        break;
+      case "gz":
+        if (!(localAxis.x.x === 0 && localAxis.x.y === 0)) {
+          return undefined;
+        }
         break;
       default:
         return undefined;

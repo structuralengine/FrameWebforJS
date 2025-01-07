@@ -1,12 +1,29 @@
 import * as THREE from "three";
 
 import {
+  ConflictSection,
   LoadData,
   MaxLoadDict,
   OffsetDict,
   OffsetDirection,
 } from "./three-load-common";
 import { ThreeLoadText3D } from "./three-load-text";
+
+/** 荷重描画色データ */
+type SetColorParams = {
+  /** 矢印の描画色 */
+  arrowColor: number;
+};
+
+/** 荷重値描画用データ */
+type SetTextParams = {
+  /** テキストを描画する座標 */
+  pP: THREE.Vector3;
+  /** オイラー角 */
+  euler: THREE.Euler;
+  /** 描画スケール */
+  scale: number;
+};
 
 /** 節点荷重データ */
 export class ThreeLoadPoint extends LoadData {
@@ -136,11 +153,20 @@ export class ThreeLoadPoint extends LoadData {
     scale: number,
     isSelected: boolean | undefined
   ): void {
-    isSelected ??= this.isSelected;
+    const old = this.getObjectByName("group");
+    if (old) {
+      this.remove(old);
+    }
+
+    if (isSelected !== undefined) {
+      this.isSelected = isSelected;
+    } else {
+      isSelected = this.isSelected;
+    }
 
     // この荷重に関連するOffsetDictの抽出
     const correspondingOffsetDictList1: OffsetDict[] = []; // offset決定用(節点＋部材)
-    const correspondingOffsetDictList2: OffsetDict[] = []; // offset更新用(節点のみ)
+    const correspondingOffsetDictList2: OffsetDict[] = []; // offset更新用(節点荷重の上に部材荷重は来ないので更新対象は節点のみ)
     this.correspondingNodeNoList.forEach((no) => {
       const dict = nodeOffsetDictMap.get(no);
       correspondingOffsetDictList1.push(dict);
@@ -151,10 +177,9 @@ export class ThreeLoadPoint extends LoadData {
     });
 
     // この荷重に適用するoffsetの決定
-    const offset = OffsetDict.getMax(
-      this.offsetDirection,
-      ...correspondingOffsetDictList1
-    );
+    const offsetData = correspondingOffsetDictList1
+      .map((dict) => dict.get(this.offsetDirection, ConflictSection.EndToEnd))
+      .reduce((a, b) => (a.offset > b.offset ? a : b));
 
     // 矢印の向き(this.uLoadは矢印の向きではなくて矢印を描画する領域の向き)
     const dir = this.uLoad.clone().negate();
@@ -165,7 +190,7 @@ export class ThreeLoadPoint extends LoadData {
     const origin = dir
       .clone()
       .negate()
-      .multiplyScalar(offset + length);
+      .multiplyScalar(offsetData.offset + length);
     // 非選択時の矢印の色
     let arrowColor: number;
     switch (this.direction) {
@@ -185,7 +210,12 @@ export class ThreeLoadPoint extends LoadData {
 
     // この荷重に関連するOffsetDictの更新
     correspondingOffsetDictList2.forEach((dict) =>
-      dict.update(this.offsetDirection, offset + length)
+      dict.update(
+        this.offsetDirection,
+        offsetData.offset + length,
+        true,
+        ConflictSection.EndToEnd
+      )
     );
 
     const arrow = new THREE.ArrowHelper(dir, origin, length, color);
@@ -195,40 +225,38 @@ export class ThreeLoadPoint extends LoadData {
     child.add(arrow);
     child.name = "child";
 
-    const old = this.getObjectByName("group");
-    if (old) {
-      this.remove(old);
-    }
-
     const group = new THREE.Group();
     group.add(child);
     group.name = "group";
 
     this.add(group);
 
-    // 荷重値の描画位置
-    this.userData["textPos"] = origin; // 矢印の根元
     // 荷重値の描画方向(右)
-    this.userData["vx"] = dir.clone().negate().normalize(); // 荷重の逆向き
+    const vx = dir.clone().negate().normalize(); // 荷重の逆向き
     // 荷重線の描画方向(上)
+    let vy: THREE.Vector3;
     switch (this.direction) {
       case "tx":
-        this.userData["vy"] = new THREE.Vector3(0, -1, 0); // y軸負方向
+        vy = new THREE.Vector3(0, -1, 0); // y軸負方向
         break;
       case "ty":
       case "tz":
-        this.userData["vy"] = new THREE.Vector3(-1, 0, 0); // x軸負方向
+        vy = new THREE.Vector3(-1, 0, 0); // x軸負方向
         break;
       default:
         throw new Error();
     }
-    // 非選択時の矢印の色
-    this.userData["arrowColor"] = arrowColor;
+    // オイラー角
+    const euler = ThreeLoadText3D.getEuler(vx, vy);
 
-    this.isSelected = isSelected;
-
-    this.setText(isSelected);
-    // this.setColor(isSelected); 呼び出し不要
+    this.setText(isSelected, {
+      pP: origin, // 矢印の根元
+      euler: euler,
+      scale: scale,
+    });
+    this.setColor(isSelected, {
+      arrowColor: arrowColor,
+    });
   }
 
   /**
@@ -245,11 +273,18 @@ export class ThreeLoadPoint extends LoadData {
     this.setColor(isSelected);
   }
 
+  /** 荷重値描画用データの退避先 */
+  private setTextParams: SetTextParams;
+
   /**
    * 選択時は荷重値を描画し、非選択時は荷重値の描画をクリアする
    * @param isSelected true=選択状態、false=非選択状態
+   * @param params relocate()から呼び出された時は荷重値描画用データ、highlight()から呼び出された時はundefined
    */
-  private setText(isSelected: boolean): void {
+  private setText(
+    isSelected: boolean,
+    params: SetTextParams | undefined = undefined
+  ): void {
     const key = "value";
 
     // 一旦削除
@@ -259,34 +294,50 @@ export class ThreeLoadPoint extends LoadData {
       child.remove(old);
     }
 
+    if (params) {
+      this.setTextParams = params;
+    }
+
     if (!isSelected) {
       return;
     }
 
-    const textString = this.value.toFixed(2) + " kN";
-    const position = this.userData["textPos"] as THREE.Vector3;
-    const vx = this.userData["vx"] as THREE.Vector3;
-    const vy = this.userData["vy"] as THREE.Vector3;
+    params ??= this.setTextParams;
 
-    const text = new ThreeLoadText3D(textString, position, 0.1, {
-      vx: vx,
-      vy: vy,
+    const textString = this.value.toFixed(2) + " kN";
+    const scale = this.adjustTextScale(params.scale);
+
+    const text = new ThreeLoadText3D(textString, params.pP, 0.1, {
+      euler: params.euler,
       hAlign: "left",
       vAlign: "center",
     });
     text.name = key;
 
+    text.scale.set(scale, scale, scale);
+
     child.add(text);
   }
+
+  /** 荷重描画色データの退避先 */
+  private setColorParams: SetColorParams;
 
   /**
    * 選択状態と非選択状態とで矢印の色を切り替える
    * @param isSelected true=選択状態、false=非選択状態
+   * @param params relocate()から呼び出された時は荷重描画色データ、highlight()から呼び出された時はundefined
    */
-  private setColor(isSelected: boolean): void {
-    const color = isSelected
-      ? ThreeLoadPoint.colorPick
-      : (this.userData["arrowColor"] as number);
+  private setColor(
+    isSelected: boolean,
+    params: SetColorParams | undefined = undefined
+  ): void {
+    if (params) {
+      this.setColorParams = params;
+    } else {
+      params = this.setColorParams;
+    }
+
+    const color = isSelected ? ThreeLoadPoint.colorPick : params.arrowColor;
 
     const arrow = this.getObjectByName("arrow") as THREE.ArrowHelper;
     if (!arrow) {

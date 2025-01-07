@@ -1,6 +1,7 @@
 import * as THREE from "three";
 
 import {
+  ConflictSection,
   LoadData,
   LocalAxis,
   MaxLoadDict,
@@ -8,6 +9,20 @@ import {
   OffsetDirection,
 } from "./three-load-common";
 import { ThreeLoadText2D } from "./three-load-text";
+
+/** 荷重描画色データ */
+type SetColorParams = {
+  /** 矢尻の描画色 */
+  arrowColor: THREE.MeshBasicMaterial;
+  /** 矢柄の描画色 */
+  lineColor: THREE.LineBasicMaterial;
+};
+
+/** 荷重値描画用データ */
+type SetTextParams = {
+  /** 描画スケール */
+  scale: number;
+};
 
 /** 節点モーメント荷重データ */
 export class ThreeLoadMoment extends LoadData {
@@ -139,12 +154,25 @@ export class ThreeLoadMoment extends LoadData {
     scale: number,
     isSelected: boolean | undefined
   ): void {
-    isSelected ??= this.isSelected;
+    const old = this.getObjectByName("group");
+    if (old) {
+      this.remove(old);
+    }
+
+    if (isSelected !== undefined) {
+      this.isSelected = isSelected;
+    } else {
+      isSelected = this.isSelected;
+    }
 
     // この荷重に関連するOffsetDictの抽出
-    const correspondingOffsetDictList = this.correspondingNodeNoList.map((no) =>
-      nodeOffsetDictMap.get(no)
-    );
+    const correspondingOffsetDictList: OffsetDict[] = [];
+    this.correspondingNodeNoList.forEach((no) => {
+      correspondingOffsetDictList.push(nodeOffsetDictMap.get(no));
+    });
+    this.correspondingMemberNoList.forEach((no) => {
+      correspondingOffsetDictList.push(memberOffsetDictMap.get(no));
+    });
 
     // モーメント系は積み上げ対象外
 
@@ -161,26 +189,20 @@ export class ThreeLoadMoment extends LoadData {
       lineColor
     );
 
-    // この荷重に関連するOffsetDictの更新
+    // 関連するOffsetDictの更新
     correspondingOffsetDictList.forEach((dict) =>
-      dict.update(this.offsetDirection, radius)
+      dict.update(this.offsetDirection, radius, true, ConflictSection.EndToEnd)
     );
-
-    const old = this.getObjectByName("group");
-    if (old) {
-      this.remove(old);
-    }
 
     this.add(group);
 
-    // 非選択時の矢印と本体の色
-    this.userData["arrowColor"] = arrowColor;
-    this.userData["lineColor"] = lineColor;
-
-    this.isSelected = isSelected;
-
-    this.setText(isSelected);
-    this.setColor(isSelected);
+    this.setText(isSelected, {
+      scale: scale,
+    });
+    this.setColor(isSelected, {
+      arrowColor: arrowColor,
+      lineColor: lineColor,
+    });
   }
 
   /**
@@ -334,11 +356,18 @@ export class ThreeLoadMoment extends LoadData {
     return { arrowColor, lineColor };
   }
 
+  /** 荷重値描画用データの退避先 */
+  private setTextParams: SetTextParams;
+
   /**
    * 選択時は荷重値を描画し、非選択時は荷重値の描画をクリアする
    * @param isSelected true=選択状態、false=非選択状態
+   * @param params relocate()から呼び出された時は荷重値描画用データ、highlight()から呼び出された時はundefined
    */
-  private setText(isSelected: boolean): void {
+  private setText(
+    isSelected: boolean,
+    params: SetTextParams | undefined = undefined
+  ): void {
     const key = "value";
 
     // 一旦削除
@@ -348,13 +377,20 @@ export class ThreeLoadMoment extends LoadData {
       child.remove(old);
     }
 
+    if (params) {
+      this.setTextParams = params;
+    }
+
     if (!isSelected) {
       return;
     }
 
-    // テキストの大きさが描画スケールに連動して変化しないようにする
-    // 描画スケールが小さくなりすぎた時はテキストの描画を諦める
-    const textSize = 0.1 / child.scale.x;
+    params ??= this.setTextParams;
+
+    const scale = this.adjustTextScale(params.scale);
+
+    // child.scale.xで除算しているのは、荷重値の大小に伴う荷重線のスケール調整がテキストの描画サイズに影響するのを防ぐため
+    const textSize = (0.1 / child.scale.x) * scale;
     if (!isFinite(textSize)) {
       return;
     }
@@ -379,14 +415,27 @@ export class ThreeLoadMoment extends LoadData {
     child.add(text);
   }
 
+  /** 荷重描画色データの退避先 */
+  private setColorParams: SetColorParams;
+
   /**
    * 選択状態と非選択状態とで矢印の色を切り替える
    * @param isSelected true=選択状態、false=非選択状態
+   * @param params relocate()から呼び出された時は荷重描画色データ、highlight()から呼び出された時はundefined
    */
-  private setColor(isSelected: boolean): void {
+  private setColor(
+    isSelected: boolean,
+    params: SetColorParams | undefined = undefined
+  ): void {
+    if (params) {
+      this.setColorParams = params;
+    } else {
+      params = this.setColorParams;
+    }
+
     const arrowColor = isSelected
       ? ThreeLoadMoment.arrowMaterialPick
-      : (this.userData["arrowColor"] as THREE.MeshBasicMaterial);
+      : params.arrowColor;
     const arrow = this.getObjectByName("arrow") as THREE.Mesh;
     if (!arrow) {
       throw new Error();
@@ -395,7 +444,7 @@ export class ThreeLoadMoment extends LoadData {
 
     const lineColor = isSelected
       ? ThreeLoadMoment.lineMaterialPick
-      : (this.userData["lineColor"] as THREE.LineBasicMaterial);
+      : params.lineColor;
     const line = this.getObjectByName("line") as THREE.Line<
       THREE.BufferGeometry,
       THREE.LineBasicMaterial

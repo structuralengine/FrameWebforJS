@@ -1,6 +1,7 @@
 import * as THREE from "three";
 
 import {
+  ConflictSection,
   LoadData,
   LocalAxis,
   MaxLoadDict,
@@ -8,12 +9,25 @@ import {
   OffsetDirection,
 } from "./three-load-common";
 import { ThreeLoadMoment } from "./three-load-moment";
-import { ThreeLoadDimension } from "./three-load-dimension";
-import { ThreeLoadText3D } from "./three-load-text";
+import { ThreeLoadText2D } from "./three-load-text";
 
 type ColorMaterial = {
   meshColor: THREE.MeshBasicMaterial;
   lineColor: THREE.LineBasicMaterial;
+};
+
+/** 荷重描画色データ */
+type SetColorParams = {
+  /** L1点側の円筒(または円錐)の描画色 */
+  mesh1: THREE.MeshBasicMaterial;
+  /** L2点側の円筒(または円錐)の描画色 */
+  mesh2: THREE.MeshBasicMaterial;
+};
+
+/** 荷重値描画用データ */
+type SetTextParams = {
+  /** 描画スケール */
+  scale: number;
 };
 
 /** ねじりモーメント荷重データ */
@@ -22,7 +36,7 @@ export class ThreeLoadTorsion extends LoadData {
   readonly loadType = "TorsionLoad";
 
   /** 荷重図形の拡大倍率 */
-  readonly magnifier = 1;
+  readonly magnifier = 0.5;
 
   /** この荷重と関連を持つ節点の節点番号一覧 */
   readonly correspondingNodeNoList: string[];
@@ -83,10 +97,10 @@ export class ThreeLoadTorsion extends LoadData {
   // this.children["group"].children["child"].children["mesh2"] - L2点側の荷重円錐(?)
   // this.children["group"].children["child"].children["arrow1"].children["child"].children["arrow"] - L1点側の荷重矢印の矢尻
   // this.children["group"].children["child"].children["arrow1"].children["child"].children["line"] - L1点側の荷重矢印の矢柄
+  // this.children["group"].children["child"].children["arrow1"].children["child"].children["P1"] - 荷重値テキスト
   // this.children["group"].children["child"].children["arrow2"].children["child"].children["arrow"] - L2点側の荷重矢印の矢尻
   // this.children["group"].children["child"].children["arrow2"].children["child"].children["line"] - L2点側の荷重矢印の矢柄
-  // this.children["P1"] - 荷重値テキスト
-  // this.children["P2"] - 荷重値テキスト
+  // this.children["group"].children["child"].children["arrow1"].children["child"].children["P2"] - 荷重値テキスト
   // this.children["Dimention"]
   // this.children["Dimention"].children["Dimension1"]
   // this.children["Dimention"].children["Dimension1"].children["line"] - L1点の寸法補助線
@@ -191,19 +205,17 @@ export class ThreeLoadTorsion extends LoadData {
     this.pL2 = nodej.clone().lerp(nodei, L2 / len);
     this.rMax = Math.max(Math.abs(P1), Math.abs(P2));
 
-    const uLoad = new THREE.Vector3();
     switch (direction) {
       case "r":
-        uLoad.copy(localAxis.y);
+        this.uLoad = localAxis.y.clone().negate();
         break;
       default:
         throw new Error();
     }
-    this.uLoad = uLoad.negate();
 
     this.offsetDirection = "R";
 
-    this.uDimension = uLoad.negate();
+    this.uDimension = this.uLoad.clone().negate();
 
     this.row = row;
 
@@ -226,8 +238,22 @@ export class ThreeLoadTorsion extends LoadData {
     scale: number,
     isSelected: boolean | undefined
   ): void {
+    const old = this.getObjectByName("group");
+    if (old) {
+      this.remove(old);
+    }
+
+    if (isSelected !== undefined) {
+      this.isSelected = isSelected;
+    } else {
+      isSelected = this.isSelected;
+    }
+
     // この荷重に関連するOffsetDictの抽出
     const correspondingOffsetDictList: OffsetDict[] = [];
+    this.correspondingNodeNoList.forEach((no) => {
+      correspondingOffsetDictList.push(nodeOffsetDictMap.get(no));
+    });
     this.correspondingMemberNoList.forEach((no) => {
       correspondingOffsetDictList.push(memberOffsetDictMap.get(no));
     });
@@ -241,7 +267,10 @@ export class ThreeLoadTorsion extends LoadData {
     child.name = "child";
 
     // 長さを決める
-    const { radius1, radius2, points } = this.getPoints(maxLoadDict.rMax);
+    const { radius1, radius2, points } = this.getPoints(
+      maxLoadDict.rMax,
+      scale
+    );
 
     // 面
     for (const mesh of this.getFace(my_color, points)) {
@@ -267,13 +296,13 @@ export class ThreeLoadTorsion extends LoadData {
       correspondingOffsetDictList.push(nodeOffsetDictMap.get(no))
     );
     correspondingOffsetDictList.forEach((dict) =>
-      dict.update(this.offsetDirection, largerRadius * scale)
+      dict.update(
+        this.offsetDirection,
+        largerRadius,
+        true,
+        ConflictSection.EndToEnd
+      )
     );
-
-    const oldGroup = this.getObjectByName("group");
-    if (oldGroup) {
-      this.remove(oldGroup);
-    }
 
     this.add(group);
 
@@ -283,25 +312,24 @@ export class ThreeLoadTorsion extends LoadData {
     // 全体の位置を修正する
     group.position.copy(this.nodei);
 
-    // 描画スケールを反映する
-    group.scale.set(1, scale, scale);
-
-    // 非選択時の荷重円錐部の色
-    this.userData["mesh1"] = my_color[0].meshColor;
-    this.userData["mesh2"] = my_color[1].meshColor;
-    // 荷重値の描画位置は矢印の開口部中央
-    const gap1 = this.uLoad.clone().multiplyScalar(-radius1 * scale);
-    const gap2 = this.uLoad.clone().multiplyScalar(-radius2 * scale);
-    this.userData["P1Pos"] = this.pL1.clone().add(gap1);
-    this.userData["P2Pos"] = this.pL2.clone().add(gap2);
-    // 寸法線関連の描画用データ
-    this.userData["scale"] = scale;
-
-    isSelected ??= this.isSelected;
-
-    this.setColor(isSelected);
-    this.setText(isSelected);
-    this.setDim(isSelected);
+    this.setColor(isSelected, {
+      mesh1: my_color[0].meshColor,
+      mesh2: my_color[1].meshColor,
+    });
+    this.setText(isSelected, {
+      scale: scale,
+    });
+    this.setDim(isSelected, {
+      scale: scale,
+      L1: this.L1,
+      L: this.L,
+      L2: this.L2,
+      pi: this.nodei,
+      pL1: this.pL1,
+      pL2: this.pL2,
+      pj: this.nodej,
+      uDimension: this.uDimension,
+    });
   }
 
   /**
@@ -364,13 +392,14 @@ export class ThreeLoadTorsion extends LoadData {
   }
 
   // 座標
-  private getPoints(rMax: number): {
+  private getPoints(
+    rMax: number,
+    scale: number
+  ): {
     radius1: number;
     radius2: number;
     points: THREE.Vector3[];
   } {
-    const radiusBase: number = 0.5;
-
     const P1 = this.P1;
     const P2 = this.P2;
     const L1 = this.L1;
@@ -381,8 +410,8 @@ export class ThreeLoadTorsion extends LoadData {
     const x3 = L1 + L;
     let x2 = (x1 + x3) / 2;
 
-    const y1 = (P1 / rMax) * radiusBase;
-    const y3 = (P2 / rMax) * radiusBase;
+    const y1 = (P1 / rMax) * this.magnifier * scale;
+    const y3 = (P2 / rMax) * this.magnifier * scale;
     let y2 = (y1 + y3) / 2;
 
     if (P1 * P2 < 0) {
@@ -507,11 +536,24 @@ export class ThreeLoadTorsion extends LoadData {
     }
   }
 
+  /** 荷重描画色データの退避先 */
+  private setColorParams: SetColorParams;
+
   /**
    * 選択時と非選択時の寸法面の色の切り替え
    * @param isSelected true=選択状態、false=非選択状態
+   * @param params relocate()から呼び出された時は荷重描画色データ、highlight()から呼び出された時はundefined
    */
-  private setColor(isSelected: boolean): void {
+  private setColor(
+    isSelected: boolean,
+    params: SetColorParams | undefined = undefined
+  ): void {
+    if (params) {
+      this.setColorParams = params;
+    } else {
+      params = this.setColorParams;
+    }
+
     const mesh1 = this.getObjectByName("mesh1") as THREE.Mesh<
       THREE.CylinderBufferGeometry,
       THREE.MeshBasicMaterial
@@ -519,7 +561,7 @@ export class ThreeLoadTorsion extends LoadData {
     if (mesh1) {
       const meshColor = isSelected
         ? ThreeLoadTorsion.meshColorSelected
-        : (this.userData["mesh1"] as THREE.MeshBasicMaterial);
+        : params.mesh1;
       mesh1.material = meshColor;
     }
 
@@ -530,154 +572,73 @@ export class ThreeLoadTorsion extends LoadData {
     if (mesh2) {
       const meshColor = isSelected
         ? ThreeLoadTorsion.meshColorSelected
-        : (this.userData["mesh2"] as THREE.MeshBasicMaterial);
+        : params.mesh2;
       mesh2.material = meshColor;
     }
   }
 
+  /** 荷重値描画用データの退避先 */
+  private setTextParams: SetTextParams;
+
   /**
    * 選択時は荷重値を描画し、非選択時は荷重値の描画をクリアする
    * @param isSelected true=選択状態、false=非選択状態
+   * @param params relocate()から呼び出された時は荷重値描画用データ、highlight()から呼び出された時はundefined
    */
-  private setText(isSelected: boolean): void {
+  private setText(
+    isSelected: boolean,
+    params: SetTextParams | undefined = undefined
+  ): void {
     // 一旦削除
     ["P1", "P2"].forEach((key) => {
       const old = this.getObjectByName(key);
       if (old) {
-        this.remove(old);
+        old.parent.remove(old);
       }
     });
+
+    if (params) {
+      this.setTextParams = params;
+    }
 
     if (!isSelected) {
       return;
     }
 
-    const P1 = this.P1;
-    const P2 = this.P2;
-    const P1Pos = this.userData["P1Pos"] as THREE.Vector3;
-    const P2Pos = this.userData["P2Pos"] as THREE.Vector3;
+    params ??= this.setTextParams;
+
+    const scale = this.adjustTextScale(params.scale);
 
     [
-      { key: "P1", value: P1, pos: P1Pos },
-      { key: "P2", value: P2, pos: P2Pos },
-    ].forEach((data) => {
-      const value = Math.round(data.value * 100) / 100;
-      if (value === 0) {
+      { key: "P1", value: this.P1, name: "arrow1" },
+      { key: "P2", value: this.P2, name: "arrow2" },
+    ].forEach(({ key, value, name }) => {
+      const arrow = this.getObjectByName(name);
+      const child = arrow.getObjectByName("child");
+
+      // child.scale.xで除算しているのは、荷重値の大小に伴う荷重線のスケール調整がテキストの描画サイズに影響するのを防ぐため
+      const textSize = (0.1 / child.scale.x) * scale;
+      if (!isFinite(textSize)) {
         return;
       }
-      const textString = value.toFixed(2) + " kNm/m";
-      const text = new ThreeLoadText3D(textString, data.pos, 0.1);
-      text.name = data.key;
 
-      this.add(text);
+      const textString: string = value.toFixed(2) + " kNm/m";
+
+      // テキストの描画位置は矢筈(ノック)の位置
+      const group_scale = 1;
+      const pi6 = -Math.PI / 6;
+      const sin30 = Math.sin(pi6);
+      const cos30 = Math.cos(pi6);
+      const position = new THREE.Vector2(
+        group_scale * cos30,
+        group_scale * sin30
+      );
+      const text = new ThreeLoadText2D(textString, position, textSize);
+      //   text.rotateX(Math.PI);
+      text.name = key;
+
+      child.add(text);
     });
-  }
-
-  /**
-   * 選択時は寸法線関連を描画し、非選択時はクリアする
-   * @param isSelected true=選択状態、false=非選択状態
-   */
-  private setDim(isSelected: boolean): void {
-    // 一旦削除
-    const old = this.getObjectByName("Dimension");
-    if (old) {
-      this.remove(old);
-    }
-
-    if (!isSelected) {
-      return;
-    }
-
-    const scale = this.userData["scale"] as number;
-
-    // const offset: number = (group.offset ?? 0) * scale; // @FIXME: 現状はundefinedで固定
-    const offset = 0;
-    const L1 = this.L1;
-    const L = this.L;
-    const L2 = this.L2;
-
-    const size = 1 * scale; // 寸法補助線の長さ(でっぱりを除く)
-    const protrude = 0.03 * scale; // 寸法補助線のでっぱりの長さ
-
-    const dim = new THREE.Group();
-
-    // L1点の座標
-    const pL1 = this.pL1;
-    // L2点の座標
-    const pL2 = this.pL2;
-    // 部材軸に直交しており、かつ荷重面に平行な単位ベクトル(寸法補助線の向き)
-    const uDimension = this.uDimension;
-
-    // 寸法補助線の始点(L1点)
-    const pL1a = pL1.clone().add(uDimension.clone().multiplyScalar(offset));
-    // 寸法線の始点(L1点)
-    const pL1b = pL1a.clone().add(uDimension.clone().multiplyScalar(size));
-    // 寸法補助線の終点(L1点)
-    const pL1c = pL1b.clone().add(uDimension.clone().multiplyScalar(protrude));
-
-    // 寸法補助線の始点(L2点)
-    const pL2a = pL2.clone().add(uDimension.clone().multiplyScalar(offset));
-    // 寸法線の始点(L2点)
-    const pL2b = pL2a.clone().add(uDimension.clone().multiplyScalar(size));
-    // 寸法補助線の終点(L2点)
-    const pL2c = pL2b.clone().add(uDimension.clone().multiplyScalar(protrude));
-
-    const pp: THREE.Vector3[][] = [
-      [pL1a, pL1c], // 寸法補助線(L1点)
-      [pL2a, pL2c], // 寸法補助線(L2点)
-      [pL1b, pL2b], // 寸法線
-    ];
-    const dim1 = new ThreeLoadDimension(pp, L.toFixed(3));
-    dim1.visible = true;
-    dim1.name = "Dimentsion1";
-    dim.add(dim1);
-
-    if (L1 > 0) {
-      // 部材i端の座標
-      const pi = this.nodei;
-
-      // 寸法補助線の始点(i端)
-      const pia = pi.clone().add(uDimension.clone().multiplyScalar(offset));
-      // 寸法線の始点(i端)
-      const pib = pia.clone().add(uDimension.clone().multiplyScalar(size));
-      // 寸法補助線の終点(i端)
-      const pic = pib.clone().add(uDimension.clone().multiplyScalar(protrude));
-
-      const pp: THREE.Vector3[][] = [
-        [pia, pic], // 寸法補助線(i端)
-        [pib, pL1b], // 寸法線
-      ];
-      const dim2 = new ThreeLoadDimension(pp, L1.toFixed(3));
-      dim2.visible = true;
-      dim2.name = "Dimentsion2";
-      dim.add(dim2);
-    }
-
-    if (L2 > 0) {
-      // 部材j端の座標
-      const pj: THREE.Vector3 = this.nodej;
-
-      // 寸法補助線の始点(j端)
-      const pja = pj.clone().add(uDimension.clone().multiplyScalar(offset));
-      // 寸法線の始点(j端)
-      const pjb = pja.clone().add(uDimension.clone().multiplyScalar(size));
-      // 寸法補助線の終点(j端)
-      const pjc = pjb.clone().add(uDimension.clone().multiplyScalar(protrude));
-
-      const pp: THREE.Vector3[][] = [
-        [pja, pjc], // 寸法補助線(j端)
-        [pL2b, pjb], // 寸法線
-      ];
-      const dim3 = new ThreeLoadDimension(pp, L2.toFixed(3));
-      dim3.visible = true;
-      dim3.name = "Dimentsion3";
-      dim.add(dim3);
-    }
-
-    // 登録
-    dim.name = "Dimension";
-
-    this.add(dim);
   }
 
   /**
