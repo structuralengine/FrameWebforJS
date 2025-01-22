@@ -146,19 +146,15 @@ export class ThreeLoadDistribute extends LoadData {
 
   static readonly lineMaterialRed = new THREE.LineBasicMaterial({
     color: 0xff0000,
-    vertexColors: true,
   });
   static readonly lineMaterialGreen = new THREE.LineBasicMaterial({
     color: 0x00ff00,
-    vertexColors: true,
   });
   static readonly lineMaterialBlue = new THREE.LineBasicMaterial({
     color: 0x0000ff,
-    vertexColors: true,
   });
   static readonly lineMaterialSelected = new THREE.LineBasicMaterial({
     color: 0xffeeee,
-    vertexColors: true,
   });
 
   /**

@@ -85,12 +85,10 @@ export class ThreeLoadTemperature extends LoadData {
   private static readonly lineMaterial = new THREE.LineBasicMaterial({
     color: 0xff0000,
     linewidth: 0.001,
-    // vertexColors: true, // @TODO: これがあると黒線になってしまう
   });
   private static readonly lineMaterialSelected = new THREE.LineBasicMaterial({
     color: 0x00ffff,
     linewidth: 0.001,
-    // vertexColors: true, // TODO: これがあると黒線になってしまう
   });
 
   /**
