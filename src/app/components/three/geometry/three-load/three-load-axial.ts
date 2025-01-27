@@ -1,332 +1,490 @@
-import { Injectable } from '@angular/core';
 import * as THREE from "three";
-import { Points, Vector2, Vector3 } from 'three';
-import { ThreeLoadText } from './three-load-text';
-import { ThreeLoadDimension } from './three-load-dimension';
 
-@Injectable({
-  providedIn: 'root'
-})
-export class ThreeLoadAxial {
+import {
+  ConflictSection,
+  LoadData,
+  LocalAxis,
+  MaxLoadDict,
+  OffsetDict,
+  OffsetDirection,
+} from "./three-load-common";
+import { ThreeLoadText3D } from "./three-load-text";
 
-  static id = 'AxialLoad';
-  public id = ThreeLoadAxial.id;
+/** 荷重値描画用データ */
+type SetTextParams = {
+  /** L1点の荷重値を描画する座標 */
+  pP1: THREE.Vector3;
+  /** L2点の荷重値を描画する座標 */
+  pP2: THREE.Vector3;
+  /** 荷重値の描画方向(上) */
+  vy: THREE.Vector3;
+  /** オイラー角 */
+  euler: THREE.Euler;
+  /** 描画スケール */
+  scale: number;
+};
 
-  
-  private matLine: THREE.LineBasicMaterial;
-  private matLine_Pick: THREE.LineBasicMaterial;
-  private arrow_mat: THREE.MeshBasicMaterial;
-  private arrow_mat_Pick: THREE.MeshBasicMaterial;
+/** 部材軸方向分布荷重データ */
+export class ThreeLoadAxial extends LoadData {
+  /** 荷重の種別 */
+  readonly loadType = "AxialLoad";
 
-  private text: ThreeLoadText;
-  private dim: ThreeLoadDimension;
+  /** 荷重図形の拡大倍率 */
+  readonly magnifier = 1;
 
-  constructor(text: ThreeLoadText) {
-    
-    this.text = text;
-    this.dim = new ThreeLoadDimension(text);
-    
-    this.matLine = new THREE.LineBasicMaterial({
-      color: 0xff0000,
-      linewidth: 0.001, // in pixels
-      vertexColors: false, // true
-    });
-    this.matLine_Pick  = new THREE.LineBasicMaterial({
-      color: 0x00ffff,
-      linewidth: 0.001, // in pixels
-      vertexColors: false, // true
-    });
+  /** この荷重と関連を持つ節点の節点番号一覧 */
+  readonly correspondingNodeNoList: string[];
+  /** この荷重と関連を持つ部材の部材番号一覧 */
+  readonly correspondingMemberNoList: string[];
 
-    this.arrow_mat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-    this.arrow_mat_Pick = new THREE.MeshBasicMaterial({ color: 0x00ffff });
+  /** i端節点の座標(基準点はthis.position) */
+  readonly nodei: THREE.Vector3;
+  /** j端節点の座標(基準点はthis.position) */
+  readonly nodej: THREE.Vector3;
+  /** マーク */
+  readonly mark: number;
+  /** 方向 */
+  readonly direction: string;
+  /** i端節点とL1点の間の距離(m) */
+  readonly L1: number;
+  /** L1点とL2点の間の距離(m) */
+  readonly L: number;
+  /** j端節点とL2点の間の距離(m) */
+  readonly L2: number;
+  /** L1点の荷重値(kN/m) */
+  readonly P1: number;
+  /** L2点の荷重値(kN/m) */
+  readonly P2: number;
+  /** 部材荷重系 */
+  readonly localAxis: LocalAxis;
+  /** L1点の座標 */
+  readonly pL1: THREE.Vector3;
+  /** L2点の座標 */
+  readonly pL2: THREE.Vector3;
+  /** 荷重値の最大値(節点荷重と部材集中荷重) */
+  readonly pMax: number = 0;
+  /** 荷重値の最大値(節点モーメントと部材集中モーメント) */
+  readonly mMax: number = 0;
+  /** 荷重値の最大値(部材分布荷重) */
+  readonly wMax: number = 0;
+  /** 荷重値の最大値(部材ねじりモーメント) */
+  readonly rMax: number = 0;
+  /** 荷重値の最大値(部材軸方向分布荷重) */
+  readonly qMax: number;
+  /** 荷重描画方向を示す単位ベクトル */
+  readonly uLoad: THREE.Vector3;
+  /** 部材軸を起点とした場合の荷重描画方向を示す文字列 */
+  readonly offsetDirection: OffsetDirection;
+  /** 寸法線の描画方向を示す単位ベクトル */
+  readonly uDimension: THREE.Vector3;
+  /** 荷重テーブルの列情報(m=部材荷重、p=節点荷重) */
+  readonly col: "m" | "p" = "m";
+  /** 荷重テーブルの行番号 */
+  readonly row: number;
+  /** 荷重の積み上げ順を決める数値 */
+  readonly rank = 10;
+
+  /** ハイライト表示状態を示すフラグ */
+  private isSelected: boolean = false;
+
+  // this.children["group"].children["child"].children["arrow"] - 荷重矢印
+  // this.children["P1"] - 荷重値テキスト
+  // this.children["P2"] - 荷重値テキスト
+  // this.children["Dimention"]
+  // this.children["Dimention"].children["Dimension1"]
+  // this.children["Dimention"].children["Dimension1"].children["line"] - L1点の寸法補助線
+  // this.children["Dimention"].children["Dimension1"].children["line"] - L1点とL2点の間の寸法線
+  // this.children["Dimention"].children["Dimension1"].children["line"] - L2点の寸法補助線
+  // this.children["Dimention"].children["Dimension1"].children["text"] - L1点とL2点の間の寸法テキスト
+  // this.children["Dimention"].children["Dimension2"]
+  // this.children["Dimention"].children["Dimension2"].children["line"] - i端節点の寸法補助線
+  // this.children["Dimention"].children["Dimension2"].children["line"] - i端節点とL1点の間の寸法線
+  // this.children["Dimention"].children["Dimension2"].children["text"] - i端節点とL1点お間の寸法テキスト
+  // this.children["Dimention"].children["Dimension3"]
+  // this.children["Dimention"].children["Dimension3"].children["line"] - j端節点の寸法補助線
+  // this.children["Dimention"].children["Dimension3"].children["line"] - j端節点とL2点の間の寸法線
+  // this.children["Dimention"].children["Dimension3"].children["text"] - j端節点とL2点の間の寸法テキスト
+
+  private static readonly arrowColor = 0xff0000;
+  private static readonly arrowColorPick = 0x00ffff;
+
+  /**
+   * 部材軸方向分布荷重データインスタンスの生成
+   * @param mNo 部材番号
+   * @param niNo i端節点の節点番号
+   * @param njNo j端節点の節点番号
+   * @param nodei i端節点の座標
+   * @param nodej j端節点の座標
+   * @param mark マーク
+   * @param direction 方向
+   * @param L1 i端節点とL1点の間の距離(m)
+   * @param L2 j端節点とL2点の間の距離(m)
+   * @param P1 L1点の荷重値(kN/m)
+   * @param P2 L2点の荷重値(kN/m)
+   * @param localAxis 部材座標系
+   * @param row 部材荷重データテーブルの行インデックス
+   */
+  constructor(
+    mNo: string,
+    niNo: string,
+    njNo: string,
+    nodei: THREE.Vector3,
+    nodej: THREE.Vector3,
+    mark: number,
+    direction: string,
+    L1: number,
+    L2: number,
+    P1: number,
+    P2: number,
+    localAxis: LocalAxis,
+    row: number
+  ) {
+    super();
+
+    this.correspondingNodeNoList = [niNo, njNo];
+    this.correspondingMemberNoList = [mNo];
+
+    // 部材長
+    const len = nodei.distanceTo(nodej);
+
+    // 部材の基準点
+    const pBase = nodei.clone().lerp(nodej, 0.5); // nodeiとnodejの中点
+    // i端節点とj端節点の座標の基準点を原点からpBaseに移動
+    nodei = nodei.clone().sub(pBase);
+    nodej = nodej.clone().sub(pBase);
+
+    this.nodei = nodei;
+    this.nodej = nodej;
+    this.mark = mark;
+    this.direction = direction;
+    this.L1 = L1;
+    this.L = len - L1 - L2;
+    this.L2 = L2;
+    this.P1 = P1;
+    this.P2 = P2;
+    this.localAxis = localAxis.clone();
+    this.pL1 = nodei.clone().lerp(nodej, L1 / len);
+    this.pL2 = nodej.clone().lerp(nodei, L2 / len);
+    this.qMax = Math.max(Math.abs(P1), Math.abs(P2));
+
+    // 部材座標系のy軸プラス側に矢印を描画する
+    const uLoad = new THREE.Vector3();
+    switch (direction) {
+      case "x":
+      case "gx":
+      case "gy":
+      case "gz":
+        uLoad.copy(localAxis.y);
+        break;
+      default:
+        throw new Error();
+    }
+    this.uLoad = uLoad;
+    this.offsetDirection = "ly+" as OffsetDirection;
+
+    // 寸法関連は部材軸および矢印を描画する向きと直交する向きに描画
+    this.uDimension = this.localAxis.x.clone().cross(uLoad);
+
+    this.row = row;
+
+    this.name = `${this.loadType}-${row}-m`;
+    this.position.copy(pBase);
   }
 
-  public create( nodei: THREE.Vector3, nodej: THREE.Vector3, localAxis: any,
-    direction: string, L1: number, L2: number, P1: number, P2: number,
-    row: number, gDir?:any): THREE.Group {
+  /**
+   * 荷重図の再配置
+   * @param nodeOffsetDictMap key=節点番号、value=各接点のOffsetDict
+   * @param memberOffsetDictMap key=部材番号、value=各部材のOffsetDict
+   * @param maxLoadDict
+   * @param scale 描画スケール
+   * @param isSelected true=ハイライト表示、false=ハイライト表示解除、undefined=状態継続
+   */
+  relocate(
+    nodeOffsetDictMap: Map<string, OffsetDict>,
+    memberOffsetDictMap: Map<string, OffsetDict>,
+    maxLoadDict: MaxLoadDict,
+    scale: number,
+    isSelected: boolean | undefined
+  ): void {
+    const old = this.getObjectByName("group");
+    if (old) {
+      this.remove(old);
+    }
 
-    const offset: number = 0.1;
+    if (isSelected !== undefined) {
+      this.isSelected = isSelected;
+    } else {
+      isSelected = this.isSelected;
+    }
+
+    // この荷重に関連するOffsetDictの抽出
+    const correspondingOffsetDictList: OffsetDict[] = [];
+    this.correspondingMemberNoList.forEach((no) => {
+      correspondingOffsetDictList.push(memberOffsetDictMap.get(no));
+    });
+
+    // この荷重に適用するoffsetの決定
+    const offsetData = correspondingOffsetDictList
+      .map((dict) => dict.get(this.offsetDirection, ConflictSection.EndToEnd))
+      .reduce((a, b) => (a.offset > b.offset ? a : b));
+
+    const gap = 0.1 * scale; // 部材軸と荷重矢印間の間隙の大きさ
+
+    const value = this.P1; // 矢印の向きを決める値
+
+    const pL1 = this.pL1; // L1点の座標
+    const pL2 = this.pL2; // L2点の座標
+    const uLoad = this.uLoad; // 荷重を描画する向き
+
+    const pL1a = pL1
+      .clone()
+      .add(uLoad.clone().multiplyScalar(offsetData.offset + gap)); // 荷重矢印の始点
+    const pL2a = pL2
+      .clone()
+      .add(uLoad.clone().multiplyScalar(offsetData.offset + gap)); // 荷重矢印の始点
+
+    // 矢印
+    const origin = pL1a.clone();
+    const dir = pL2a.clone().sub(pL1a).normalize();
+    if (value < 0) {
+      origin.copy(pL2a);
+      dir.negate();
+    }
+    const length = pL1a.distanceTo(pL2a);
+    const color = 0xff0000;
+    const arrow = new THREE.ArrowHelper(dir, origin, length, color);
+    arrow.name = "arrow";
 
     const child = new THREE.Group();
-
-    const LL = nodei.distanceTo(nodej);
-    const L: number = LL - L1 - L2;
-    const value = P1;
-
-    // 線を描く
-    const points: THREE.Vector3[] = [];
-    points.push(new THREE.Vector3(0, 0, 0));
-    points.push(new THREE.Vector3(L, 0, 0));
-
-    const geometry = new THREE.BufferGeometry().setFromPoints( points );
-    const line2 = new THREE.Line(geometry, this.matLine);
-    line2.computeLineDistances();
-    line2.position.x = L1;
-    line2.name = 'line2';
-
-    child.add(line2);
-
-    // 矢印を描く
-    const arrow_height = 0.25
-    const arrow_geo = new THREE.ConeBufferGeometry(0.05, arrow_height, 3, 1, false);
-    const arrow_child = new THREE.Mesh(arrow_geo, this.arrow_mat);
-    if (value > 0) {
-      arrow_child.position.x = -arrow_height / 2;
-    } else {
-      arrow_child.position.x = arrow_height / 2;
-    }
-    arrow_child.name = "arrow_child";
-
-    const arrow = new THREE.Group();
-    arrow.name = "arrow";
-    arrow.add(arrow_child);
-
-    if (value > 0) {
-      arrow_child.rotation.z = -Math.PI / 2;
-      arrow.position.x = L1 + L;
-    } else {
-      arrow_child.rotation.z = Math.PI / 2;
-      arrow.position.x = L1;
-    }
-
+    child.name = "child";
     child.add(arrow);
-    child.name = "child";
 
-    // 全体
-    child.name = "child";
-    child.position.y = offset;
-
-    const group0 = new THREE.Group();
-    group0.add(child);
-    group0.name = "group";
-
-    // 全体の位置を修正する
     const group = new THREE.Group();
-    group.add(group0);
-    group["points"] = points;
-    group["L1"] = L1;
-    group["L"] = L;
-    group["L2"] = L2;
-    group["P1"] = P1;
-    group["P2"] = P2;
-    group["nodei"] = nodei;
-    group["nodej"] = nodej;
-    group["direction"] = direction;
-    group["localAxis"] = localAxis;
-    group["editor"] = this;
-    group['value'] = Math.max(Math.abs(P1), Math.abs(P2)); // 大きい方の値を保存　
+    group.name = "group";
+    group.add(child);
 
-    group.position.set(nodei.x, nodei.y, nodei.z);
+    // 荷重の外側の間隙の大きさ
+    const overGap = 0.1 * scale;
 
-    // 全体の向きを修正する
-    const XY = new Vector2(localAxis.x.x, localAxis.x.y).normalize();
-    let A = Math.asin(XY.y);
+    // この荷重に関連するOffsetDictの更新(節点の情報も併せて更新する)
+    this.correspondingNodeNoList.forEach((no) =>
+      correspondingOffsetDictList.push(nodeOffsetDictMap.get(no))
+    );
+    correspondingOffsetDictList.forEach((dict) =>
+      dict.update(
+        this.offsetDirection,
+        offsetData.offset + gap + overGap,
+        true,
+        ConflictSection.EndToEnd
+      )
+    );
 
-    if (XY.x < 0) {
-      A = Math.PI - A;
-    }
-    group.rotateZ(A);
-    if(gDir != null && gDir !== direction){
-      if((XY.x == 0 && XY.y == 1)|| (XY.x == 1 && XY.y == 0)){
-        group.rotateX(Math.PI);
-      }
-    }
-    const lenXY = Math.sqrt(Math.pow(localAxis.x.x, 2) + Math.pow(localAxis.x.y, 2));
-    const XZ = new Vector2(lenXY, localAxis.x.z).normalize();
-    group.rotateY(-Math.asin(XZ.y));
-    // group.rotateX(Math.PI);
-    group.name = ThreeLoadAxial.id + "-" + row.toString() + "-x";
-    return group;
+    this.add(group);
+
+    // 荷重値の描画方向(右)
+    const vx = this.nodej.clone().sub(this.nodei).normalize(); // i端からj端に向かう向き
+    // 荷重値の描画方向(上)
+    const vy = this.uLoad;
+    // オイラー角
+    const euler = ThreeLoadText3D.getEuler(vx, vy);
+
+    this.setColor(isSelected);
+    this.setText(isSelected, {
+      pP1: pL1a,
+      pP2: pL2a,
+      vy: vy,
+      euler: euler,
+      scale: scale,
+    });
+    this.setDim(isSelected, {
+      scale: scale,
+      L1: this.L1,
+      L: this.L,
+      L2: this.L2,
+      pi: this.nodei,
+      pL1: this.pL1,
+      pL2: this.pL2,
+      pj: this.nodej,
+      uDimension: this.uDimension,
+    });
   }
 
-
-  // 大きさを反映する
-  public setSize(group: any, scale: number): void {
-    for (const item of group.children) {
-      item.scale.set(1, scale, scale);
+  /**
+   * 選択状態と非選択状態の切り替え
+   * @param isSelected true=選択状態、false=非選択状態
+   */
+  highlight(isSelected: boolean): void {
+    if (this.isSelected === isSelected) {
+      return;
     }
+    this.isSelected = isSelected;
+
+    this.setColor(isSelected);
+    this.setText(isSelected);
+    this.setDim(isSelected);
   }
 
-  // 大きさを反映する
-  public setScale(group: any, scale: number): void {
-    group.scale.set(1, scale, scale);
-    // coneにのみスケールを反映させる
-    const arrow = group.getObjectByName('arrow');
-    if (arrow !== undefined) {
-      arrow.scale.set(scale, 1, 1);
+  /**
+   * 選択状態と非選択状態とで矢印の色を切り替える
+   * @param isSelected true=選択状態、false=非選択状態
+   */
+  private setColor(isSelected: boolean): void {
+    const arrowColor = isSelected
+      ? ThreeLoadAxial.arrowColorPick
+      : ThreeLoadAxial.arrowColor;
+    const arrow = this.getObjectByName("arrow") as THREE.ArrowHelper;
+    if (!arrow) {
+      throw new Error();
     }
-
+    arrow.setColor(arrowColor);
   }
 
-  // ハイライトを反映させる
-  public setColor(group: any, status: string): void {
+  /** 荷重値描画用データの退避先 */
+  private setTextParams: SetTextParams;
 
-    const group0 = group.getObjectByName('group');
-
-    function change(
-      matLine: THREE.LineBasicMaterial, 
-      matArrow: THREE.MeshBasicMaterial, 
-      textVisible: boolean) {
-
-      for(const child of  group0.children){
-        if(child.name === 'child'){
-          child.children.forEach(target => {
-            if (target.name === 'line2') {
-              target.material = matLine // 線のカラー
-            } else if (target.name === 'arrow') {
-              target.material = matArrow // 矢印のカラー
-            }
-          });
-        } else if(child.name === 'text'){
-          child.visible = textVisible;  // 文字を表示
-        }
-      }
-    }
-
-    if (status === "clear") {
-      change(this.matLine, this.arrow_mat, false);
-    } else {
-      change(this.matLine_Pick, this.arrow_mat_Pick, true);
-    }
-
-    // 文字
-    this.setText(group, status);
-
-    // 寸法線
-    this.setDim(group, status);
-  }
-
-  // 文字
-  private setText(group: any, status: string): void {
-
-    const group0 = group.getObjectByName('group');
-    const child = group0.getObjectByName('child');
+  /**
+   * 選択時は荷重値を描画し、非選択時は荷重値の描画をクリアする
+   * @param isSelected true=選択状態、false=非選択状態
+   * @param params relocate()から呼び出された時は荷重値描画用データ、highlight()から呼び出された時はundefined
+   */
+  private setText(
+    isSelected: boolean,
+    params: SetTextParams | undefined = undefined
+  ): void {
     // 一旦削除
-    for(let i=0; i<2; i++){
-      const key = 'P' + (i+1);
-      const text = child.getObjectByName(key);
-      if(text !== undefined){
-        child.remove(text);
+    ["P1", "P2"].forEach((key) => {
+      const old = this.getObjectByName(key);
+      if (old) {
+        this.remove(old);
       }
+    });
+
+    if (params) {
+      this.setTextParams = params;
     }
 
-    if (status !== "select") {
+    if (!isSelected) {
       return;
     }
 
-    const L1 = group.L1;
-    const points = group.points;
-    const pos1 = new Vector2(points[0] + L1, points[1]);
-    const pos2 = new Vector2(points[3] + L1, points[4]);
-    const pos = [pos1, pos2];
-    const localAxis = group.localAxis;
-    const vartical = ['bottom', 'top'];
-    for(let i=0; i<2; i++){
-      const key = 'P' + (i+1);
-      const textString: string = group[key].toFixed(2) + " kN/m";
-      const text = this.text.create(textString, pos[i], 0.1, 0.15);
-      const height = Math.abs(text.geometry.boundingBox.max.y - text.geometry.boundingBox.min.y);
-      const width = Math.abs(text.geometry.boundingBox.max.x - text.geometry.boundingBox.min.x);
-      if (vartical[i] === 'bottom') {
-        text.position.x += 0.5 * height;
-      } else {
-        text.position.x -= 0.5 * height;
+    params ??= this.setTextParams;
+
+    const scale = this.adjustTextScale(params.scale);
+
+    [
+      { key: "P1", value: this.P1, pos: params.pP1 },
+      { key: "P2", value: this.P2, pos: params.pP2 },
+    ].forEach(({ key, value, pos }) => {
+      value = Math.round(value * 100) / 100;
+      if (value === 0) {
+        return;
       }
-      text.position.y -= 0.5 * width;
-      // text.rotateX(Math.PI);
-      if (localAxis.x.y === 1 || localAxis.x.y === -1) text.rotateZ(Math.PI/2);
+      const textString = value.toFixed(2) + " kN/m";
+      pos = pos.clone().add(params.vy.clone().multiplyScalar(0.03)); // テキストと荷重線の間を少し空ける
+      const text = new ThreeLoadText3D(textString, pos, 0.1, {
+        euler: params.euler,
+        hAlign: "center",
+        vAlign: "bottom",
+      });
       text.name = key;
-      text.scale.x = -1;
-      child.add(text);
-    }
-    
+
+      text.scale.set(scale, scale, scale);
+
+      this.add(text);
+    });
   }
-  
-  // 寸法線
-  private setDim(group: any, status: string): void{
-    
-    const group0 = group.getObjectByName('group');
-    const child = group0.getObjectByName('child');
 
-    const point = group.points;
-    const L1: number = group.L1;
-    const L: number = group.L;
-    const L2: number = group.L2
-    const points = [new Vector3(point[0].x + L1, point[0].y, 0),
-                    new Vector3(point[0].x + L1, child.position.y, 0),
-                    new Vector3(point[1].x + L1, child.position.y, 0),
-                    new Vector3(point[1].x + L1, point[1].y, 0)];
-
-    // 一旦削除
-    for(let i=0; i<2; i++){
-      const text = group.getObjectByName('Dimension');
-      if(text !== undefined){
-        group.remove(text);
-      }
+  /**
+   * 部材軸方向分布荷重の描画インスタンス生成
+   * @param mNo 部材番号
+   * @param niNo i端節点の節点番号
+   * @param njNo j端節点の節点番号
+   * @param nodei i端節点の座標
+   * @param nodej j端節点の座標
+   * @param mark マーク
+   * @param direction 方向
+   * @param L1 i端節点からL1点までの距離(m)
+   * @param L2 j端節点からL2点までの距離(m)
+   * @param P1 L1点の荷重値(kN/m)
+   * @param P2 L2点の荷重値(kN/m)
+   * @param localAxis 部材座標系
+   * @param row 部材荷重データテーブルの行インデックス
+   * @returns 部材軸方向分布荷重の描画インスタンス。対象外の荷重の場合はundefined
+   */
+  static create(
+    mNo: string,
+    niNo: string,
+    njNo: string,
+    nodei: THREE.Vector3,
+    nodej: THREE.Vector3,
+    mark: number,
+    direction: string,
+    L1: number | undefined,
+    L2: number | undefined,
+    P1: number | undefined,
+    P2: number | undefined,
+    localAxis: LocalAxis,
+    row: number
+  ): ThreeLoadAxial | undefined {
+    switch (mark) {
+      case 2:
+        break;
+      default:
+        return undefined;
+    }
+    switch (direction) {
+      case "x":
+        break;
+      case "gx":
+        if (!(localAxis.x.y === 0 && localAxis.x.z === 0)) {
+          return undefined;
+        }
+        break;
+      case "gy":
+        if (!(localAxis.x.x === 0 && localAxis.x.z === 0)) {
+          return undefined;
+        }
+        break;
+      case "gz":
+        if (!(localAxis.x.x === 0 && localAxis.x.y === 0)) {
+          return undefined;
+        }
+        break;
+      default:
+        return undefined;
     }
 
-    if (status !== "select") {
-      return;
+    const L = nodei.distanceTo(nodej);
+    if (L === 0) {
+      return undefined;
     }
 
-    const dim = new THREE.Group();
-
-    let dim1: THREE.Group;
-    let dim2: THREE.Group;
-    let dim3: THREE.Group;
-
-    const size: number = 0.1; // 文字サイズ
-
-    //const y1a = Math.abs(points[1].y);
-    //const y3a = Math.abs(points[2].y);
-    //const y4a = Math.max(y1a, y3a) + (size * 10);
-    //const a = (y1a > y3a) ? Math.sign(points[1].y) : Math.sign(points[2].y);
-    const y4 = (size * 10);
-
-    if(L1 > 0){
-      const x0 = points[1].x - L1;
-      const p = [
-        new THREE.Vector2(x0, 0),
-        new THREE.Vector2(x0, y4),
-        new THREE.Vector2(points[1].x, y4),
-        new THREE.Vector2(points[1].x, points[1].y),
-      ];
-      dim1 = this.dim.create(p, L1.toFixed(3), -1)
-      dim1.visible = true;
-      dim1.name = "Dimension1";
-      dim.add(dim1);
+    const xL1 = L1 ?? 0;
+    const xL2 = L2 ?? 0;
+    if (xL1 < 0 || xL2 < 0 || L - xL1 - xL2 < 0) {
+      return undefined;
     }
 
-    const p = [
-      new THREE.Vector2(points[1].x, points[1].y),
-      new THREE.Vector2(points[1].x, y4),
-      new THREE.Vector2(points[2].x, y4),
-      new THREE.Vector2(points[2].x, points[2].y),
-    ];
-    dim2 = this.dim.create(p, L.toFixed(3), -1)
-    dim2.visible = true;
-    dim2.name = "Dimension2";
-    dim.add(dim2);
-
-    if(L2 > 0){
-      const x4 = points[2].x + L2;
-      const p = [
-        new THREE.Vector2(points[2].x, points[2].y),
-        new THREE.Vector2(points[2].x, y4),
-        new THREE.Vector2(x4, y4),
-        new THREE.Vector2(x4, 0),
-      ];
-      dim3 = this.dim.create(p, L2.toFixed(3), -1)
-      dim3.visible = true;
-      dim3.name = "Dimension3";
-      dim.add(dim3);
+    const xP1 = P1 ?? 0;
+    const xP2 = P2 ?? 0;
+    if (xP1 === 0 && xP2 === 0) {
+      return undefined;
     }
 
-    // 登録
-    dim.name = "Dimension";
-
-    group.add(dim);
-  
+    return new ThreeLoadAxial(
+      mNo,
+      niNo,
+      njNo,
+      nodei,
+      nodej,
+      mark,
+      direction,
+      xL1,
+      xL2,
+      xP1,
+      xP2,
+      localAxis,
+      row
+    );
   }
-  
 }
