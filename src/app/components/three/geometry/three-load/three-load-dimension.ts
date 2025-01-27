@@ -1,124 +1,59 @@
-import { Injectable } from '@angular/core';
 import * as THREE from "three";
 
-import { ThreeLoadText } from "./three-load-text";
+import { ThreeLoadText3D } from "./three-load-text";
 
-@Injectable({
-  providedIn: 'root'
-})
-export class ThreeLoadDimension {
+/** 寸法線関連データ */
+export class ThreeLoadDimension extends THREE.Group {
+  /** 寸法線と寸法補助線の色 */
+  private static readonly lineMaterial = new THREE.LineBasicMaterial({
+    color: 0x000000,
+  });
 
-  private text: ThreeLoadText;
-  private line_mat: THREE.LineBasicMaterial;
-  
-  constructor(text: ThreeLoadText) {
-    this.text = text;
-    this.line_mat = new THREE.LineBasicMaterial({ color: 0x000000 });
+  /**
+   * @param points 寸法線と寸法補助線の描画用データ(直線の始点と終点の座標の組のリスト。リストの最後の要素が寸法線用、それ以外は寸法補助線用)
+   * @param textStr 寸法値テキスト
+   * @param textScale 寸法値テキストの描画スケール
+   */
+  constructor(points: THREE.Vector3[][], textStr: string, textScale: number) {
+    super();
 
-  }
+    // 寸法線と寸法補助線の描画
+    points.forEach((p) => {
+      this.add(this.getLine(p));
+    });
 
-   // 寸法線を編集する
-   public create( points: THREE.Vector2[], textStr: string, scaleX: number = 1 ): THREE.Group {
+    // 寸法線の両端の座標
+    const pxS = points[points.length - 1][0];
+    const pxE = points[points.length - 1][1];
+    // 寸法補助線(の内の1本)の両端の座標
+    const pyS = points[0][0];
+    const pyE = points[0][1];
 
-    const positions = [
-      new THREE.Vector3(points[0].x, points[0].y, 0),
-      new THREE.Vector3(points[1].x, points[1].y, 0),
-      new THREE.Vector3(points[2].x, points[2].y, 0),
-      new THREE.Vector3(points[3].x, points[3].y, 0),
-    ];
-    const line_color = 0x000000;
-
-
-    const group = new THREE.Group();
-
-    group.add(this.getLine(positions));
-
-
-    // 矢印を描く
-    /*const length = 0.5; // 長さ
-    const origin = new THREE.Vector3(length, 1, 0);
-
-    const dir1 = new THREE.Vector3(-1, 0, 0); // 矢印の方向（単位ベクトル）
-    const arrow1 = new THREE.ArrowHelper(dir1, origin, length, line_color);
-    arrow1.position.set(points[1].x + 0.5, points[1].y, 0);
-    arrow1.name = "arrow1";
-    
-    group.add(arrow1);
-
-
-    const dir2 = new THREE.Vector3(1, 0, 0); // 矢印の方向（単位ベクトル）
-    const arrow2 = new THREE.ArrowHelper(dir2, origin, length, line_color);
-    arrow2.position.set(points[2].x - 0.5, points[2].y, 0);
-    arrow2.name = "arrow2";
-
-    group.add(arrow2);*/
-
-    // 寸法線のはみ出している部分を描く
-    for(let i = 0; i < 2; i++){
-      const positions2 = [
-        new THREE.Vector3(0, -0.03, 0),
-        new THREE.Vector3(0, 0.03, 0),
-        new THREE.Vector3(0, 0, 0),
-      ];
-      if (i === 0) {
-        positions2.push( new THREE.Vector3(-0.02, 0, 0) )
-      } else {
-        positions2.push( new THREE.Vector3( 0.02, 0, 0) )
-      }
-      const plus = this.getLine(positions2)
-      plus.position.set(points[i + 1].x, points[i + 1].y, 0)
-      group.add(plus);
-    }
-
-    // 文字を描く
-    const x = points[1].x + (points[2].x - points[1].x) / 2;
-    const y = points[1].y + (points[2].y - points[1].y) / 2;
-    const horizontal: string = 'center';
-    let vartical: string = 'top';
-    if(points[1].y >= 0 ){
-      if (points[1].y < points[0].y) vartical = 'bottom';
-    } else {
-      if (points[1].y > points[0].y) vartical = 'bottom';
-    }
-    const text = this.text.create(textStr, new THREE.Vector2(x, y), 0.08);
-    const height = Math.abs(text.geometry.boundingBox.max.y - text.geometry.boundingBox.min.y);
-    const width = Math.abs(text.geometry.boundingBox.max.x - text.geometry.boundingBox.min.x);
-    if (vartical === 'bottom') {
-      text.position.y -= 0.5 * height;
-
-    } else if (vartical === 'top') {
-      text.position.y += 0.9 * height;
-    }
-    if (horizontal === 'left') {
-      text.position.x += 0.5 * width;
-    } else if (horizontal === 'right') {
-      text.position.x -= 0.5 * width;
-    }
-    // text.rotateX(Math.PI*2);
-    
-    // text.rotateZ(Math.PI);
-    // text.rotateY(Math.PI*2);
+    // 寸法線の中間点の座標
+    const position = pxS.clone().lerp(pxE, 0.5);
+    // 寸法値テキストの左から右への向きを指すベクトル
+    const vx = pxE.clone().sub(pxS);
+    // 寸法値テキストの上向きを指すベクトル
+    const vy = pyE.clone().sub(pyS);
+    // 寸法値テキストの描画
+    const text = new ThreeLoadText3D(textStr, position, 0.08, {
+      vx: vx,
+      vy: vy,
+      hAlign: "center",
+      vAlign: "bottom",
+    });
     text.name = "text";
-    text.scale.y = 2.0;
-    text.scale.x = scaleX;
-    group.add(text);
 
-    return group;
+    text.scale.set(1 * textScale, 2 * textScale, 0); // 縦長
 
+    this.add(text);
   }
 
-  private getLine(positions: THREE.Vector3[]): THREE.Line{
-    //const line_color = 0x000000;
-
-    // 面の周りの枠線を描く
-    //const line_mat = new THREE.LineBasicMaterial({ color: line_color });
+  private getLine(positions: THREE.Vector3[]): THREE.Line {
     const line_geo = new THREE.BufferGeometry().setFromPoints(positions);
-    const line = new THREE.Line(line_geo, this.line_mat);
+    const line = new THREE.Line(line_geo, ThreeLoadDimension.lineMaterial);
     line.name = "line";
 
     return line;
-
   }
-
-
 }
