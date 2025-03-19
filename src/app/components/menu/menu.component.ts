@@ -636,4 +636,8 @@ export class MenuComponent implements OnInit {
     console.log("elementChat", elementChat)
     elementChat.click()
   }
+
+  navigateMyPage() {
+    window.open('https://mypage.malme.app/', '_blank');
+  }
 }

@@ -62,7 +62,8 @@
         "select_preset": "Select Preset",
         "preset": "Preset",
         "contact":"Contact",
-        "leave": "Your work will be lost. Do you want to leave this site?"
+        "leave": "Your work will be lost. Do you want to leave this site?",
+        "my_page": "My page"
     },
     "input": {
         "input-fix-node": {
