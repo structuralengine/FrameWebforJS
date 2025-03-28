@@ -101,6 +101,7 @@ export class MenuComponent implements OnInit {
           surname: listClaims.find(item => item.claim === "family_name")?.value
         };
         if (profile.uid) {
+          this.checkUserPermission();
           this.setUserProfile(profile)
         } else {
           this.openFile()
@@ -144,6 +145,7 @@ export class MenuComponent implements OnInit {
               surname: listClaims.find(item => item.claim === "family_name")?.value
             };
             this.setUserProfile(profile)
+            this.checkUserPermission();
           }
         })
 
@@ -249,9 +251,23 @@ export class MenuComponent implements OnInit {
       lastName: profile.surname ?? "",
     }
     this.user.setUserProfile(userProfile);
+  }
 
-    this.user.checkPermission().subscribe({
-      next: (data) => console.log(data),
+  checkUserPermission() {
+     // Check permission
+     this.user.checkPermission().subscribe({
+      next: (res : any) => { 
+        if (res.roles && res.roles.includes(environment.productionRole)) {
+          localStorage.setItem('malme_roles', JSON.stringify(res.roles));
+          return;
+        } else {
+          const isForceLogout = true;
+          alert('No access to app')
+          localStorage.removeItem('frameweb_accesstoken');
+          localStorage.removeItem('malme_roles');
+          this.logout(isForceLogout);
+        }
+      },
       error: (err) => console.error(err),
     });
   }
@@ -474,12 +490,30 @@ export class MenuComponent implements OnInit {
     }
   }
 
-  async logout() {
+  async logout(isForceLogout ?: boolean) {
     if (this.electronService.isElectron) {
       this.electronService.ipcRenderer.send(IPC_MESSAGES.LOGOUT);
       this.user.setUserProfile(null);
       window.sessionStorage.setItem("openStart", "1");
     } else {
+      if (isForceLogout) {
+        this.authService.instance
+        .handleRedirectPromise()
+        .then((tokenResponse) => {
+          if (!tokenResponse) {
+            this.user.setUserProfile(null);
+            localStorage.removeItem('frameweb_accesstoken');
+            localStorage.removeItem('malme_roles');
+            this.authService.logoutRedirect();
+            window.sessionStorage.setItem("openStart", "1");
+          }
+        })
+        .catch((err) => {
+          // Handle error
+          console.error(err);
+        });
+        return;
+      }
       const isConfirm = await this.helper.confirm(
         this.translate.instant("menu.leave"),  this.translate.instant("window.leaveTitle"),
       );
@@ -489,6 +523,8 @@ export class MenuComponent implements OnInit {
         .then((tokenResponse) => {
           if (!tokenResponse) {
             this.user.setUserProfile(null);
+            localStorage.removeItem('frameweb_accesstoken');
+            localStorage.removeItem('malme_roles');
             this.authService.logoutRedirect();
             window.sessionStorage.setItem("openStart", "1");
           } else {

@@ -6,7 +6,7 @@ import { Firestore, collection, doc, getDocs, getFirestore, onSnapshot } from '@
 import { MsalService } from '@azure/msal-angular';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
-import { Observable, switchMap } from 'rxjs';
+import { Observable, switchMap, timer } from 'rxjs';
 
 const APP = 'FrameWeb';
 const USER_PROFILE = 'userProfile';
@@ -107,7 +107,8 @@ export class UserInfoService {
   }
 
   checkPermission() {
-    return this.getAcessToken().pipe(
+    return timer(3000).pipe(
+      switchMap(() => this.getAcessToken()),
       switchMap((res) => {
         const header = new HttpHeaders({
           'Authorization': `Bearer ${res}`,
@@ -122,8 +123,7 @@ export class UserInfoService {
     return new Observable<string>((observer) => {
       this.authService.acquireTokenSilent(request).subscribe({
         next: (result) => {
-          localStorage.setItem('azure_accesstoken', result.accessToken);
-          console.log(result.accessToken, 'token')
+          localStorage.setItem('frameweb_accesstoken', result.accessToken);
           observer.next(result.accessToken);
           observer.complete();
         },
