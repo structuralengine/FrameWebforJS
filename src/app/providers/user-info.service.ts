@@ -4,8 +4,9 @@ import { nanoid } from 'nanoid';
 import axios from 'axios';
 import { Firestore, collection, doc, getDocs, getFirestore, onSnapshot } from '@angular/fire/firestore';
 import { MsalService } from '@azure/msal-angular';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
+import { Observable, switchMap } from 'rxjs';
 
 const APP = 'FrameWeb';
 const USER_PROFILE = 'userProfile';
@@ -17,7 +18,7 @@ interface UserProfile {
   firstName: string;
   lastName: string;
 }
- 
+
 @Injectable({
   providedIn: 'root'
 })
@@ -43,7 +44,7 @@ export class UserInfoService {
       this.clientId = nanoid();
       window.sessionStorage.setItem(CLIENT_ID, this.clientId);
     }
-    
+
     this.initializeUserProfile();
   }
 
@@ -103,5 +104,34 @@ export class UserInfoService {
       });
     }
     return listClaims;
+  }
+
+  checkPermission() {
+    return this.getAcessToken().pipe(
+      switchMap((res) => {
+        const header = new HttpHeaders({
+          'Authorization': `Bearer ${res}`,
+        });
+        return this.http.get(`${environment.mypageUrl}/user/check-permission`, { headers: header });
+      })
+    );
+  }
+
+  getAcessToken(): Observable<string> {
+    const request = { scopes: environment.apiConfig.scopes };
+    return new Observable<string>((observer) => {
+      this.authService.acquireTokenSilent(request).subscribe({
+        next: (result) => {
+          localStorage.setItem('azure_accesstoken', result.accessToken);
+          console.log(result.accessToken, 'token')
+          observer.next(result.accessToken);
+          observer.complete();
+        },
+        error: (err) => {
+          console.error('Token error:', err);
+          observer.error(err);
+        }
+      });
+    });
   }
 }

@@ -249,6 +249,11 @@ export class MenuComponent implements OnInit {
       lastName: profile.surname ?? "",
     }
     this.user.setUserProfile(userProfile);
+
+    this.user.checkPermission().subscribe({
+      next: (data) => console.log(data),
+      error: (err) => console.error(err),
+    });
   }
 
   @HostListener("window:beforeunload", ["$event"])
