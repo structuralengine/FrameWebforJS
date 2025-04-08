@@ -58,6 +58,27 @@ export class DataHelperModule {
     }
   }
 
+  public async notify(message: string, title?: string | undefined): Promise<boolean> {
+    if (this.electronService.isElectron) {
+      window.alert(message);
+      return true;
+    } else {
+      const modalRef = this.modalService.open(AlertDialogComponent, {
+        centered: true,
+        backdrop: true,
+        keyboard: true,
+        size: "md",
+        windowClass: "alert-modal",
+      });
+      modalRef.componentInstance.title = title;
+      modalRef.componentInstance.message = message;
+      modalRef.componentInstance.dialogMode = "alert";
+
+      const result = await modalRef.result;
+      return result === 'ok';
+    }
+  }
+
   /**
    * 文字列として与えられた数値が自然数(0を含まない正の整数)であるかを調べる
    * @param str 文字列として与えられた数値
@@ -69,7 +90,7 @@ export class DataHelperModule {
     }
     return /^[1-9][0-9]*$/.test(str);
   }
-  
+
   /**
    * 文字列として与えられた数値が0を除く整数であるかを調べる
    * @param str 文字列として与えられた数値
@@ -81,7 +102,7 @@ export class DataHelperModule {
     }
     return /^-?[1-9][0-9]*$/.test(str);
   }
-  
+
   /**
    * 文字列として与えられた数値が正の整数であるかを調べる
    * @param str 文字列として与えられた数値
@@ -135,12 +156,12 @@ export class DataHelperModule {
     }
     return result;
   }
-  
+
   // 文字列の配列を数字の小さい順に並べ替える
   public numberSort(strList: string[]): string[]{
     // 数値型の配列に変換する
     const toNumbers = strList.map(Number);
-    
+
     toNumbers.sort((a, b) => {
       return a - b
     })
@@ -214,18 +235,15 @@ export class DataHelperModule {
 
     const ratio = 1 * Math.abs(data) / max;
     return ratio;
-    
-    // 円を用いた倍率を設定する
-    const scale = ( 1 - ( ratio - 1)**2 )**0.5; 
-    return scale;
+
   }
 
   public getCircleScale(data: number, max: number): number {
 
     const ratio = 1 * Math.abs(data) / max;
-    
+
     // 円を用いた倍率を設定する
-    const scale = ( 1 - ( ratio - 1)**2 )**0.5; 
+    const scale = ( 1 - ( ratio - 1)**2 )**0.5;
     return scale;
   }
 

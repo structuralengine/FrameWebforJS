@@ -188,7 +188,7 @@ export class MenuComponent implements OnInit {
             let signUpSignInFlowRequest: RedirectRequest | PopupRequest = {
               authority: environment.b2cPolicies.authorities.signUpSignIn.authority,
               scopes: [...environment.apiConfig.scopes],
-              prompt: PromptValue.LOGIN 
+              prompt: PromptValue.LOGIN
             };
 
             await this.login(signUpSignInFlowRequest, true);
@@ -256,13 +256,13 @@ export class MenuComponent implements OnInit {
   checkUserPermission() {
      // Check permission
      this.user.checkPermission().subscribe({
-      next: (res : any) => { 
+      next: (res : any) => {
         if (res.roles && res.roles.includes(environment.productionRole)) {
           localStorage.setItem('malme_roles', JSON.stringify(res.roles));
           return;
         } else {
           const isForceLogout = true;
-          alert('No access to app')
+          // alert('No access to app')
           localStorage.removeItem('frameweb_accesstoken');
           localStorage.removeItem('malme_roles');
           this.logout(isForceLogout);
@@ -497,21 +497,52 @@ export class MenuComponent implements OnInit {
       window.sessionStorage.setItem("openStart", "1");
     } else {
       if (isForceLogout) {
-        this.authService.instance
-        .handleRedirectPromise()
-        .then((tokenResponse) => {
-          if (!tokenResponse) {
-            this.user.setUserProfile(null);
-            localStorage.removeItem('frameweb_accesstoken');
-            localStorage.removeItem('malme_roles');
-            this.authService.logoutRedirect();
-            window.sessionStorage.setItem("openStart", "1");
-          }
-        })
-        .catch((err) => {
-          // Handle error
-          console.error(err);
-        });
+        try {
+                          const isNotify = await this.helper.notify(
+                            this.translate.instant('menu.logoutMessage'),
+                            this.translate.instant('menu.logoutTitle')
+                          );
+                          if(isNotify) {
+                           this.authService.instance
+                             .handleRedirectPromise()
+                             .then((tokenResponse) => {
+                               if (!tokenResponse) {
+                                 this.user.setUserProfile(null);
+                                 localStorage.removeItem(
+                                   'frameweb_accesstoken'
+                                 );
+                                 localStorage.removeItem('malme_roles');
+                                 this.authService.logoutRedirect();
+                                 window.sessionStorage.setItem(
+                                   'openStart',
+                                   '1'
+                                 );
+                               }
+                             })
+                             .catch((err) => {
+                               // Handle error
+                               console.error(err);
+                             });
+                          }
+        } catch (error) {
+          this.authService.instance
+            .handleRedirectPromise()
+            .then((tokenResponse) => {
+              if (!tokenResponse) {
+                this.user.setUserProfile(null);
+                localStorage.removeItem('frameweb_accesstoken');
+                localStorage.removeItem('malme_roles');
+                this.authService.logoutRedirect();
+                window.sessionStorage.setItem('openStart', '1');
+              }
+            })
+            .catch((err) => {
+              // Handle error
+              console.error(err);
+            });
+        }
+
+
         return;
       }
       const isConfirm = await this.helper.confirm(
