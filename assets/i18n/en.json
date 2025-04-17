@@ -18,6 +18,7 @@
         "memberSectionForce": "MemberSectionForce",
         "output": "Output",
         "preparing": "Preparing for printing",
+        "alertMultiPrinting" : "Too many pages have been printed. There is a possibility that the printer will be forced to terminate due to insufficient memory. Do you want to cancel printing?",
         "description": {
             "node-2D": "Specify coordinates in the X and Y directions and set node information",
             "node-3D": "Specify coordinates in the X, Y, and Z directions and set node information",
@@ -59,7 +60,11 @@
         "save": "Save",
         "update_success": "Update success!!",
         "select_preset": "Select Preset",
-        "preset": "Preset"
+        "preset": "Preset",
+        "contact":"Contact",
+        "leave": "Your work will be lost. Do you want to leave this site?",
+        "logoutMessage": "Your account does not have permission to access the FrameWeb system.\nPlease contact Malme administrator for more information.",
+        "logoutTitle": "You don’t have access"
     },
     "input": {
         "input-fix-node": {
@@ -314,7 +319,7 @@
         "SectionForce": "SectionForce",
         "combine_SectionForce": "SectionForce (COMBINE)",
         "pickup_SectionForce": "SectionForce (PICKUP)",
-        "PrintScreen": "Print screen",
+        "PrintScreen": "Graphical output",
         "PrintLoad": "Load diagram",
         "PrintDiagram": "Sectional force diagram",
         "disgDiagram": "Displacement diagram",
@@ -383,13 +388,15 @@
                 "axis_scale_x": "X",
                 "axis_scale_y": "Y"
             }
-        }
+        },
+        "all":"All"
     },
     "providers": {
         "input-data": {
             "node_nodata": "There is no node data",
             "member_nodata": "There is no member data",
             "load_nodata": "There is no load data",
+            "rigid_nodata": "Material number of rigid zone is not specified.",
             "member": "Member",
             "node": "Node",
             "panel": "Panel",
@@ -406,10 +413,13 @@
     "modal": {
         "close": "Close",
         "cancel": "Cancel",
-        "ok": "OK"
+        "ok": "OK",
+        "updateMessage": "Update is available.\nDo you want to reboot to perform the update?\nIf you choose to cancel, the application will be automatically updated after it is closed."
+
     },
     "window": {
         "closeTitle": "Confirm",
+        "leaveTitle": "All input will be discarded",
         "closeMessage": "Changes may not to be saved. Are you sure you want to quit?",
         "confirm": "Information being entered is discarded."
     },
@@ -420,7 +430,10 @@
         "cut": "Cut"
     },
     "message":{
-        "mes": "The elastic modulus in the material menu is too small. Please check the units."
+        "calc": "Computation error",
+        "print": "Print Error",
+        "print-max": "The file is too large. Please reduce the selection and output again.",
+        "transmission-error": "Transmission error"
     },
     "preset":{
         "ramen-viaduct" : "Ramen viaduct",
@@ -437,6 +450,7 @@
         "nodeScale":"Node Scale",
         "fixnodeScale":"Fix-node Scale",
         "memberScale":"Member Scale",
+        "fixmenberScale":"Spring Scale",
         "LoadScale":"Load Scale",
         "dispScale":"dispScale",
         "reactScale":"eactScale",
