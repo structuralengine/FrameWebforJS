@@ -558,96 +558,52 @@ export class MenuComponent implements OnInit {
     }
   }
 
+  functionHandleRedirectPromise() {
+    this.authService.instance
+    .handleRedirectPromise()
+    .then((tokenResponse) => {
+      if (!tokenResponse) {
+        this.user.setUserProfile(null);
+        localStorage.removeItem("frameweb_accesstoken");
+        localStorage.removeItem("malme_roles");
+        this.authService.logoutRedirect();
+        window.sessionStorage.setItem("openStart", "1");
+      } else {
+        // Do something with the tokenResponse
+      }
+    })
+    .catch((err) => {
+      // Handle error
+      console.error(err);
+    });
+  }
+
+  async handleForceLogout() {
+    try {
+      const isNotify = await this.helper.notify(
+        this.translate.instant("menu.logoutMessage"),
+        this.translate.instant("menu.logoutTitle")
+      );
+      if (isNotify) {
+        this.functionHandleRedirectPromise()
+      }
+    } catch (error) {
+      this.functionHandleRedirectPromise()
+    }
+  }
+
   async logout(isForceLogout?: boolean) {
     if (this.electronService.isElectron) {
       this.electronService.ipcRenderer.send(IPC_MESSAGES.LOGOUT);
       this.user.setUserProfile(null);
       window.sessionStorage.setItem("openStart", "1");
       if (isForceLogout) {
-        try {
-          const isNotify = await this.helper.notify(
-            this.translate.instant("menu.logoutMessage"),
-            this.translate.instant("menu.logoutTitle")
-          );
-          if (isNotify) {
-            this.authService.instance
-              .handleRedirectPromise()
-              .then((tokenResponse) => {
-                if (!tokenResponse) {
-                  this.user.setUserProfile(null);
-                  localStorage.removeItem("frameweb_accesstoken");
-                  localStorage.removeItem("malme_roles");
-                  this.authService.logoutRedirect();
-                  window.sessionStorage.setItem("openStart", "1");
-                }
-              })
-              .catch((err) => {
-                // Handle error
-                console.error(err);
-              });
-          }
-        } catch (error) {
-          this.authService.instance
-            .handleRedirectPromise()
-            .then((tokenResponse) => {
-              if (!tokenResponse) {
-                this.user.setUserProfile(null);
-                localStorage.removeItem("frameweb_accesstoken");
-                localStorage.removeItem("malme_roles");
-                this.authService.logoutRedirect();
-                window.sessionStorage.setItem("openStart", "1");
-              }
-            })
-            .catch((err) => {
-              // Handle error
-              console.error(err);
-            });
-        }
-
+        await this.handleForceLogout()
         return;
       }
     } else {
       if (isForceLogout) {
-        try {
-          const isNotify = await this.helper.notify(
-            this.translate.instant("menu.logoutMessage"),
-            this.translate.instant("menu.logoutTitle")
-          );
-          if (isNotify) {
-            this.authService.instance
-              .handleRedirectPromise()
-              .then((tokenResponse) => {
-                if (!tokenResponse) {
-                  this.user.setUserProfile(null);
-                  localStorage.removeItem("frameweb_accesstoken");
-                  localStorage.removeItem("malme_roles");
-                  this.authService.logoutRedirect();
-                  window.sessionStorage.setItem("openStart", "1");
-                }
-              })
-              .catch((err) => {
-                // Handle error
-                console.error(err);
-              });
-          }
-        } catch (error) {
-          this.authService.instance
-            .handleRedirectPromise()
-            .then((tokenResponse) => {
-              if (!tokenResponse) {
-                this.user.setUserProfile(null);
-                localStorage.removeItem("frameweb_accesstoken");
-                localStorage.removeItem("malme_roles");
-                this.authService.logoutRedirect();
-                window.sessionStorage.setItem("openStart", "1");
-              }
-            })
-            .catch((err) => {
-              // Handle error
-              console.error(err);
-            });
-        }
-
+        await this.handleForceLogout()
         return;
       }
       const isConfirm = await this.helper.confirm(
@@ -655,23 +611,7 @@ export class MenuComponent implements OnInit {
         this.translate.instant("window.leaveTitle")
       );
       if (isConfirm) {
-        this.authService.instance
-          .handleRedirectPromise()
-          .then((tokenResponse) => {
-            if (!tokenResponse) {
-              this.user.setUserProfile(null);
-              localStorage.removeItem("frameweb_accesstoken");
-              localStorage.removeItem("malme_roles");
-              this.authService.logoutRedirect();
-              window.sessionStorage.setItem("openStart", "1");
-            } else {
-              // Do something with the tokenResponse
-            }
-          })
-          .catch((err) => {
-            // Handle error
-            console.error(err);
-          });
+        this.functionHandleRedirectPromise()
       }
     }
   }
