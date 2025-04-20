@@ -21,22 +21,38 @@ import { PrintCustomFsecService } from "../print/custom/print-custom-fsec/print-
 import { LanguagesService } from "src/app/providers/languages.service";
 import { ElectronService } from "src/app/providers/electron.service";
 import { TranslateService } from "@ngx-translate/core";
-import packageJson from '../../../../package.json';
+import packageJson from "../../../../package.json";
 
 import { MenuService } from "./menu.service";
 import { AppService } from "src/app/app.service";
 import { Router } from "@angular/router";
 import { PresetService } from "../preset/preset.service";
-import { MSAL_GUARD_CONFIG, MsalGuardConfiguration, MsalService, MsalBroadcastService } from "@azure/msal-angular";
-import { EventMessage, InteractionStatus, EventType, RedirectRequest, AuthenticationResult, AccountInfo, SsoSilentRequest, PopupRequest, PromptValue, IdTokenClaims } from "@azure/msal-browser";
+import {
+  MSAL_GUARD_CONFIG,
+  MsalGuardConfiguration,
+  MsalService,
+  MsalBroadcastService,
+} from "@azure/msal-angular";
+import {
+  EventMessage,
+  InteractionStatus,
+  EventType,
+  RedirectRequest,
+  AuthenticationResult,
+  AccountInfo,
+  SsoSilentRequest,
+  PopupRequest,
+  PromptValue,
+  IdTokenClaims,
+} from "@azure/msal-browser";
 import { Subject } from "rxjs";
 import { takeUntil, filter } from "rxjs/operators";
 import { environment } from "src/environments/environment";
 import { IPC_MESSAGES } from "src/electron/login/constants";
 
 type IdTokenClaimsWithPolicyId = IdTokenClaims & {
-  acr?: string,
-  tfp?: string,
+  acr?: string;
+  tfp?: string;
 };
 
 @Component({
@@ -93,20 +109,38 @@ export class MenuComponent implements OnInit {
     this.menuService.setDimension(2);
 
     if (this.electronService.isElectron) {
-      this.electronService.ipcRenderer.on(IPC_MESSAGES.GET_PROFILE, (event, listClaims) => {
-        const profile = {
-          uid: listClaims.find(item => item.claim === "sub")?.value,
-          email: listClaims.find(item => item.claim === "emails")?.value[0],
-          givenName: listClaims.find(item => item.claim === "given_name")?.value,
-          surname: listClaims.find(item => item.claim === "family_name")?.value
-        };
-        if (profile.uid) {
-          this.checkUserPermission();
-          this.setUserProfile(profile)
-        } else {
-          this.openFile()
+      this.electronService.ipcRenderer.on(
+        IPC_MESSAGES.GET_PROFILE,
+        (event, listClaims) => {
+          const profile = {
+            uid: listClaims.find((item) => item.claim === "sub")?.value,
+            email: listClaims.find((item) => item.claim === "emails")?.value[0],
+            givenName: listClaims.find((item) => item.claim === "given_name")
+              ?.value,
+            surname: listClaims.find((item) => item.claim === "family_name")
+              ?.value,
+          };
+          if (profile.uid) {
+            // this.checkUserPermission();
+            const role = listClaims.find(
+              (item) => item.claim === "extension_Role"
+            )?.value;
+            if (role && role.includes(environment.productionRole)) {
+              localStorage.setItem("malme_roles", JSON.stringify(role));
+              this.setUserProfile(profile);
+              return;
+            } else {
+              const isForceLogout = true;
+              // alert('No access to app')
+              localStorage.removeItem("frameweb_accesstoken");
+              localStorage.removeItem("malme_roles");
+              this.logout(isForceLogout);
+            }
+          } else {
+            this.openFile();
+          }
         }
-      })
+      );
     } else {
       this.isIframe = window !== window.parent && !window.opener;
       this.setLoginDisplay();
@@ -130,41 +164,53 @@ export class MenuComponent implements OnInit {
 
       this.msalBroadcastService.inProgress$
         .pipe(
-          filter((status: InteractionStatus) => status === InteractionStatus.None),
+          filter(
+            (status: InteractionStatus) => status === InteractionStatus.None
+          ),
           takeUntil(this._destroying$)
         )
         .subscribe(() => {
           this.setLoginDisplay();
           this.checkAndSetActiveAccount();
           if (this.loginDisplay) {
-            const listClaims = this.getClaims(this.authService.instance.getActiveAccount()?.idTokenClaims as Record<string, any>);
+            const listClaims = this.getClaims(
+              this.authService.instance.getActiveAccount()
+                ?.idTokenClaims as Record<string, any>
+            );
             const profile = {
-              uid: listClaims.find(item => item.claim === "sub")?.value,
-              email: listClaims.find(item => item.claim === "emails")?.value[0],
-              givenName: listClaims.find(item => item.claim === "given_name")?.value,
-              surname: listClaims.find(item => item.claim === "family_name")?.value
+              uid: listClaims.find((item) => item.claim === "sub")?.value,
+              email: listClaims.find((item) => item.claim === "emails")
+                ?.value[0],
+              givenName: listClaims.find((item) => item.claim === "given_name")
+                ?.value,
+              surname: listClaims.find((item) => item.claim === "family_name")
+                ?.value,
             };
-            this.setUserProfile(profile)
+            this.setUserProfile(profile);
             this.checkUserPermission();
           }
-        })
+        });
 
       this.msalBroadcastService.msalSubject$
         .pipe(
-          filter((msg: EventMessage) => msg.eventType === EventType.LOGIN_SUCCESS
-            || msg.eventType === EventType.ACQUIRE_TOKEN_SUCCESS
-            || msg.eventType === EventType.SSO_SILENT_SUCCESS),
+          filter(
+            (msg: EventMessage) =>
+              msg.eventType === EventType.LOGIN_SUCCESS ||
+              msg.eventType === EventType.ACQUIRE_TOKEN_SUCCESS ||
+              msg.eventType === EventType.SSO_SILENT_SUCCESS
+          ),
           takeUntil(this._destroying$)
         )
         .subscribe(async (result: EventMessage) => {
-
           let payload = result.payload as AuthenticationResult;
           let idtoken = payload.idTokenClaims as IdTokenClaimsWithPolicyId;
 
-          if (idtoken.acr === environment.b2cPolicies.names.signUpSignIn || idtoken.tfp === environment.b2cPolicies.names.signUpSignIn) {
+          if (
+            idtoken.acr === environment.b2cPolicies.names.signUpSignIn ||
+            idtoken.tfp === environment.b2cPolicies.names.signUpSignIn
+          ) {
             this.authService.instance.setActiveAccount(payload.account);
           }
-
 
           // if (idtoken.acr === environment.b2cPolicies.names.editProfile || idtoken.tfp === environment.b2cPolicies.names.editProfile) {
 
@@ -184,11 +230,15 @@ export class MenuComponent implements OnInit {
           //   this.authService.ssoSilent(signUpSignInFlowRequest);
           // }
 
-          if (idtoken.acr === environment.b2cPolicies.names.resetPassword || idtoken.tfp === environment.b2cPolicies.names.resetPassword) {
+          if (
+            idtoken.acr === environment.b2cPolicies.names.resetPassword ||
+            idtoken.tfp === environment.b2cPolicies.names.resetPassword
+          ) {
             let signUpSignInFlowRequest: RedirectRequest | PopupRequest = {
-              authority: environment.b2cPolicies.authorities.signUpSignIn.authority,
+              authority:
+                environment.b2cPolicies.authorities.signUpSignIn.authority,
               scopes: [...environment.apiConfig.scopes],
-              prompt: PromptValue.LOGIN
+              prompt: PromptValue.LOGIN,
             };
 
             await this.login(signUpSignInFlowRequest, true);
@@ -199,28 +249,38 @@ export class MenuComponent implements OnInit {
 
       this.msalBroadcastService.msalSubject$
         .pipe(
-          filter((msg: EventMessage) => msg.eventType === EventType.LOGIN_FAILURE || msg.eventType === EventType.ACQUIRE_TOKEN_FAILURE),
+          filter(
+            (msg: EventMessage) =>
+              msg.eventType === EventType.LOGIN_FAILURE ||
+              msg.eventType === EventType.ACQUIRE_TOKEN_FAILURE
+          ),
           takeUntil(this._destroying$)
         )
         .subscribe(async (result: EventMessage) => {
-          if (result.error && result.error.message.indexOf('AADB2C90118') > -1) {
+          if (
+            result.error &&
+            result.error.message.indexOf("AADB2C90118") > -1
+          ) {
             let resetPasswordFlowRequest: RedirectRequest | PopupRequest = {
-              authority: environment.b2cPolicies.authorities.resetPassword.authority,
+              authority:
+                environment.b2cPolicies.authorities.resetPassword.authority,
               scopes: [],
             };
 
             await this.login(resetPasswordFlowRequest, true);
-          };
+          }
         });
     }
   }
 
   getClaims(claims: Record<string, any>) {
-    const listClaims = []
+    const listClaims = [];
     if (claims) {
-      Object.entries(claims).forEach((claim: [string, unknown], index: number) => {
-        listClaims.push({ id: index, claim: claim[0], value: claim[1] });
-      });
+      Object.entries(claims).forEach(
+        (claim: [string, unknown], index: number) => {
+          listClaims.push({ id: index, claim: claim[0], value: claim[1] });
+        }
+      );
     }
     return listClaims;
   }
@@ -232,7 +292,10 @@ export class MenuComponent implements OnInit {
   checkAndSetActiveAccount() {
     let activeAccount = this.authService.instance.getActiveAccount();
 
-    if (!activeAccount && this.authService.instance.getAllAccounts().length > 0) {
+    if (
+      !activeAccount &&
+      this.authService.instance.getAllAccounts().length > 0
+    ) {
       let accounts = this.authService.instance.getAllAccounts();
       this.authService.instance.setActiveAccount(accounts[0]);
     }
@@ -249,22 +312,22 @@ export class MenuComponent implements OnInit {
       email: profile.email,
       firstName: profile.givenName ?? "User",
       lastName: profile.surname ?? "",
-    }
+    };
     this.user.setUserProfile(userProfile);
   }
 
   checkUserPermission() {
-     // Check permission
-     this.user.checkPermission().subscribe({
-      next: (res : any) => {
+    // Check permission
+    this.user.checkPermission().subscribe({
+      next: (res: any) => {
         if (res.roles && res.roles.includes(environment.productionRole)) {
-          localStorage.setItem('malme_roles', JSON.stringify(res.roles));
+          localStorage.setItem("malme_roles", JSON.stringify(res.roles));
           return;
         } else {
           const isForceLogout = true;
           // alert('No access to app')
-          localStorage.removeItem('frameweb_accesstoken');
-          localStorage.removeItem('malme_roles');
+          localStorage.removeItem("frameweb_accesstoken");
+          localStorage.removeItem("malme_roles");
           this.logout(isForceLogout);
         }
       },
@@ -364,10 +427,10 @@ export class MenuComponent implements OnInit {
   }
 
   private removeBOM(text) {
-    if (text.charCodeAt(0) === 0xFEFF) {
+    if (text.charCodeAt(0) === 0xfeff) {
       return text.slice(1);
     }
-  return text;
+    return text;
   }
 
   // ファイルを開く
@@ -452,88 +515,87 @@ export class MenuComponent implements OnInit {
       this.app.dialogClose(); // 現在表示中の画面を閉じる
       this.modalService
         .open(LoginDialogComponent, { backdrop: false })
-        .result.then((result) => { });
+        .result.then((result) => {});
     } else {
     }
   }
 
-  async login(userFlowRequest?: RedirectRequest | PopupRequest, ignoreAlert?: boolean) {
+  async login(
+    userFlowRequest?: RedirectRequest | PopupRequest,
+    ignoreAlert?: boolean
+  ) {
     if (this.electronService.isElectron) {
       this.electronService.ipcRenderer.send(IPC_MESSAGES.LOGIN);
     } else {
-
       //If you ignore the alert, it is considered as confirmation to leave the page.
       let isConfirm = false;
-      if(ignoreAlert) isConfirm = true;
-      else
-      {
+      if (ignoreAlert) isConfirm = true;
+      else {
         isConfirm = await this.helper.confirm(
-          this.translate.instant("menu.leave"),  this.translate.instant("window.leaveTitle"),
+          this.translate.instant("menu.leave"),
+          this.translate.instant("window.leaveTitle")
         );
       }
 
       if (!this.loginDisplay && isConfirm) {
         this.msalBroadcastService.inProgress$
-        .pipe(
-          filter(
-            (status: InteractionStatus) => status === InteractionStatus.None
+          .pipe(
+            filter(
+              (status: InteractionStatus) => status === InteractionStatus.None
+            )
           )
-        )
-        .subscribe(async () => {
-          if (this.msalGuardConfig.authRequest) {
-            this.authService.loginRedirect({ ...this.msalGuardConfig.authRequest, ...userFlowRequest } as RedirectRequest);
-          } else {
-            this.authService.loginRedirect(userFlowRequest);
-          }
-        });
+          .subscribe(async () => {
+            if (this.msalGuardConfig.authRequest) {
+              this.authService.loginRedirect({
+                ...this.msalGuardConfig.authRequest,
+                ...userFlowRequest,
+              } as RedirectRequest);
+            } else {
+              this.authService.loginRedirect(userFlowRequest);
+            }
+          });
       }
     }
   }
 
-  async logout(isForceLogout ?: boolean) {
+  async logout(isForceLogout?: boolean) {
     if (this.electronService.isElectron) {
       this.electronService.ipcRenderer.send(IPC_MESSAGES.LOGOUT);
       this.user.setUserProfile(null);
       window.sessionStorage.setItem("openStart", "1");
-    } else {
       if (isForceLogout) {
         try {
-                          const isNotify = await this.helper.notify(
-                            this.translate.instant('menu.logoutMessage'),
-                            this.translate.instant('menu.logoutTitle')
-                          );
-                          if(isNotify) {
-                           this.authService.instance
-                             .handleRedirectPromise()
-                             .then((tokenResponse) => {
-                               if (!tokenResponse) {
-                                 this.user.setUserProfile(null);
-                                 localStorage.removeItem(
-                                   'frameweb_accesstoken'
-                                 );
-                                 localStorage.removeItem('malme_roles');
-                                 this.authService.logoutRedirect();
-                                 window.sessionStorage.setItem(
-                                   'openStart',
-                                   '1'
-                                 );
-                               }
-                             })
-                             .catch((err) => {
-                               // Handle error
-                               console.error(err);
-                             });
-                          }
+          const isNotify = await this.helper.notify(
+            this.translate.instant("menu.logoutMessage"),
+            this.translate.instant("menu.logoutTitle")
+          );
+          if (isNotify) {
+            this.authService.instance
+              .handleRedirectPromise()
+              .then((tokenResponse) => {
+                if (!tokenResponse) {
+                  this.user.setUserProfile(null);
+                  localStorage.removeItem("frameweb_accesstoken");
+                  localStorage.removeItem("malme_roles");
+                  this.authService.logoutRedirect();
+                  window.sessionStorage.setItem("openStart", "1");
+                }
+              })
+              .catch((err) => {
+                // Handle error
+                console.error(err);
+              });
+          }
         } catch (error) {
           this.authService.instance
             .handleRedirectPromise()
             .then((tokenResponse) => {
               if (!tokenResponse) {
                 this.user.setUserProfile(null);
-                localStorage.removeItem('frameweb_accesstoken');
-                localStorage.removeItem('malme_roles');
+                localStorage.removeItem("frameweb_accesstoken");
+                localStorage.removeItem("malme_roles");
                 this.authService.logoutRedirect();
-                window.sessionStorage.setItem('openStart', '1');
+                window.sessionStorage.setItem("openStart", "1");
               }
             })
             .catch((err) => {
@@ -542,30 +604,74 @@ export class MenuComponent implements OnInit {
             });
         }
 
+        return;
+      }
+    } else {
+      if (isForceLogout) {
+        try {
+          const isNotify = await this.helper.notify(
+            this.translate.instant("menu.logoutMessage"),
+            this.translate.instant("menu.logoutTitle")
+          );
+          if (isNotify) {
+            this.authService.instance
+              .handleRedirectPromise()
+              .then((tokenResponse) => {
+                if (!tokenResponse) {
+                  this.user.setUserProfile(null);
+                  localStorage.removeItem("frameweb_accesstoken");
+                  localStorage.removeItem("malme_roles");
+                  this.authService.logoutRedirect();
+                  window.sessionStorage.setItem("openStart", "1");
+                }
+              })
+              .catch((err) => {
+                // Handle error
+                console.error(err);
+              });
+          }
+        } catch (error) {
+          this.authService.instance
+            .handleRedirectPromise()
+            .then((tokenResponse) => {
+              if (!tokenResponse) {
+                this.user.setUserProfile(null);
+                localStorage.removeItem("frameweb_accesstoken");
+                localStorage.removeItem("malme_roles");
+                this.authService.logoutRedirect();
+                window.sessionStorage.setItem("openStart", "1");
+              }
+            })
+            .catch((err) => {
+              // Handle error
+              console.error(err);
+            });
+        }
 
         return;
       }
       const isConfirm = await this.helper.confirm(
-        this.translate.instant("menu.leave"),  this.translate.instant("window.leaveTitle"),
+        this.translate.instant("menu.leave"),
+        this.translate.instant("window.leaveTitle")
       );
-      if(isConfirm){
+      if (isConfirm) {
         this.authService.instance
-        .handleRedirectPromise()
-        .then((tokenResponse) => {
-          if (!tokenResponse) {
-            this.user.setUserProfile(null);
-            localStorage.removeItem('frameweb_accesstoken');
-            localStorage.removeItem('malme_roles');
-            this.authService.logoutRedirect();
-            window.sessionStorage.setItem("openStart", "1");
-          } else {
-            // Do something with the tokenResponse
-          }
-        })
-        .catch((err) => {
-          // Handle error
-          console.error(err);
-        });
+          .handleRedirectPromise()
+          .then((tokenResponse) => {
+            if (!tokenResponse) {
+              this.user.setUserProfile(null);
+              localStorage.removeItem("frameweb_accesstoken");
+              localStorage.removeItem("malme_roles");
+              this.authService.logoutRedirect();
+              window.sessionStorage.setItem("openStart", "1");
+            } else {
+              // Do something with the tokenResponse
+            }
+          })
+          .catch((err) => {
+            // Handle error
+            console.error(err);
+          });
       }
     }
   }
@@ -661,31 +767,35 @@ export class MenuComponent implements OnInit {
     this.three.ClearData();
     // this.countArea.clear();
     const modalRef = this.modalService.open(WaitDialogComponent);
-    this.http.get('./assets/preset/サンプル（門型橋脚）.json', { responseType: 'text' }).subscribe(text => {
-      this.menuService.fileName = 'サンプル（門型橋脚）.json';
-      this.three.fileName = 'サンプル（門型橋脚）.json';
-      this.printCustomFsecService.flg = undefined;
-      this.ResultData.clear(); // 解析結果を削除
-      const old = this.helper.dimension;
-      const jsonData: {} = JSON.parse(text);
-      let resultData: {} = null;
-      if ("result" in jsonData) {
-        resultData = jsonData["result"];
-        delete jsonData["result"];
-      }
-      this.InputData.loadInputData(jsonData); // データを読み込む
-      if (resultData !== null) {
-        this.ResultData.loadResultData(resultData); // 解析結果を読み込む
-        this.ResultData.isCalculated = true;
-      } else {
-        this.ResultData.isCalculated = false;
-      }
-      if (old !== this.helper.dimension) {
-        this.setDimension(this.helper.dimension);
-      }
-      this.three.fileload();
-      modalRef.close();
-    });
+    this.http
+      .get("./assets/preset/サンプル（門型橋脚）.json", {
+        responseType: "text",
+      })
+      .subscribe((text) => {
+        this.menuService.fileName = "サンプル（門型橋脚）.json";
+        this.three.fileName = "サンプル（門型橋脚）.json";
+        this.printCustomFsecService.flg = undefined;
+        this.ResultData.clear(); // 解析結果を削除
+        const old = this.helper.dimension;
+        const jsonData: {} = JSON.parse(text);
+        let resultData: {} = null;
+        if ("result" in jsonData) {
+          resultData = jsonData["result"];
+          delete jsonData["result"];
+        }
+        this.InputData.loadInputData(jsonData); // データを読み込む
+        if (resultData !== null) {
+          this.ResultData.loadResultData(resultData); // 解析結果を読み込む
+          this.ResultData.isCalculated = true;
+        } else {
+          this.ResultData.isCalculated = false;
+        }
+        if (old !== this.helper.dimension) {
+          this.setDimension(this.helper.dimension);
+        }
+        this.three.fileload();
+        modalRef.close();
+      });
   }
 
   public setDimension(dim: number = null) {
@@ -705,7 +815,7 @@ export class MenuComponent implements OnInit {
 
   handelClickChat() {
     const elementChat = document.getElementById("chatplusheader");
-    console.log("elementChat", elementChat)
-    elementChat.click()
+    console.log("elementChat", elementChat);
+    elementChat.click();
   }
 }
