@@ -102,6 +102,10 @@ export class MenuComponent implements OnInit {
   }
 
   async ngOnInit() {
+
+    console.log("menu component ngOnInit", this.translate);
+    console.log("menu component ngOnInit currentLang", this.translate.currentLang);
+
     this.menuService.fileName = "";
     this.three.fileName = "";
 

@@ -5,6 +5,7 @@ import { DataHelperModule } from "./data-helper.module";
 import { ElectronService } from "./electron.service";
 import { forkJoin, merge } from "rxjs";
 
+const SELECTED_LANGUAGE = 'lang';
 @Injectable({
   providedIn: "root",
 })
@@ -22,11 +23,14 @@ export class LanguagesService {
     public helper: DataHelperModule,
     public electronService: ElectronService
   ) {
-    this.browserLang = translate.getBrowserLang();
-    // translate.use(this.browserLang);
-    // if (this.electronService.isElectron) {
-    //   this.electronService.ipcRenderer.send('change-lang', this.browserLang);
-    // }
+    let savedLang: string | null = null;
+    try {
+      savedLang = localStorage.getItem(SELECTED_LANGUAGE);
+    } catch (e) {
+      console.warn('Unable to access localStorage:', e);
+    }
+    const browserLang = savedLang || this.translate.getBrowserLang() || 'ja';
+    this.browserLang = browserLang;
     translate.use(this.browserLang).subscribe(
       () => {
         this.tranText();
@@ -39,20 +43,8 @@ export class LanguagesService {
         console.log(error);
       }
     );
-    if (this.electronService.isElectron) {
-      this.electronService.ipcRenderer.send("change-lang", this.browserLang);
-    }
+    this.updateLanguage();
   }
-
-  // public trans(key: string) {
-  //   this.browserLang = key;
-  //   this.translate.use(this.browserLang);
-  //   this.helper.isContentsDailogShow = false;
-  //   this.addHiddenFromElements();
-  //   if (this.electronService.isElectron) {
-  //     this.electronService.ipcRenderer.send('change-lang', this.browserLang);
-  //   }
-  // }
 
   public trans(key: string) {
     this.browserLang = key;
@@ -61,9 +53,12 @@ export class LanguagesService {
     });
     this.helper.isContentsDailogShow = false;
     this.addHiddenFromElements();
-    if (this.electronService.isElectron) {
-      this.electronService.ipcRenderer.send("change-lang", this.browserLang);
-    }
+    this.updateLanguage();
+  }
+
+  public updateLanguage(): void {
+    localStorage.setItem(SELECTED_LANGUAGE, this.browserLang);
+    if (this.electronService.isElectron) this.electronService.ipcRenderer.send("change-lang", this.browserLang);
   }
 
   private addHiddenFromElements(): void {
