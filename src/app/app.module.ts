@@ -120,7 +120,7 @@ const httpLoaderFactory = (http: HttpClient): TranslateHttpLoader =>
   new TranslateHttpLoader(http, "./assets/i18n/", ".json");
 
 export function loggerCallback(logLevel: LogLevelMasl, message: string) {
-  // console.log(message);
+  console.log(message);
 }
 
 export function MSALInstanceFactory(): IPublicClientApplication {
