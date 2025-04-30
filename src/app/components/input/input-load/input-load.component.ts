@@ -871,16 +871,6 @@ export class InputLoadComponent implements OnInit, OnDestroy {
    * @returns 入力制限を適用した結果のデータ行
    */
   private fixRowData(load: LoadColumns, dimension: number): LoadColumns {
-    let directions_1_11: string[];
-    let directions_2: string[];
-    if (dimension === 3) {
-      directions_1_11 = ['x', 'y', 'z', 'gx', 'gy', 'gz'];
-      directions_2 = ['x', 'y', 'z', 'gx', 'gy', 'gz', 'r'];
-    } else {
-      directions_1_11 = ['x', 'y', 'gx', 'gy'];
-      directions_2 = ['x', 'y', 'gx', 'gy'];
-    }
-
     // const result = structuredClone(load);
     const result = load;
 
@@ -903,22 +893,22 @@ export class InputLoadComponent implements OnInit, OnDestroy {
       result.mark = ['1', '2', '9', '11'].some((s) => s === mark) ? mark : '';
     }
     // direction mark==1 or mark==11 ? [x, y, z, gx, gy, gz] : mark==9 ? null : [x, y, z, gx, gy, gz, r]
+    let allowed_directions: string[];
     switch (result.mark) {
       case '1':
       case '11':
-        if (!directions_1_11.some((s) => s === result.direction)) {
-          result.direction = '';
-        }
+        allowed_directions = ['x', 'y', 'z', 'gx', 'gy', 'gz']
         break;
       case '2':
       default:
-        if (!directions_2.some((s) => s === result.direction)) {
-          result.direction = '';
-        }
+        allowed_directions = ['x', 'y', 'z', 'gx', 'gy', 'gz', 'r'];
         break;
       case '9':
-        result.direction = '';
+        allowed_directions = []
         break;
+    }
+    if (allowed_directions.every((s) => s !== result.direction)) {
+      result.direction = '';
     }
     // L1 実数 mark=9では入力不可 -0なら-0.000を表示
     if (result.L1 === '') {
