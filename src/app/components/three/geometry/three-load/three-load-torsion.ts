@@ -656,6 +656,7 @@ export class ThreeLoadTorsion extends LoadData {
    * @param P2 L2点の荷重値(kN/m)
    * @param localAxis 部材座標系
    * @param row 部材荷重データテーブルの行インデックス
+   * @param is3d 3D描画モードかどうか
    * @returns ねじりモーメント荷重の描画インスタンス。対象外の荷重の場合はundefined
    */
   static create(
@@ -671,7 +672,8 @@ export class ThreeLoadTorsion extends LoadData {
     P1: number | undefined,
     P2: number | undefined,
     localAxis: LocalAxis,
-    row: number
+    row: number,
+    is3d: boolean
   ): ThreeLoadTorsion | undefined {
     switch (mark) {
       case 1:
@@ -682,11 +684,15 @@ export class ThreeLoadTorsion extends LoadData {
       case 2:
         break;
     }
-    switch (direction) {
-      case "r":
-        break;
-      default:
-        return undefined;
+    if (is3d) {
+      switch (direction) {
+        case "r":
+          break;
+        default:
+          return undefined;
+      }
+    } else {
+      return undefined;
     }
 
     const L = nodei.distanceTo(nodej);

@@ -24,6 +24,7 @@ import { ThreeLoadMoment } from "./three-load-moment";
 import { ThreeLoadPoint } from "./three-load-point";
 import { ThreeLoadTemperature } from "./three-load-temperature";
 import { ThreeLoadTorsion } from "./three-load-torsion";
+import { DataHelperModule } from "src/app/providers/data-helper.module";
 
 /** 荷重ケースデータ */
 type CaseData = {
@@ -82,7 +83,8 @@ export class ThreeLoadService {
     private node: InputNodesService,
     private member: InputMembersService,
     private load: InputLoadService,
-    private three_member: ThreeMembersService
+    private three_member: ThreeMembersService,
+    private helper: DataHelperModule
   ) {
     // 全てのケースの荷重情報
     this.AllCaseDataDict = {};
@@ -973,6 +975,8 @@ export class ThreeLoadService {
       return;
     }
 
+    const is3d = this.helper.dimension === 3;
+
     // 分布荷重の矢印をシーンに追加する
     for (const load of memberLoadData) {
       // 部材データを集計する
@@ -1027,7 +1031,8 @@ export class ThreeLoadService {
             P1,
             P2,
             localAxis,
-            load.row
+            load.row,
+            is3d
           );
           break;
         case 2:
@@ -1052,7 +1057,8 @@ export class ThreeLoadService {
                 P1,
                 P2,
                 localAxis,
-                load.row
+                load.row,
+                is3d
               );
               if (arrow !== undefined) {
                 break;
@@ -1071,7 +1077,8 @@ export class ThreeLoadService {
                 P1,
                 P2,
                 localAxis,
-                load.row
+                load.row,
+                is3d
               );
               break;
             case "r":
@@ -1089,7 +1096,8 @@ export class ThreeLoadService {
                 P1,
                 P2,
                 localAxis,
-                load.row
+                load.row,
+                is3d
               );
               break;
             default:
@@ -1126,7 +1134,8 @@ export class ThreeLoadService {
             P1,
             P2,
             localAxis,
-            load.row
+            load.row,
+            is3d
           );
           break;
         default:
@@ -1324,6 +1333,19 @@ export class ThreeLoadService {
     }
 
     //this.scene.render(); //コメントアウト：レンダリング不要の場合があるため、レンダリングはこの関数の外側で行う
+  }
+
+  /**
+   * 2D/3D切り替えに伴う荷重再描画
+   */
+  public redraw(): void {
+    if (this.currentCaseId === null) {
+      return;
+    }
+    const currentCaseId = this.currentCaseId;
+    this.changeCase(-1);
+    this.ResetData();
+    this.changeCase(Number(currentCaseId))
   }
 
   /**
