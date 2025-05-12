@@ -502,6 +502,7 @@ export class ThreeLoadMemberMoment extends LoadData {
    * @param P2 L2点の荷重値(kNm)
    * @param localAxis 部材座標系
    * @param row 部材荷重データテーブルの行インデックス
+   * @param is3d 3D描画モードかどうか
    * @returns 部材集中モーメント荷重の描画インスタンス。対象外の荷重の場合はundefined
    */
   static create(
@@ -517,7 +518,8 @@ export class ThreeLoadMemberMoment extends LoadData {
     P1: number | undefined,
     P2: number | undefined,
     localAxis: LocalAxis,
-    row: number
+    row: number,
+    is3d: boolean
   ): ThreeLoadMemberMoment | undefined {
     switch (mark) {
       case 11:
@@ -525,16 +527,26 @@ export class ThreeLoadMemberMoment extends LoadData {
       default:
         return undefined;
     }
-    switch (direction) {
-      case "x":
-      case "y":
-      case "z":
-      case "gx":
-      case "gy":
-      case "gz":
-        break;
-      default:
-        return undefined;
+    if (is3d) {
+      switch (direction) {
+        case "x":
+        case "y":
+        case "z":
+        case "gx":
+        case "gy":
+        case "gz":
+          break;
+        default:
+          return undefined;
+      }
+    } else {
+      switch (direction) {
+        case "z":
+        case "gz":
+          break;
+        default:
+          return undefined;
+      }
     }
 
     const L = nodei.distanceTo(nodej);
