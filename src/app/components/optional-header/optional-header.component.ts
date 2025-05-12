@@ -3,6 +3,7 @@ import { Router, NavigationEnd } from "@angular/router";
 import { filter } from "rxjs/operators";
 import { DataHelperModule } from "src/app/providers/data-helper.module";
 import { SceneService } from "../three/scene.service";
+import { ThreeLoadService } from "../three/geometry/three-load/three-load.service";
 
 const URL_INPUTS = [
   "/input-fix_nodes",
@@ -94,6 +95,7 @@ export class OptionalHeaderComponent implements OnInit {
   constructor(
     private router: Router,
     private scene: SceneService,
+    private load: ThreeLoadService,
     public helper: DataHelperModule
   ) {
     this.router.events
@@ -234,13 +236,12 @@ export class OptionalHeaderComponent implements OnInit {
     if (this.showFsecComponent) return this.resultFsecURL;
   }
   handleShow(dimension:number){
-    if(dimension===2){
-      this.helper.dimension = 2
-      this.scene.changeGui(2);
-    }else{
-      this.helper.dimension = 3
-      this.scene.changeGui(3);
+    if (dimension !== 2) {
+      dimension = 3;
     }
-    }
+    this.helper.dimension = dimension
+    this.load.redraw();
+    this.scene.changeGui(dimension);
+  }
 }
 
