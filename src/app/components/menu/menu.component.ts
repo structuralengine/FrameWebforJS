@@ -759,6 +759,9 @@ export class MenuComponent implements OnInit {
   }
 
   navigateMyPage() {
-    window.open('https://mypage.malme.app/', '_blank');
+    const newTab = window.open('https://mypage.malme.app/', '_blank', 'noopener,noreferrer');
+    if (!newTab) {
+      console.warn('Failed to open My Page – it might have been blocked by the browser.');
+    }
   }
 }
