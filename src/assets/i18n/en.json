@@ -63,6 +63,7 @@
         "preset": "Preset",
         "contact":"Contact",
         "leave": "Your work will be lost. Do you want to leave this site?",
+        "my_page": "My page",
         "logoutMessage": "Your account does not have permission to access the FrameWeb system.\nPlease contact Malme administrator for more information.",
         "logoutTitle": "You don’t have access"
     },
