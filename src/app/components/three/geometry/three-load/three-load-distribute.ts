@@ -793,7 +793,16 @@ export class ThreeLoadDistribute extends LoadData {
     } else {
       switch (direction) {
         case "y":
+          break;
+        case "gx":
+          if (localAxis.x.y === 0 && localAxis.x.z === 0) {
+            return undefined;
+          }
+          break;
         case "gy":
+          if (localAxis.x.x === 0 && localAxis.x.z === 0) {
+            return undefined;
+          }
           break;
         default:
           return undefined;
