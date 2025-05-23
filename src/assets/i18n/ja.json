@@ -65,7 +65,9 @@
         "contact":"お問い合わせ",
         "leave": "入力内容が破棄されます。このページから遷移してもよろしいですか？",
         "logoutMessage": "お客様のアカウントにはFrameWebシステムへのアクセス権限がありません。\n詳しくはMalme管理者にお問い合わせください。",
-        "logoutTitle": "アクセス権がありません"
+        "logoutTitle": "アクセス権がありません",
+        "loginSuccessTitle": "正常にサインインしました",
+        "loginSuccessDescription": "このウィンドウを閉じてください。"
     },
     "input": {
         "input-fix-node": {

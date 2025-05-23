@@ -4,8 +4,9 @@ import { InputFixNodeService } from "../components/input/input-fix-node/input-fi
 import { DataHelperModule } from "./data-helper.module";
 import { ElectronService } from "./electron.service";
 import { forkJoin, merge } from "rxjs";
+import { HelperService } from './helper.service';
 
-const SELECTED_LANGUAGE = 'lang';
+export const SELECTED_LANGUAGE = 'lang';
 @Injectable({
   providedIn: "root",
 })
@@ -21,16 +22,10 @@ export class LanguagesService {
     public translate: TranslateService,
     private inputFixNode: InputFixNodeService,
     public helper: DataHelperModule,
-    public electronService: ElectronService
+    public electronService: ElectronService,
+    private helperProvider: HelperService
   ) {
-    let savedLang: string | null = null;
-    try {
-      savedLang = localStorage.getItem(SELECTED_LANGUAGE);
-    } catch (e) {
-      console.warn('Unable to access localStorage:', e);
-    }
-    const browserLang = savedLang || this.translate.getBrowserLang() || 'ja';
-    this.browserLang = browserLang;
+    this.browserLang = this.helperProvider.getLang();
     translate.use(this.browserLang).subscribe(
       () => {
         this.tranText();
