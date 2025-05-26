@@ -742,6 +742,7 @@ export class ThreeLoadDistribute extends LoadData {
    * @param P2 L2点の荷重値(kN/m)
    * @param localAxis 部材座標系
    * @param row 部材荷重データテーブルの行インデックス
+   * @param is3d 3D描画モードかどうか
    * @returns 部材分布荷重の描画インスタンス。対象外の荷重の場合はundefined
    */
   static create(
@@ -757,7 +758,8 @@ export class ThreeLoadDistribute extends LoadData {
     P1: number | undefined,
     P2: number | undefined,
     localAxis: LocalAxis,
-    row: number
+    row: number,
+    is3d: boolean
   ): ThreeLoadDistribute | undefined {
     switch (mark) {
       case 2:
@@ -765,27 +767,46 @@ export class ThreeLoadDistribute extends LoadData {
       default:
         return undefined;
     }
-    switch (direction) {
-      case "y":
-      case "z":
-        break;
-      case "gx":
-        if (localAxis.x.y === 0 && localAxis.x.z === 0) {
+    if (is3d) {
+      switch (direction) {
+        case "y":
+        case "z":
+          break;
+        case "gx":
+          if (localAxis.x.y === 0 && localAxis.x.z === 0) {
+            return undefined;
+          }
+          break;
+        case "gy":
+          if (localAxis.x.x === 0 && localAxis.x.z === 0) {
+            return undefined;
+          }
+          break;
+        case "gz":
+          if (localAxis.x.x === 0 && localAxis.x.y === 0) {
+            return undefined;
+          }
+          break;
+        default:
           return undefined;
-        }
-        break;
-      case "gy":
-        if (localAxis.x.x === 0 && localAxis.x.z === 0) {
+      }
+    } else {
+      switch (direction) {
+        case "y":
+          break;
+        case "gx":
+          if (localAxis.x.y === 0 && localAxis.x.z === 0) {
+            return undefined;
+          }
+          break;
+        case "gy":
+          if (localAxis.x.x === 0 && localAxis.x.z === 0) {
+            return undefined;
+          }
+          break;
+        default:
           return undefined;
-        }
-        break;
-      case "gz":
-        if (localAxis.x.x === 0 && localAxis.x.y === 0) {
-          return undefined;
-        }
-        break;
-      default:
-        return undefined;
+      }
     }
 
     const L = nodei.distanceTo(nodej);

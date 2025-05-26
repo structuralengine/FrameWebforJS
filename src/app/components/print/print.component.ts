@@ -983,12 +983,8 @@ export class PrintComponent implements OnInit, OnDestroy {
           }
         } catch (e) { }
         this.loadind_desable();
-        let alertMessage = err["message"];
-        if (alertMessage.includes("0 Unknown Error")) {
-          this.helper.alert(this.translate.instant("message.print"));
-        } else {
-          this.helper.alert(err["message"]);
-        }
+        console.log(err);
+        this.helper.alert(this.translate.instant("message.print"));
       }
     );
   }
