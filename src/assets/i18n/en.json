@@ -431,10 +431,10 @@
         "cut": "Cut"
     },
     "message":{
-        "calc": "Computation error",
-        "print": "Print Error",
+        "calc": "A calculation error occurred.\nPlease contact your sales representative.",
+        "print": "A printing error occurred.\nPlease contact your sales representative.",
         "print-max": "The file is too large. Please reduce the selection and output again.",
-        "transmission-error": "Transmission error"
+        "transmission-error": "A communication error occurred.\nPlease contact your sales representative."
     },
     "preset":{
         "ramen-viaduct" : "Ramen viaduct",
