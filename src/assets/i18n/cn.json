@@ -62,8 +62,11 @@
         "preset": "预设",
         "contact":"询问",
         "leave": "你的工作將會失去。您想離開這個網站嗎？",
+        "my_page": "我的頁面",
         "logoutMessage": "但您的账号没有权限访问 FrameWeb 系统。\n如需更多信息，请联系管理员。",
-        "logoutTitle": "您暂无访问权限"
+        "logoutTitle": "您暂无访问权限",
+        "loginSuccessTitle": "登录成功！",
+        "loginSuccessDescription": "您现在可以关闭此窗口。"
     },
     "input": {
         "input-fix-node": {
@@ -425,10 +428,10 @@
         "cut": "剪下"
     },
     "message":{
-        "calc": "计算错误",
-        "print": "打印错误",
+        "calc": "发生计算错误。请联系您的销售代表。",
+        "print": "发生打印错误。请联系您的销售代表。",
         "print-max": "文件太大。缩小选择范围并重新导出。",
-        "transmission-error": "通信错误"
+        "transmission-error": "发生通信错误。请联系您的销售代表。"
     },
     "preset":{
         "ramen-viaduct" : "架构",
