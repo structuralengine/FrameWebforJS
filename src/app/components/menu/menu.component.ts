@@ -755,7 +755,13 @@ export class MenuComponent implements OnInit {
 
   handelClickChat() {
     const elementChat = document.getElementById("chatplusheader");
-    console.log("elementChat", elementChat);
-    elementChat.click();
+    elementChat.click()
+  }
+
+  navigateMyPage() {
+    const newTab = window.open('https://mypage.malme.app/', '_blank', 'noopener,noreferrer');
+    if (!newTab) {
+      console.warn('Failed to open My Page – it might have been blocked by the browser.');
+    }
   }
 }

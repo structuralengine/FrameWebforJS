@@ -4,7 +4,9 @@ import { InputFixNodeService } from "../components/input/input-fix-node/input-fi
 import { DataHelperModule } from "./data-helper.module";
 import { ElectronService } from "./electron.service";
 import { forkJoin, merge } from "rxjs";
+import { HelperService } from './helper.service';
 
+export const SELECTED_LANGUAGE = 'lang';
 @Injectable({
   providedIn: "root",
 })
@@ -20,13 +22,10 @@ export class LanguagesService {
     public translate: TranslateService,
     private inputFixNode: InputFixNodeService,
     public helper: DataHelperModule,
-    public electronService: ElectronService
+    public electronService: ElectronService,
+    private helperProvider: HelperService
   ) {
-    this.browserLang = translate.getBrowserLang();
-    // translate.use(this.browserLang);
-    // if (this.electronService.isElectron) {
-    //   this.electronService.ipcRenderer.send('change-lang', this.browserLang);
-    // }
+    this.browserLang = this.helperProvider.getLang();
     translate.use(this.browserLang).subscribe(
       () => {
         this.tranText();
@@ -39,20 +38,8 @@ export class LanguagesService {
         console.log(error);
       }
     );
-    if (this.electronService.isElectron) {
-      this.electronService.ipcRenderer.send("change-lang", this.browserLang);
-    }
+    this.updateLanguage();
   }
-
-  // public trans(key: string) {
-  //   this.browserLang = key;
-  //   this.translate.use(this.browserLang);
-  //   this.helper.isContentsDailogShow = false;
-  //   this.addHiddenFromElements();
-  //   if (this.electronService.isElectron) {
-  //     this.electronService.ipcRenderer.send('change-lang', this.browserLang);
-  //   }
-  // }
 
   public trans(key: string) {
     this.browserLang = key;
@@ -61,9 +48,12 @@ export class LanguagesService {
     });
     this.helper.isContentsDailogShow = false;
     this.addHiddenFromElements();
-    if (this.electronService.isElectron) {
-      this.electronService.ipcRenderer.send("change-lang", this.browserLang);
-    }
+    this.updateLanguage();
+  }
+
+  public updateLanguage(): void {
+    localStorage.setItem(SELECTED_LANGUAGE, this.browserLang);
+    if (this.electronService.isElectron) this.electronService.ipcRenderer.send("change-lang", this.browserLang);
   }
 
   private addHiddenFromElements(): void {
