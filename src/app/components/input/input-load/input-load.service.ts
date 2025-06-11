@@ -2,6 +2,7 @@ import { Injectable } from "@angular/core";
 import { RouterLink } from "@angular/router";
 import { DataHelperModule } from "../../../providers/data-helper.module";
 import { InputMembersService } from "../input-members/input-members.service";
+import { LLLoadService } from "./ll-load.service";
 
 export type LoadColumns = {
   row: number,
@@ -33,7 +34,8 @@ export class InputLoadService {
 
   constructor(
     private member: InputMembersService,
-    private helper: DataHelperModule
+    private helper: DataHelperModule,
+    private llLoadService: LLLoadService
   ) {
     this.clear();
   }
@@ -685,39 +687,11 @@ export class InputLoadService {
   }
 
   private get_LL_position(load1: any[]): object {
-
-    // 荷重の長さ(L1)を調べる
-    let L1: number = 0
-
-    for(let i = 0; i < load1.length; i++){
-      const targetLoad = load1[i];
-      const _L1 : number = this.helper.toNumber(targetLoad.L1);
-      if(_L1 <= 0){
-        L1 -= _L1;
-      }
-      if(targetLoad.L2 <= 0){
-        L1 -= targetLoad.L2;
-      }
-    }
-
-    // 載荷する部材の長さ(L2)を調べる
-    let L2 = 0
-
-    const m1: number = Math.abs(load1[0].m1);
-    let m2: number = Math.abs(load1[0].m2);
-    if(m2===0) 
-      m2 = m1;
-    for (let j = m1; j <= m2; j++) {
-      L2 += Math.round(this.member.getMemberLength(j.toString()) * 1000);
-    }
-    L2 = L2 / 1000;
-
-    
+    const result = this.llLoadService.calculateLLPosition(load1);
     return {
-      L1: -L1,      // スタート位置は -L1
-      LL_length: L2 // 最大長さは L2
+      L1: result.startPosition,
+      LL_length: result.totalLength
     };
-
   }
 
   // 要素荷重を サーバーで扱える形式に変換する

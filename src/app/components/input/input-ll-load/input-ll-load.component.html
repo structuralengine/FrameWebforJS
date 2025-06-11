@@ -1,0 +1,35 @@
+<div class="ll-load-controls">
+  <div class="pitch-control">
+    <label for="ll-pitch">LL Pitch:</label>
+    <input 
+      id="ll-pitch" 
+      type="number" 
+      [(ngModel)]="pitch" 
+      (change)="onPitchChange()" 
+      min="0.1" 
+      step="0.1"
+    />
+  </div>
+  
+  <div class="animation-controls">
+    <button (click)="startAnimation()" [disabled]="animationState.isActive">
+      Start Animation
+    </button>
+    <button (click)="pauseAnimation()" [disabled]="!animationState.isActive">
+      Pause
+    </button>
+    <button (click)="stopAnimation()">
+      Stop
+    </button>
+  </div>
+  
+  <div class="animation-info" *ngIf="animationState.totalCases > 0">
+    <span>Case {{ animationState.currentCaseIndex + 1 }} of {{ animationState.totalCases }}</span>
+    <div class="progress-bar">
+      <div 
+        class="progress-fill" 
+        [style.width.%]="(animationState.currentCaseIndex / animationState.totalCases) * 100"
+      ></div>
+    </div>
+  </div>
+</div>

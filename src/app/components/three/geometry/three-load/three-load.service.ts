@@ -10,6 +10,7 @@ import { SceneService } from "../../scene.service";
 import { ThreeMembersService } from "../three-members.service";
 import { ThreeNodesService } from "../three-nodes.service";
 
+
 import {
   LoadData,
   LocalAxis,
@@ -541,10 +542,9 @@ export class ThreeLoadService {
    * @param id ケース番号
    */
   public change_LL_Load(id: string): void {
-    const memberLoadData = this.load.getMemberLoadJson(0, id); //計算に使う版
+    const memberLoadData = this.load.getMemberLoadJson(0, id);
     const LL_keys = Object.keys(memberLoadData);
 
-    // 対象の連行荷重を全部削除する
     let keys = Object.keys(this.AllCaseDataDict).filter((e) => {
       return e.indexOf(id + ".") === 0;
     });
@@ -559,12 +559,9 @@ export class ThreeLoadService {
 
     if (Object.keys(this.memberData).length > 0) {
       for (const key of LL_keys) {
-        // 一旦削除したので追加する
         this.addCase(key);
         const LoadList = this.AllCaseDataDict[key];
-        //
         const targetMemberLoad = memberLoadData[key];
-        // 要素荷重を作成する
         this.createMemberLoad(
           targetMemberLoad,
           this.nodeData,
@@ -574,18 +571,14 @@ export class ThreeLoadService {
           LoadList.localAxisDict
         );
       }
-      // 荷重の最大値を調べる
       Object.keys(memberLoadData).forEach((caseStr) => {
         this.updateMaxLoad(caseStr);
       });
-      // 荷重データの並び替え
       this.loadListSort();
-      // サイズを調整する
       this.onResize();
     }
 
-    // 連行荷重の場合
-    this.animation(LL_keys, memberLoadData); //ループのきっかけ
+    this.animation(LL_keys, memberLoadData);
   }
 
   /**

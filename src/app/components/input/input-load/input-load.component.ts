@@ -7,6 +7,8 @@ import pq from "pqgrid";
 import { AppComponent } from "src/app/app.component";
 import { FormControl, FormGroup } from "@angular/forms";
 import { ThreeLoadService } from "../../three/geometry/three-load/three-load.service";
+import { LLLoadService } from "./ll-load.service";
+import { LLThreeIntegrationService } from "../../three/geometry/ll-three-integration.service";
 import { SceneService } from "../../three/scene.service";
 import { TranslateService } from "@ngx-translate/core";
 import { NgbModal } from "@ng-bootstrap/ng-bootstrap";
@@ -681,6 +683,8 @@ export class InputLoadComponent implements OnInit, OnDestroy {
     private three: ThreeService,
     private threeLoad: ThreeLoadService,
     private modalService: NgbModal,
+    private llLoadService: LLLoadService,
+    private llThreeIntegration: LLThreeIntegrationService,
     private translate: TranslateService,
     private language: LanguagesService,
     private pagerService: PagerService, public docLayout:DocLayoutService
@@ -1044,30 +1048,17 @@ export class InputLoadComponent implements OnInit, OnDestroy {
     return Math.round(containerHeight / 30);
   }
 
-  // 連行荷重のピッチを変えた場合
-  public change_pich() {
-
-    if (this.LL_pitch < 0.1) {
-      this.LL_pitch = 0.1;
-      return;
-    }
-    // 入力情報をデータに反映する
+  public onPitchChange() {
+    this.LL_pitch = this.llLoadService.validatePitch(this.LL_pitch);
+    
     const load_name = this.data.getLoadNameColumns(this.page);
     load_name.LL_pitch = this.LL_pitch;
 
-    this.threeLoad.change_LL_Load(this.page.toString());
+    this.llThreeIntegration.updateLLLoadDisplay(this.page.toString());
   }
 
   private checkLL(symbol: string): void {
-    if (symbol === undefined) {
-      this.LL_flg = false;
-      return
-    }
-    if (symbol.includes("LL")) {
-      this.LL_flg = true;
-    } else {
-      this.LL_flg = false;
-    }
+    this.LL_flg = this.llLoadService.isLLLoad(symbol);
   }
 
   private sheetChange(dim: number, LL: boolean) {
