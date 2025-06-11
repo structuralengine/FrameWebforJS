@@ -149,7 +149,7 @@
               "node_modules/fontisto/css/fontisto/fontisto.min.css"
             ],
             "scripts": [
-              "node_modules/@fortawesome/some-free/js/all.min.js"
+              "node_modules/@fortawesome/fontawesome-free/js/all.min.js"
             ]
           }
         },
