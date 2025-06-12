@@ -30,15 +30,24 @@ async function createWindow() {
   // mainWindow.webContents.openDevTools();
   mainWindow.on('close', function (e) {
     if (check == -1) {
-      let langText = require(`../assets/i18n/${locale}.json`)
-      let choice = dialog.showMessageBoxSync(this,
-        {
-          type: 'question',
-          buttons: ['Yes', 'No'],
-          title: langText.window.closeTitle,
-          message: langText.window.closeMessage,
-        });
-      if (choice == 1) {
+      try {
+        const assetsPath = isDev 
+          ? path.join(__dirname, '../assets/i18n')
+          : path.join(process.resourcesPath, 'app/assets/i18n');
+        const langFilePath = path.join(assetsPath, `${locale}.json`);
+        const langText = JSON.parse(fs.readFileSync(langFilePath, 'utf-8'));
+        let choice = dialog.showMessageBoxSync(this,
+          {
+            type: 'question',
+            buttons: ['Yes', 'No'],
+            title: langText.window.closeTitle,
+            message: langText.window.closeMessage,
+          });
+        if (choice == 1) {
+          e.preventDefault();
+        }
+      } catch (error) {
+        console.error('Failed to load language file:', error);
         e.preventDefault();
       }
     }
@@ -68,27 +77,34 @@ autoUpdater.on('download-progress', (progressObj) => {
 //when update downloaded, reboot to install
 autoUpdater.on('update-downloaded', (info) => {
   log.info('Update-downloaded', info)
-  let langText = require(`../assets/i18n/${locale}.json`)
-  let choice = dialog.showMessageBoxSync(mainWindow,
-    {
-      type: 'question',
-      buttons: ["Ok", "Cancel"],
-      message: langText.modal.updateMessage,
-    });
-  if (choice == 0) {
-    let langText = require(`../assets/i18n/${locale}.json`)
-    let choice1 = dialog.showMessageBoxSync(mainWindow,
+  try {
+    const assetsPath = isDev 
+      ? path.join(__dirname, '../assets/i18n')
+      : path.join(process.resourcesPath, 'app/assets/i18n');
+    const langFilePath = path.join(assetsPath, `${locale}.json`);
+    const langText = JSON.parse(fs.readFileSync(langFilePath, 'utf-8'));
+    let choice = dialog.showMessageBoxSync(mainWindow,
       {
         type: 'question',
-        buttons: ['Yes', 'No'],
-        title: langText.window.closeTitle,
-        message: langText.window.closeMessage,
+        buttons: ["Ok", "Cancel"],
+        message: langText.modal.updateMessage,
       });
-    if (choice1 == 0) {
-      check = 0;
-      log.info("check install", check);
-      autoUpdater.quitAndInstall();
+    if (choice == 0) {
+      let choice1 = dialog.showMessageBoxSync(mainWindow,
+        {
+          type: 'question',
+          buttons: ['Yes', 'No'],
+          title: langText.window.closeTitle,
+          message: langText.window.closeMessage,
+        });
+      if (choice1 == 0) {
+        check = 0;
+        log.info("check install", check);
+        autoUpdater.quitAndInstall();
+      }
     }
+  } catch (error) {
+    console.error('Failed to load language file:', error);
   }
 
 });
@@ -222,12 +238,19 @@ ipcMain.on(IPC_MESSAGES.LOGOUT, async () => {
 function buildSuccessMessage(locale: string): string {
   let langText;
   try {
-    const filePath = path.join(__dirname, '../src/assets/i18n', `${locale}.json`);
+    // パッケージ化後の環境を考慮したパス解決
+    const assetsPath = isDev 
+      ? path.join(__dirname, '../assets/i18n')
+      : path.join(process.resourcesPath, 'app/assets/i18n');
+    const filePath = path.join(assetsPath, `${locale}.json`);
     const jsonString = fs.readFileSync(filePath, 'utf-8');
     langText = JSON.parse(jsonString);
   } catch (error) {
     console.warn(`Failed to load locale '${locale}', falling back to 'ja'`, error);
-    const fallbackPath = path.join(__dirname, '../src/assets/i18n', 'ja.json');
+    const assetsPath = isDev 
+      ? path.join(__dirname, '../assets/i18n')
+      : path.join(process.resourcesPath, 'app/assets/i18n');
+    const fallbackPath = path.join(assetsPath, 'ja.json');
     const fallbackString = fs.readFileSync(fallbackPath, 'utf-8');
     langText = JSON.parse(fallbackString);
   }
