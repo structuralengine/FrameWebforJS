@@ -3,16 +3,21 @@ import { TranslateModule } from '@ngx-translate/core';
 
 import { InputLoadComponent } from './input-load.component';
 import { InputLoadService } from './input-load.service';
+import { LLLoadService } from './ll-load.service';
 import { DataHelperModule } from '../../../providers/data-helper.module';
 
 describe('InputLoadComponent', () => {
   let component: InputLoadComponent;
   let fixture: ComponentFixture<InputLoadComponent>;
   let inputLoadService: jasmine.SpyObj<InputLoadService>;
+  let llLoadService: jasmine.SpyObj<LLLoadService>;
 
   beforeEach(async () => {
     const inputLoadServiceSpy = jasmine.createSpyObj('InputLoadService', [
       'getLoadColumns', 'getLoadJson', 'setLoadJson', 'clear', 'getLoadNameJson'
+    ]);
+    const llLoadServiceSpy = jasmine.createSpyObj('LLLoadService', [
+      'calculateLLPosition', 'isLLLoad', 'validatePitch', 'generateLLLoadCases', 'clearPositionCache'
     ]);
     const helperServiceSpy = jasmine.createSpyObj('DataHelperModule', [
       'toNumber'
@@ -23,6 +28,7 @@ describe('InputLoadComponent', () => {
       imports: [TranslateModule.forRoot()],
       providers: [
         { provide: InputLoadService, useValue: inputLoadServiceSpy },
+        { provide: LLLoadService, useValue: llLoadServiceSpy },
         { provide: DataHelperModule, useValue: helperServiceSpy }
       ]
     }).compileComponents();
@@ -30,6 +36,7 @@ describe('InputLoadComponent', () => {
     fixture = TestBed.createComponent(InputLoadComponent);
     component = fixture.componentInstance;
     inputLoadService = TestBed.inject(InputLoadService) as jasmine.SpyObj<InputLoadService>;
+    llLoadService = TestBed.inject(LLLoadService) as jasmine.SpyObj<LLLoadService>;
   });
 
   it('should create', () => {
@@ -102,6 +109,56 @@ describe('InputLoadComponent', () => {
     const result = inputLoadService.getLoadNameJson();
     expect(result).toEqual(testLoadNames);
     expect(inputLoadService.getLoadNameJson).toHaveBeenCalled();
+  });
+
+  it('should handle LL load operations', () => {
+    const testLLLoadString = JSON.stringify({
+      m1: '1',
+      m2: '2',
+      direction: 'x',
+      mark: 'LL1',
+      L1: '2.0',
+      L2: '3.0',
+      P1: '100',
+      P2: '150',
+      n: '5'
+    });
+
+    const testLLLoadArray = [{
+      m1: '1',
+      m2: '2',
+      direction: 'x',
+      mark: 'LL1',
+      L1: '2.0',
+      L2: '3.0',
+      P1: '100',
+      P2: '150',
+      n: '5'
+    }];
+
+    llLoadService.isLLLoad.and.returnValue(true);
+    llLoadService.calculateLLPosition.and.returnValue({
+      startPosition: 0,
+      totalLength: 10
+    });
+
+    const isLL = llLoadService.isLLLoad(testLLLoadString);
+    const position = llLoadService.calculateLLPosition(testLLLoadArray);
+
+    expect(isLL).toBe(true);
+    expect(position.startPosition).toBe(0);
+    expect(position.totalLength).toBe(10);
+    expect(llLoadService.isLLLoad).toHaveBeenCalledWith(testLLLoadString);
+    expect(llLoadService.calculateLLPosition).toHaveBeenCalledWith(testLLLoadArray);
+  });
+
+  it('should validate LL pitch values', () => {
+    llLoadService.validatePitch.and.returnValue(2.5);
+
+    const validatedPitch = llLoadService.validatePitch(2.5);
+
+    expect(validatedPitch).toBe(2.5);
+    expect(llLoadService.validatePitch).toHaveBeenCalledWith(2.5);
   });
 
   it('should handle clear operation', () => {
