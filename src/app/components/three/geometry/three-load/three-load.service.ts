@@ -82,7 +82,8 @@ export class ThreeLoadService {
     duration: 0.5, // 各ケース表示時間（秒）
     isActive: false,
     currentKeys: [] as string[],
-    currentLL_list: {} as any
+    currentLL_list: {} as any,
+    previousIndex: -1 // 前回のインデックスを記録
   };
 
   // 初期化
@@ -314,6 +315,7 @@ export class ThreeLoadService {
     this.animationConfig.isActive = true;
     this.animationConfig.currentKeys = keys;
     this.animationConfig.currentLL_list = LL_list;
+    this.animationConfig.previousIndex = -1; // 初期化
     
     // クロックをリセット
     this.animationClock.start();
@@ -337,15 +339,20 @@ export class ThreeLoadService {
     const totalDuration = this.animationConfig.duration * this.animationConfig.currentKeys.length;
     const normalizedTime = (elapsedTime % totalDuration) / totalDuration;
     const currentIndex = Math.floor(normalizedTime * this.animationConfig.currentKeys.length);
-
-    // 表示ケースを変更
-    const currentKey = this.animationConfig.currentKeys[currentIndex];
-    this.visibleCaseChange(currentKey, true);
-    console.log(currentKey);
-
-    // レンダリング
-    this.scene.render();
-
+    
+    // インデックスが変更された時のみ処理を実行
+    if (currentIndex !== this.animationConfig.previousIndex) {
+      this.animationConfig.previousIndex = currentIndex;
+      
+      // 表示ケースを変更
+      const currentKey = this.animationConfig.currentKeys[currentIndex];
+      this.visibleCaseChange(currentKey, true);
+      console.log(currentKey);
+      
+      // レンダリング
+      this.scene.render();
+    }
+    
     // 次のフレームを要求
     this.animationHandle = requestAnimationFrame(() => {
       this.animationLoop();
@@ -357,6 +364,7 @@ export class ThreeLoadService {
    */
   public stopNewAnimation(): void {
     this.animationConfig.isActive = false;
+    this.animationConfig.previousIndex = -1; // リセット
     this.animationClock.stop();
     this.cancelAnimation();
   }
