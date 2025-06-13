@@ -261,12 +261,19 @@ export class ThreeLoadService {
       this.addCase(id);
     }
 
-    // 荷重の表示非表示を切り替える
-    for (const [key, targetLoad] of Object.entries(this.AllCaseDataDict)) {
-      console.log("targetLoad", targetLoad);
-      const ThreeObject: THREE.Object3D = targetLoad.ThreeObject;
-      ThreeObject.visible = key === id ? true : false;
+    // 前のケースを非表示、新しいケースを表示（効率的な切り替え）
+    if (this.currentCaseId && this.currentCaseId in this.AllCaseDataDict) {
+      this.AllCaseDataDict[this.currentCaseId].ThreeObject.visible = false;
     }
+
+    this.AllCaseDataDict[id].ThreeObject.visible = true;
+
+    // // 荷重の表示非表示を切り替える
+    // for (const [key, targetLoad] of Object.entries(this.AllCaseDataDict)) {
+    //   console.log("targetLoad", targetLoad);
+    //   const ThreeObject: THREE.Object3D = targetLoad.ThreeObject;
+    //   ThreeObject.visible = key === id ? true : false;
+    // }
 
     // カレントデータをセット
     if (isLL_Load == false) {
