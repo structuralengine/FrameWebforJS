@@ -1485,11 +1485,19 @@ export class ThreeLoadService {
     return this.getParent(item.parent);
   }
 
-  /** 連行移動荷重のアニメーションを終了する */
+  /** 連行移動荷重のアニメーションを終了する（新旧両対応） */
   private cancelAnimation(): void {
+    // 従来のアニメーションを停止
     if (this.animationHandle !== undefined) {
       cancelAnimationFrame(this.animationHandle);
       this.animationHandle = undefined;
+    }
+    
+    // 新しいアニメーションを停止
+    if (this.animationConfig.isActive) {
+      this.animationConfig.isActive = false;
+      this.animationConfig.previousIndex = -1;
+      this.animationClock.stop();
     }
   }
 
