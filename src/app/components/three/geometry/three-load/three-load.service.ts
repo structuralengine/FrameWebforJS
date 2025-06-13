@@ -339,20 +339,24 @@ export class ThreeLoadService {
     const totalDuration = this.animationConfig.duration * this.animationConfig.currentKeys.length;
     const normalizedTime = (elapsedTime % totalDuration) / totalDuration;
     const currentIndex = Math.floor(normalizedTime * this.animationConfig.currentKeys.length);
-    
+
     // インデックスが変更された時のみ処理を実行
     if (currentIndex !== this.animationConfig.previousIndex) {
       this.animationConfig.previousIndex = currentIndex;
-      
+
       // 表示ケースを変更
       const currentKey = this.animationConfig.currentKeys[currentIndex];
       this.visibleCaseChange(currentKey, true);
-      console.log(currentKey);
-      
+      console.log(currentKey,
+        this.animationConfig.currentLL_list[currentKey][0].L1,
+        this.animationConfig.currentLL_list[currentKey][0].L2,
+        this.animationConfig.currentLL_list[currentKey][0].P1,
+        this.animationConfig.currentLL_list[currentKey][0].P2);
+
       // レンダリング
       this.scene.render();
     }
-    
+
     // 次のフレームを要求
     this.animationHandle = requestAnimationFrame(() => {
       this.animationLoop();
