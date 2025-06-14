@@ -236,19 +236,17 @@ export class ThreeLoadService {
     // this.currentCaseId = changeCase.toString();
     if (!isLL_Load) {
       this.visibleCaseChange(changeCase.toString());
+      this.onResize();
+      this.scene.render();
     } else {
       // 連行荷重の場合
       const LL_list = this.load.getMemberLoadJson(0, changeCase.toString());
       const LL_keys: string[] = Object.keys(LL_list);
       if (LL_keys.length > 0) {
         this.new_animation(LL_keys, LL_list); //ループのきっかけ
-        return;
       }
     }
 
-    this.onResize();
-
-    this.scene.render();
   }
 
   /**
@@ -256,7 +254,7 @@ export class ThreeLoadService {
    * @param id ケース番号
    * @param isLL_Load 連行移動荷重を描画するか
    */
-  private visibleCaseChange(id: string, isLL_Load = false): void {
+  private visibleCaseChange(id: string): void {
     if (id === null) {
       // 非表示にして終わる
       for (const targetLoad of Object.values(this.AllCaseDataDict)) {
@@ -289,11 +287,8 @@ export class ThreeLoadService {
     //   ThreeObject.visible = key === id ? true : false;
     // }
 
-    // カレントデータをセット
-    if (isLL_Load == false) {
-      // 連行荷重アニメーション中は currentIndex は 親id のまま変えない
-      this.currentCaseId = id;
-    }
+    // 連行荷重アニメーション中は currentIndex は 親id のまま変えない
+    this.currentCaseId = id;
   }
 
   /**
@@ -319,7 +314,7 @@ export class ThreeLoadService {
     
     // クロックをリセット
     this.animationClock.start();
-    
+
     // アニメーションループを開始
     this.animationLoop();
   }
@@ -340,20 +335,24 @@ export class ThreeLoadService {
     const normalizedTime = (elapsedTime % totalDuration) / totalDuration;
     const currentIndex = Math.floor(normalizedTime * this.animationConfig.currentKeys.length);
 
+
     // インデックスが変更された時のみ処理を実行
     if (currentIndex !== this.animationConfig.previousIndex) {
       this.animationConfig.previousIndex = currentIndex;
 
       // 表示ケースを変更
-      let currentKey = this.animationConfig.currentKeys[currentIndex];
-      // this.visibleCaseChange(currentKey, true);
+      const currentKey = this.animationConfig.currentKeys[currentIndex];
+
       console.log(currentKey,
         this.animationConfig.currentLL_list[currentKey][0].L1,
         this.animationConfig.currentLL_list[currentKey][0].L2,
         this.animationConfig.currentLL_list[currentKey][0].P1,
         this.animationConfig.currentLL_list[currentKey][0].P2);
 
+      this.visibleCaseChange(currentKey);//, true);
+
       // レンダリング
+      this.onResize();
       this.scene.render();
     }
 
@@ -1505,42 +1504,5 @@ export class ThreeLoadService {
     }
   }
 
-  /**
-   * 連行移動荷重のアニメーションを開始する（従来版）
-   * @param keys ケース番号のリスト
-   * @param LL_list (未使用)
-   * @param i フレーム番号(0~9)
-   * @param old_j 処理中のケースの(keysの)インデックス番号
-   */
-  public animation(
-    keys: string[],
-    LL_list: any,
-    i: number = 0,
-    old_j: number = 0
-  ): void {
-    // アニメーションのオブジェクトを解放
-    this.cancelAnimation();
 
-    let j: number = Math.floor(i / 10); // 10フレームに１回位置を更新する
-
-    if (j < keys.length) {
-      i = i + 1; // 次のフレーム
-    } else {
-      i = 0;
-      j = 0;
-    }
-
-    // 次のフレームを要求
-    this.animationHandle = requestAnimationFrame(() => {
-      this.animation(keys, LL_list, i, j);
-    });
-
-    if (j === old_j) {
-      return;
-    }
-
-    this.visibleCaseChange(keys[j], true);
-    // レンダリングする
-    this.scene.render();
-  }
 }
