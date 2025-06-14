@@ -233,12 +233,12 @@ export class ThreeLoadService {
 
     this.cancelAnimation();
 
-    this.currentCaseId = changeCase.toString();
+    // this.currentCaseId = changeCase.toString();
     if (!isLL_Load) {
-      this.visibleCaseChange(this.currentCaseId);
+      this.visibleCaseChange(changeCase.toString());
     } else {
       // 連行荷重の場合
-      const LL_list = this.load.getMemberLoadJson(0, this.currentCaseId);
+      const LL_list = this.load.getMemberLoadJson(0, changeCase.toString());
       const LL_keys: string[] = Object.keys(LL_list);
       if (LL_keys.length > 0) {
         this.new_animation(LL_keys, LL_list); //ループのきっかけ
@@ -345,8 +345,8 @@ export class ThreeLoadService {
       this.animationConfig.previousIndex = currentIndex;
 
       // 表示ケースを変更
-      const currentKey = this.animationConfig.currentKeys[currentIndex];
-      this.visibleCaseChange(currentKey, true);
+      let currentKey = this.animationConfig.currentKeys[currentIndex];
+      // this.visibleCaseChange(currentKey, true);
       console.log(currentKey,
         this.animationConfig.currentLL_list[currentKey][0].L1,
         this.animationConfig.currentLL_list[currentKey][0].L2,
