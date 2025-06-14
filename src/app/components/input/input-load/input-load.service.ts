@@ -2,6 +2,7 @@ import { Injectable } from "@angular/core";
 import { RouterLink } from "@angular/router";
 import { DataHelperModule } from "../../../providers/data-helper.module";
 import { InputMembersService } from "../input-members/input-members.service";
+import { EventEmitter } from "@angular/core";
 
 export type LoadColumns = {
   row: number,
@@ -30,6 +31,9 @@ export class InputLoadService {
   public load: {
     [key: string]: LoadColumns[]
   };
+
+  // グリッドのL1列値更新を通知するEventEmitter
+  public l1ValueUpdateEmitter = new EventEmitter<{columnIndex: number, value: string}>();
 
   constructor(
     private member: InputMembersService,
@@ -1337,6 +1341,15 @@ export class InputLoadService {
       }
     }
     return maxCase;
+  }
+
+  /**
+   * グリッドのL1列の値を更新する
+   * @param columnIndex 列のインデックス
+   * @param value 新しい値
+   */
+  public updateGridValue(columnIndex: number, value: string): void {
+    this.l1ValueUpdateEmitter.emit({columnIndex, value});
   }
 
 }

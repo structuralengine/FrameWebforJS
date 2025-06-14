@@ -25,6 +25,7 @@ export class InputLoadComponent implements OnInit, OnDestroy {
   @ViewChild("grid") grid: SheetComponent;
 
   private subscription: Subscription;
+  private l1UpdateSubscription: Subscription;
   public load_name: string;
   public LL_flg: boolean = false;
 
@@ -800,9 +801,15 @@ export class InputLoadComponent implements OnInit, OnDestroy {
 
     this.three.ChangeMode("load_values");
     this.three.ChangePage(1);
+
+    // L1値更新イベントを購読
+    this.l1UpdateSubscription = this.data.l1ValueUpdateEmitter.subscribe(
+      (data: {columnIndex: number, value: string}) => {
+        this.updateGridL1Value(data.columnIndex, data.value);
+      }
+    );
   }
 
- 
   ngAfterViewInit() {
     this.docLayout.handleMove.subscribe(data => {
     this.options.height = data - 60;
@@ -811,6 +818,10 @@ export class InputLoadComponent implements OnInit, OnDestroy {
   }
   ngOnDestroy() {
     this.subscription.unsubscribe();
+    // L1値更新イベントの購読を解除
+    if (this.l1UpdateSubscription) {
+      this.l1UpdateSubscription.unsubscribe();
+    }
   }
 
   //　pager.component からの通知を受け取る
@@ -1059,6 +1070,37 @@ export class InputLoadComponent implements OnInit, OnDestroy {
       return this.columnKeys3D;
     } else {
       return this.columnKeys2D;
+    }
+  }
+
+  /**
+   * グリッドのL1列の値を更新する
+   * @param columnIndex 列のインデックス（現在は使用されていない）
+   * @param value 新しい値
+   */
+  private updateGridL1Value(columnIndex: number, value: string): void {
+    try {
+      if (this.grid && this.grid.grid) {
+        // 現在選択されている行、または最初の行のL1列を更新
+        const currentRowIndex = 0; // 最初の行を更新（必要に応じて変更可能）
+        const l1ColumnKey = this.columnKeys3D[4]; // L1列のキー
+        
+        // データセットを更新
+        if (this.dataset[currentRowIndex]) {
+          this.dataset[currentRowIndex][l1ColumnKey] = value;
+        }
+
+        // グリッドを更新（正しいパラメータ形式を使用）
+        this.grid.grid.updateRow({
+          rowIndx: currentRowIndex,
+          newRow: { [l1ColumnKey]: value }
+        });
+
+        // グリッドの表示を更新
+        this.grid.grid.refreshDataAndView();
+      }
+    } catch (error) {
+      console.error('Error updating grid L1 value:', error);
     }
   }
 

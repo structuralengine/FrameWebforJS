@@ -349,6 +349,9 @@ export class ThreeLoadService {
         this.animationConfig.currentLL_list[currentKey][0].P1,
         this.animationConfig.currentLL_list[currentKey][0].P2);
 
+      // input-load.component.tsのグリッドのL1列の値を更新
+      this.updateInputLoadGridL1Value(this.animationConfig.currentLL_list[currentKey][0].L1);
+
       this.visibleCaseChange(currentKey);//, true);
 
       // レンダリング
@@ -360,6 +363,25 @@ export class ThreeLoadService {
     this.animationHandle = requestAnimationFrame(() => {
       this.animationLoop();
     });
+  }
+
+  /**
+   * input-load.component.tsのグリッドのL1列の値を更新する
+   * @param newL1Value 新しいL1の値
+   */
+  private updateInputLoadGridL1Value(newL1Value: string): void {
+    try {
+      // InputLoadServiceを通じてデータを更新
+      // 注意: この実装はinput-load.serviceに適切なメソッドが存在することを前提とします
+      if (this.load && typeof this.load.updateGridValue === 'function') {
+        // columnKeys3D[4]はL1列に対応
+        this.load.updateGridValue(4, newL1Value); // 4はL1列のインデックス
+      } else {
+        console.warn('updateGridValue method not found in InputLoadService');
+      }
+    } catch (error) {
+      console.error('Error updating input-load grid L1 value:', error);
+    }
   }
 
   /**
