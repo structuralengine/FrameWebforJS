@@ -675,6 +675,10 @@ export class InputLoadComponent implements OnInit, OnDestroy {
   private currentRow: number; // 現在 選択中の行番号
   private currentCol: string; // 現在 選択中の列記号
 
+  // 編集状態管理用
+  private isEditing: boolean = false;
+  private pendingL1Update: {columnIndex: number, value: string} | null = null;
+
   constructor(
     private data: InputLoadService,
     private helper: DataHelperModule,
@@ -736,6 +740,23 @@ export class InputLoadComponent implements OnInit, OnDestroy {
             }
           }
         ]
+      },
+      // 編集開始時のイベント
+      editorBegin: (evt, ui) => {
+        this.isEditing = true;
+      },
+      // 編集終了時のイベント
+      editorEnd: (evt, ui) => {
+        this.isEditing = false;
+        // 保留中のL1更新があれば実行
+        if (this.pendingL1Update) {
+          const pending = this.pendingL1Update;
+          this.pendingL1Update = null;
+          // 少し遅延させて確実に編集状態が終了してから実行
+          setTimeout(() => {
+            this.updateGridL1Value(pending.columnIndex, pending.value);
+          }, 50);
+        }
       },
       beforeTableView: (evt, ui) => {
         const finalV = ui.finalV;
@@ -1080,6 +1101,13 @@ export class InputLoadComponent implements OnInit, OnDestroy {
    */
   private updateGridL1Value(columnIndex: number, value: string): void {
     try {
+      // 編集中の場合は更新を保留
+      if (this.isEditing) {
+        this.pendingL1Update = { columnIndex, value };
+        console.log('L1 update pending due to active editing');
+        return;
+      }
+
       if (this.grid && this.grid.grid) {
         // 現在選択されている行、または最初の行のL1列を更新
         const currentRowIndex = 0; // 最初の行を更新（必要に応じて変更可能）
@@ -1098,6 +1126,8 @@ export class InputLoadComponent implements OnInit, OnDestroy {
 
         // グリッドの表示を更新
         this.grid.grid.refreshDataAndView();
+        
+        console.log(`L1 value updated to: ${value}`);
       }
     } catch (error) {
       console.error('Error updating grid L1 value:', error);
