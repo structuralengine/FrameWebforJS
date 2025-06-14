@@ -760,7 +760,8 @@ export class ThreeLoadService {
     const index = parseInt(this.currentCaseId, 10);
     const symbol: string = this.load.getLoadName(index, "symbol");
     if (symbol === "LL") {
-      this.change_LL_Load(this.currentCaseId);
+      const integerPart = this.currentCaseId.split('.')[0];
+      this.change_LL_Load(integerPart);
       return;
     }
 
