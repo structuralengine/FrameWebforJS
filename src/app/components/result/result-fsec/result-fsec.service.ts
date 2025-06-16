@@ -82,58 +82,40 @@ export class ResultFsecService {
     this.fsec =  new Array();
   }
 
-public clearGradient(){
-  this.three.ClearDataGradient();
-}
-
-  public getFsecColumns(typNo: number, mode: string = null): any {
-    const key: string = typNo.toString();
-    if (!(key in this.columns)) {
-      return new Array();
-    }
-    const col = this.columns[key];
-    if (mode === null) {
-      return col;
-    } else {
-      if (mode in col) {
-        return col[mode]; // 連行荷重の時は combine のようになる
-      }
-    }
-
-    return new Array();
+  public clearGradient(){
+    this.three.ClearDataGradient();
   }
 
+  public getDataColumns(currentPage:number, row: number, mode: string = null):any{
 
-  public getDataColumns(currentPage:number, row: number):any{
+    let result = {
+      n: "",
+      m: "",
+      l:"",
+      mx: "",
+      my: "",
+      mz: "",
+      fx: "",
+      fy: "",
+      fz: "",
+      case: "",
+    };
+
     let results: any = this.fsec[currentPage];
     if(results == undefined){
-      return {
-        n: "",
-        m: "",
-        l:"",
-        mx: "",
-        my: "",
-        mz: "",
-        fx: "",
-        fy: "",
-        fz: ""
-      }
+      return result;
     };
-    let result = results[row] != undefined ? results[row] : undefined;
-    // 対象データが無かった時に処理
-    if (result === undefined) {
-      result = {
-        n: "",
-        m: "",
-        l:"",
-        mx: "",
-        my: "",
-        mz: "",
-        fx: "",
-        fy: "",
-        fz: "",
-      };
+
+    if (mode in results) {
+      let modes = results[mode] != undefined ? results[mode] : undefined;
+      if (modes != undefined) {
+        if(modes[row] != undefined)
+          result = modes[row];
+      }
+    } else if(results[row] != undefined) {
+      result = results[row];
     }
+
     return result;
   }
 

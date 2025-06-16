@@ -20,6 +20,7 @@ import { InputNodesService } from '../../input/input-nodes/input-nodes.service';
 import { ThreeSectionForceService } from '../../three/geometry/three-section-force/three-section-force.service';
 import { ThreePanelService } from '../../three/geometry/three-panel.service';
 import { ColorPaletteService } from '../../three/color-palette/color-palette.service';
+import { PagerDirectionService } from '../../input/pager-direction/pager-direction.service';
 
 @Component({
   selector: 'app-result-fsec',
@@ -32,13 +33,14 @@ import { ColorPaletteService } from '../../three/color-palette/color-palette.ser
 })
 export class ResultFsecComponent implements OnInit, OnDestroy {
   private subscription: Subscription;
+  private directionSubscription: Subscription;
   public KEYS: string[];
   public TITLES: string[];
   public height: any;
   public panelData : any[] = [];
   dataset: any[];
   page: number = 1;
-  load_name: string;
+  currentKey: any = 0;
   dimension: number;
   LL_flg: boolean[];
   LL_page: boolean;
@@ -64,6 +66,7 @@ export class ResultFsecComponent implements OnInit, OnDestroy {
     private comb: ResultCombineFsecService,
     private pic: ResultPickupFsecService,
     private helper: DataHelperModule,
+    private pagerDirectionService: PagerDirectionService,
     private pagerService: PagerService,
     public docLayout: DocLayoutService,
     private translate: TranslateService  ,
@@ -83,17 +86,20 @@ export class ResultFsecComponent implements OnInit, OnDestroy {
       this.result.page = 1;
       this.result.case = 'basic';
     }
+    this.directionSubscription =
+      this.pagerDirectionService.pageSelected$.subscribe((text) => {
+        this.onChangeKey(text);
+      });
     this.subscription = this.pagerService.pageSelected$.subscribe((text) => {
       this.onReceiveEventFromChild(text);
     });
 
-    
 
     this.COLUMNS_COUNT = this.load.getLoadCaseCount() * 2 + 1;
       if (this.COLUMNS_COUNT <= 10) {
         this.COLUMNS_COUNT = 10;
       }
-      
+
   }
 
   ngOnInit() {
@@ -154,23 +160,39 @@ export class ResultFsecComponent implements OnInit, OnDestroy {
 
     // データロード
     if (this.LL_page === true) {
-      this.dataset = new Array();
-      for (const key of this.KEYS) {
-        this.dataset.push(this.data.getFsecColumns(this.result.page, key));
+      this.options.colModel = this.helper.dimension === 3 ? this.columnHeaders3D_LL : this.columnHeaders2D_LL;
+
+      let key = this.KEYS[this.currentKey];
+      for (let i = this.datasetNew.length; i <= row; i++) {
+        const define = this.data.getDataColumns(currentPage, i, key);
+        this.datasetNew.push(define);
       }
+      this.three.ChangeMode("comb_fsec");
     } else {
+      this.options.colModel = this.helper.dimension === 3 ? this.columnHeaders3D : this.columnHeaders2D;
+
       for (let i = this.datasetNew.length; i <= row; i++) {
         const define = this.data.getDataColumns(currentPage, i);
-        this.datasetNew.push(define);  
+        this.datasetNew.push(define);
       }
+      this.three.ChangeMode('fsec');
     }
 
     this.page = currentPage;
 
     // three.jsの表示を変更
-    this.three.ChangeMode('fsec');
     this.three.ChangePage(currentPage);
     this.three_fesc.drawGradientPanel();
+  }
+
+  onChangeKey(text: any) {
+    this.currentKey = text - 1;
+
+    this.datasetNew.splice(0);
+    this.ROWS_COUNT = this.rowsCount();
+    this.loadData(this.page, this.ROWS_COUNT);
+    this.grid.refreshDataAndView();
+    this.three.ChangePage(1);
   }
 
   private tableHeight(): string {
