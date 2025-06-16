@@ -16,6 +16,25 @@ export class ResultReacService {
   private worker4: Worker;  
   private columns: any; // 表示用
 
+  public column3Ds: any[] = [
+    { title: "result.result-reac.nodeNo", id: "id", format: "", width: -40 },
+    { title: "result.result-reac.x_SupportReaction", id: "tx", format: "#.00" },
+    { title: "result.result-reac.y_SupportReaction", id: "ty", format: "#.00" },
+    { title: "result.result-reac.z_SupportReaction", id: "tz", format: "#.00" },
+    { title: "result.result-reac.x_RotationalReaction", id: "mx", format: "#.00" },
+    { title: "result.result-reac.y_RotationalReaction", id: "my", format: "#.00" },
+    { title: "result.result-reac.z_RotationalReaction", id: "mz", format: "#.00" },
+    { title: "result.result-reac.comb", id: "case", format: "#.00" },
+  ];
+
+  public column2Ds: any[] = [
+    { title: "result.result-reac.nodeNo", id: "id", format: "", width: -40 },
+    { title: "result.result-reac.x_SupportReaction", id: "tx", format: "#.00" },
+    { title: "result.result-reac.y_SupportReaction", id: "ty", format: "#.00" },
+    { title: "result.result-reac.rotationalRestraint", id: "mz", format: "#.00" },
+    { title: "result.result-reac.comb", id: "case", format: "#.00" },
+  ];
+
   public LL_flg = [];
 
   constructor(
@@ -68,35 +87,41 @@ export class ResultReacService {
   }
 
 
-  public getDataColumns(currentPage:number, row: number):any{
+  public getDataColumns(currentPage:number, row: number, mode: string = null):any{
+
+    let result = {
+      id: "",
+      tx: "",
+      ty:"",
+      tz: "",
+      mx: "",
+      my: "",
+      fz: "",
+      comb: "",
+      case: ""
+    };
+
     let results: any = this.reac[currentPage];
     if(results == undefined){
-      return {
-        id: "",
-        tx: "",
-        ty:"",
-        tz: "",
-        mx: "",
-        my: "",
-        fz: "",
-        comb: ""
-      }
+      return result;
     };
-    let result = results[row] != undefined ? results[row] : undefined;
-    // 対象データが無かった時に処理
-    if (result === undefined) {
-      result = {
-        id: "",
-        tx: "",
-        ty:"",
-        tz: "",
-        mx: "",
-        my: "",
-        fz: "",
-        comb: ""
-      };
+
+    if (mode in results) {
+      let modes = results[mode] != undefined ? results[mode] : undefined;
+      if (modes != undefined) {
+        const keys = Object.keys(modes);
+        const key = keys[row];
+        if(modes[key] != undefined){
+          result = modes[key];
+          result['id'] = '1';
+        }
+      }
+    } else if(results[row] != undefined) {
+      result = results[row];
     }
+
     return result;
+
   }
 
   // three-section-force.service から呼ばれる
