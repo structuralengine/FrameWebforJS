@@ -113,7 +113,7 @@ export class ResultReacService {
         const key = keys[row];
         if(modes[key] != undefined){
           result = modes[key];
-          result['id'] = '1';
+          result["id"] = key;
         }
       }
     } else if(results[row] != undefined) {

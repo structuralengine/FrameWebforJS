@@ -62,6 +62,25 @@ export class ResultCombineDisgService {
   public disgKeys = this.disgKeys3D || this.disgKeys2D;
   public titles = this.titles3D || this.titles2D
 
+  public column3Ds: any[] = [
+    { title: "result.result-combine-disg.No", id: "id", format: "" },
+    { title: "result.result-combine-disg.x_movement", id: "dx", format: "#.0000" },
+    { title: "result.result-combine-disg.y_movement", id: "dy", format: "#.0000" },
+    { title: "result.result-combine-disg.z_movement", id: "dz", format: "#.0000" },
+    { title: "result.result-combine-disg.x_rotation", id: "rx", format: "#.0000" },
+    { title: "result.result-combine-disg.y_rotation", id: "ry", format: "#.0000" },
+    { title: "result.result-combine-disg.z_rotation", id: "rz", format: "#.0000" },
+    { title: "result.result-combine-disg.comb", id: "case", format: "#.0000" },
+  ];
+
+  public column2Ds: any[] = [
+    { title: "result.result-combine-disg.No", id: "id", format: "" },
+    { title: "result.result-combine-disg.x_movement", id: "dx", format: "#.0000" },
+    { title: "result.result-combine-disg.y_movement", id: "dy", format: "#.0000" },
+    { title: "result.result-combine-disg.z_rotation", id: "rz", format: "#.0000" },
+    { title: "result.result-combine-disg.comb", id: "case", format: "#.0000" },
+  ];
+
   private columns: any;
 
   constructor(private pickdisg: ResultPickupDisgService,
