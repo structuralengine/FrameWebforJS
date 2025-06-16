@@ -18,6 +18,28 @@ export class ResultFsecService {
   private worker4: Worker;
   private columns: any;
 
+  public column3Ds: any[] = [
+    { title: "result.result-fsec.memberNo", id: "m", format: "", width: -40 },
+    { title: "result.result-fsec.nodeNo", id: "n", format: "", width: -40 },
+    { title: "result.result-fsec.stationLocation", id: "l", format: "#.000" },
+    { title: "result.result-fsec.axialForce", id: "fx", format:'#.00' },
+    { title: "result.result-fsec.y_shear", id: "fy", format:'#.00' },
+    { title: "result.result-fsec.z_shear", id: "fz", format:'#.00' },
+    { title: "result.result-fsec.x_torsion", id: "mx", format:'#.00' },
+    { title: "result.result-fsec.y_moment", id: "my", format:'#.00' },
+    { title: "result.result-fsec.z_moment", id: "mz", format:'#.00' },
+  ];
+
+  public column2Ds: any[] = [
+    { title: "result.result-fsec.memberNo", id: "m", format: "", width: -40 },
+    { title: "result.result-fsec.nodeNo", id: "n", format: "", width: -40 },
+    { title: "result.result-fsec.stationLocation", id: "l", format: "#.000" },
+    { title: "result.result-fsec.axialForce", id: "fx", format:'#.00' },
+    { title: "result.result-fsec.shear", id: "fy", format:'#.00' },
+    { title: "result.result-fsec.moment", id: "mz", format:'#.00' },
+  ];
+
+
   public LL_flg = [];
 
   constructor(

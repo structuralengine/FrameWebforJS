@@ -62,6 +62,31 @@ export class ResultCombineFsecService {
   public fsecKeys = this.fsecKeys3D || this.fsecKeys2D;
   public titles = this.titles3D || this.titles2D;
 
+
+  public column3Ds: any[] = [
+    { title: "result.result-combine-fsec.memberNo", id: "m" , format: "", width: -40 },
+    { title: "result.result-combine-fsec.nodeNo", id: "n" , format: "", width: -40 },
+    { title: "result.result-combine-fsec.stationLocation", id: "l", format: "#.000" },
+    { title: "result.result-combine-fsec.axialForce", id: "fx", format: "#.00" },
+    { title: "result.result-combine-fsec.y_shear", id: "fy", format: "#.00" },
+    { title: "result.result-combine-fsec.z_shear", id: "fz", format: "#.00" },
+    { title: "result.result-combine-fsec.x_torsion", id: "mx", format: "#.00" },
+    { title: "result.result-combine-fsec.y_moment", id: "my", format: "#.00" },
+    { title: "result.result-combine-fsec.z_moment", id: "mz", format: "#.00" },
+    { title: "result.result-combine-fsec.comb", id: "case", format: "#.00", width: 40 },
+  ];
+
+  public column2Ds: any[] = [
+    { title: "result.result-combine-fsec.memberNo", id: "m", format: "", width: -40 },
+    { title: "result.result-combine-fsec.nodeNo", id: "n", format: "", width: -40 },
+    { title: "result.result-combine-fsec.stationLocation", id: "l", format: "#.000" },
+    { title: "result.result-combine-fsec.axialForce", id: "fx", format: "#.00" },
+    { title: "result.result-combine-fsec.shear", id: "fy", format: "#.00" },
+    { title: "result.result-combine-fsec.moment", id: "mz", format: "#.00" },
+    { title: "result.result-combine-fsec.comb", id: "case", format: "#.00", width: 40 },
+  ];
+
+
   private columns: any;
 
   constructor(
