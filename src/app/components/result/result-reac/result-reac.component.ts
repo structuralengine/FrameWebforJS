@@ -131,7 +131,6 @@ export class ResultReacComponent implements OnInit, OnDestroy {
         const define = this.data.getDataColumns(currentPage, i, key);
         this.datasetNew.push(define);
       }
-      this.three.ChangeMode("comb_reac");
     } else {
       this.options.colModel = this.helper.dimension === 3 ? this.columnHeaders3D : this.columnHeaders2D;
 
@@ -139,10 +138,12 @@ export class ResultReacComponent implements OnInit, OnDestroy {
         const define = this.data.getDataColumns(currentPage, i);
         this.datasetNew.push(define);
       }
-      this.three.ChangeMode('reac');
     }
 
     this.page = currentPage;
+
+    // three.jsの表示を変更
+    this.three.ChangeMode('reac');
     this.three.ChangePage(currentPage);
   }
 

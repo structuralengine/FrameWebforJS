@@ -130,7 +130,6 @@ export class ResultDisgComponent implements OnInit, OnDestroy {
         const define = this.data.getDataColumns(currentPage, i, key);
         this.datasetNew.push(define);
       }
-      this.three.ChangeMode("comb_disg");
     } else {
       this.options.colModel = this.helper.dimension === 3 ? this.columnHeaders3D : this.columnHeaders2D;
 
@@ -138,10 +137,12 @@ export class ResultDisgComponent implements OnInit, OnDestroy {
         const define = this.data.getDataColumns(currentPage, i);
         this.datasetNew.push(define);
       }
-      this.three.ChangeMode("disg");
     }
 
     this.page = currentPage;
+
+    // three.jsの表示を変更
+    this.three.ChangeMode("disg");
     this.three.ChangePage(currentPage);
   }
 
