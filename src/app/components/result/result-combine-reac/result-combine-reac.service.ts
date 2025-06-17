@@ -73,7 +73,7 @@ export class ResultCombineReacService {
   ];
 
   public column2Ds: any[] = [
-    { title: "result.result-combine-reac.nodeNo", id: "m", format: "", width: -40 },
+    { title: "result.result-combine-reac.nodeNo", id: "id", format: "", width: -40 },
     { title: "result.result-combine-reac.x_SupportReaction", id: "tx", format: "#.00" },
     { title: "result.result-combine-reac.y_SupportReaction", id: "ty", format: "#.00" },
     { title: "result.result-combine-reac.rotationalRestraint", id: "mz", format: "#.00" },

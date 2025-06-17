@@ -24,7 +24,6 @@ export class ResultReacService {
     { title: "result.result-reac.x_RotationalReaction", id: "mx", format: "#.00" },
     { title: "result.result-reac.y_RotationalReaction", id: "my", format: "#.00" },
     { title: "result.result-reac.z_RotationalReaction", id: "mz", format: "#.00" },
-    { title: "result.result-reac.comb", id: "case", format: "#.00" },
   ];
 
   public column2Ds: any[] = [
@@ -32,7 +31,6 @@ export class ResultReacService {
     { title: "result.result-reac.x_SupportReaction", id: "tx", format: "#.00" },
     { title: "result.result-reac.y_SupportReaction", id: "ty", format: "#.00" },
     { title: "result.result-reac.rotationalRestraint", id: "mz", format: "#.00" },
-    { title: "result.result-reac.comb", id: "case", format: "#.00" },
   ];
 
   public LL_flg = [];
