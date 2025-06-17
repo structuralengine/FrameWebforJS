@@ -90,6 +90,8 @@ export class ResultFsecComponent implements OnInit, OnDestroy {
     this.subscription.unsubscribe();
     this.directionSubscription.unsubscribe();
     this.colorPaletteService.setControlShowHide(false);
+    // コンポーネント破棄時にLL_pageをリセット
+    this.helper.LL_page = false;
   }
 
   //　pager.component からの通知を受け取る

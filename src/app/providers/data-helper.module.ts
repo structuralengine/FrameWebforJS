@@ -2,6 +2,7 @@ import { NgModule } from "@angular/core";
 import { ElectronService } from "src/app/providers/electron.service";
 import { NgbModal } from "@ng-bootstrap/ng-bootstrap";
 import { AlertDialogComponent } from "../components/alert-dialog/alert-dialog.component";
+import { Subject } from "rxjs";
 
 @NgModule({
   imports: [],
@@ -22,7 +23,19 @@ export class DataHelperModule {
   public isContentsDailogShow: boolean;
 
   // 連行荷重LL判定フラグ
-  public LL_page: boolean = false;
+  private _LL_page: boolean = false;
+  public LL_pageChange$ = new Subject<boolean>();
+
+  public get LL_page(): boolean {
+    return this._LL_page;
+  }
+
+  public set LL_page(value: boolean) {
+    if (this._LL_page !== value) {
+      this._LL_page = value;
+      this.LL_pageChange$.next(value);
+    }
+  }
 
   // アラートを表示する
   public alert(message: string): void{

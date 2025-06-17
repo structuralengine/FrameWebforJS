@@ -78,6 +78,8 @@ export class ResultDisgComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.subscription.unsubscribe();
     this.directionSubscription.unsubscribe();
+    // コンポーネント破棄時にLL_pageをリセット
+    this.helper.LL_page = false;
   }
 
   //　pager.component からの通知を受け取る
