@@ -30,7 +30,7 @@ export class ResultDisgComponent implements OnInit, OnDestroy {
   private directionSubscription: Subscription;
   private subscription: Subscription;
   public KEYS: string[];
-  page: number;
+  page: number = 1;
   private currentKey: any = 0;
 
   LL_page: boolean;
@@ -72,6 +72,7 @@ export class ResultDisgComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.ROWS_COUNT = this.rowsCount();
+    this.loadData(this.page || 1, this.ROWS_COUNT);
   }
 
   ngOnDestroy() {
@@ -95,9 +96,10 @@ export class ResultDisgComponent implements OnInit, OnDestroy {
 
     this.datasetNew.splice(0);
     this.ROWS_COUNT = this.rowsCount();
-    this.loadData(this.page, this.ROWS_COUNT);
+    const currentPage = this.page || 1;
+    this.loadData(currentPage, this.ROWS_COUNT);
     this.grid.refreshDataAndView();
-    this.three.ChangePage(1);
+    this.three.ChangePage(currentPage);
   }
 
   @ViewChild("grid") grid: SheetComponent;
@@ -187,7 +189,8 @@ export class ResultDisgComponent implements OnInit, OnDestroy {
         return;
       }
       if (finalV >= dataV - 1) {
-        this.loadData(this.page, dataV + this.ROWS_COUNT);
+        const currentPage = this.page || 1;
+        this.loadData(currentPage, dataV + this.ROWS_COUNT);
         this.grid.refreshDataAndView();
       }
     },

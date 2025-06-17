@@ -69,7 +69,7 @@ export class ResultCombineReacService {
     { title: "result.result-combine-reac.x_RotationalReaction", id: "mx", format: "#.00" },
     { title: "result.result-combine-reac.y_RotationalReaction", id: "my", format: "#.00" },
     { title: "result.result-combine-reac.z_RotationalReaction", id: "mz", format: "#.00" },
-    { title: "result.result-combine-reac.comb", id: "case", format: "#.00", width: 40 },
+    { title: "result.result-combine-reac.comb", id: "case", format: "", width: 40 },
   ];
 
   public column2Ds: any[] = [
@@ -77,7 +77,7 @@ export class ResultCombineReacService {
     { title: "result.result-combine-reac.x_SupportReaction", id: "tx", format: "#.00" },
     { title: "result.result-combine-reac.y_SupportReaction", id: "ty", format: "#.00" },
     { title: "result.result-combine-reac.rotationalRestraint", id: "mz", format: "#.00" },
-    { title: "result.result-combine-reac.comb", id: "case", format: "#.00", width: 40 },
+    { title: "result.result-combine-reac.comb", id: "case", format: "", width: 40 },
   ];
 
   private columns: any;

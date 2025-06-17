@@ -73,7 +73,7 @@ export class ResultCombineFsecService {
     { title: "result.result-combine-fsec.x_torsion", id: "mx", format: "#.00" },
     { title: "result.result-combine-fsec.y_moment", id: "my", format: "#.00" },
     { title: "result.result-combine-fsec.z_moment", id: "mz", format: "#.00" },
-    { title: "result.result-combine-fsec.comb", id: "case", format: "#.00", width: 40 },
+    { title: "result.result-combine-fsec.comb", id: "case", format: "", width: 40 },
   ];
 
   public column2Ds: any[] = [
@@ -83,7 +83,7 @@ export class ResultCombineFsecService {
     { title: "result.result-combine-fsec.axialForce", id: "fx", format: "#.00" },
     { title: "result.result-combine-fsec.shear", id: "fy", format: "#.00" },
     { title: "result.result-combine-fsec.moment", id: "mz", format: "#.00" },
-    { title: "result.result-combine-fsec.comb", id: "case", format: "#.00", width: 40 },
+    { title: "result.result-combine-fsec.comb", id: "case", format: "", width: 40 },
   ];
 
 

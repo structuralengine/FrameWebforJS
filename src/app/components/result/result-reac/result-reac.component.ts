@@ -93,9 +93,10 @@ export class ResultReacComponent implements OnInit, OnDestroy {
 
     this.datasetNew.splice(0);
     this.ROWS_COUNT = this.rowsCount();
-    this.loadData(this.page, this.ROWS_COUNT);
+    const currentPage = this.page || 1;
+    this.loadData(currentPage, this.ROWS_COUNT);
     this.grid.refreshDataAndView();
-    this.three.ChangePage(1);
+    this.three.ChangePage(currentPage);
   }
 
   @ViewChild("grid") grid: SheetComponent;
