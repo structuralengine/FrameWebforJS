@@ -118,7 +118,7 @@ export class OptionalHeaderComponent implements OnInit {
         this.showLoadComponent = URL_LOAD.includes(event.url);
         this.showDefineComponent = URL_DEFINE.includes(event.url);
         this.showResultComponent = URL_RESULTS.includes(event.url);
-        this.showNotBasicComponent = URL_COMB_PIC.includes(event.url);
+        this.showNotBasicComponent = URL_COMB_PIC.includes(event.url) || this.helper.LL_page;
         this.showPicComponent = URL_RESULT_PIC.includes(event.url);
 
         this.showDisgComponent = this.resultDisgURL.includes(event.url);

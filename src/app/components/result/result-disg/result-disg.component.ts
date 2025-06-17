@@ -116,6 +116,9 @@ export class ResultDisgComponent implements OnInit, OnDestroy {
       this.LL_page = false;
     }
 
+    // DataHelperModuleのLL_page状態を更新
+    this.helper.LL_page = this.LL_page;
+
     // データロード
     if (this.LL_page === true) {
       this.options.colModel = this.helper.dimension === 3 ? this.columnHeaders3D_LL : this.columnHeaders2D_LL;

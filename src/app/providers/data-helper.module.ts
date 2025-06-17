@@ -21,6 +21,9 @@ export class DataHelperModule {
   public dimensionInit: number;
   public isContentsDailogShow: boolean;
 
+  // 連行荷重LL判定フラグ
+  public LL_page: boolean = false;
+
   // アラートを表示する
   public alert(message: string): void{
     if(this.electronService.isElectron) {
