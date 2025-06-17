@@ -29,18 +29,10 @@ export class ResultReacComponent implements OnInit, OnDestroy {
   private directionSubscription: Subscription;
   private subscription: Subscription;
   public KEYS: string[];
-  public TITLES: string[];
-  public height: any;
-  dataset: any[];
   page: number = 1;
   currentKey: any = 0;
-  dimension: number;
-
-  LL_flg: boolean[];
   LL_page: boolean;
-  cal: number = 0;
 
-  circleBox = new Array();
 
   private columnHeaders3D = this.result.initColumnTable(this.data.column3Ds, 80);
   private columnHeaders2D = this.result.initColumnTable(this.data.column2Ds, 80);
@@ -61,13 +53,7 @@ export class ResultReacComponent implements OnInit, OnDestroy {
     private pagerService: PagerService,
     public docLayout: DocLayoutService
   ) {
-    this.dataset = new Array();
-    this.dimension = this.helper.dimension;
     this.KEYS = this.comb.reacKeys;
-    this.TITLES = this.comb.titles;
-    for (let i = 0; i < this.TITLES.length; i++) {
-      this.circleBox.push(i);
-    }
 
     if (this.result.case != "basic") {
       this.result.page = 1;
@@ -83,26 +69,12 @@ export class ResultReacComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    // this.loadPage(this.result.page);
     this.ROWS_COUNT = this.rowsCount();
-    this.loadData(1, this.ROWS_COUNT);
-    setTimeout(() => {
-      const circle = document.getElementById(String(this.cal + 20));
-      if (circle !== null) {
-        circle.classList.add("active");
-      }
-    }, 10);
+  }
 
-    this.LL_flg = this.data.LL_flg;
-  }
-  ngAfterViewInit() {
-    this.docLayout.handleMove.subscribe((data) => {
-      //this.height = data - 100;
-      this.options.height = data - 60;
-    });
-  }
   ngOnDestroy() {
     this.subscription.unsubscribe();
+    this.directionSubscription.unsubscribe();
   }
 
   //　pager.component からの通知を受け取る
@@ -114,6 +86,16 @@ export class ResultReacComponent implements OnInit, OnDestroy {
     this.loadData(pageNew, this.ROWS_COUNT);
     this.grid.refreshDataAndView();
     this.three.ChangePage(pageNew);
+  }
+
+  onChangeKey(text: any) {
+    this.currentKey = text - 1;
+
+    this.datasetNew.splice(0);
+    this.ROWS_COUNT = this.rowsCount();
+    this.loadData(this.page, this.ROWS_COUNT);
+    this.grid.refreshDataAndView();
+    this.three.ChangePage(1);
   }
 
   @ViewChild("grid") grid: SheetComponent;
@@ -155,16 +137,6 @@ export class ResultReacComponent implements OnInit, OnDestroy {
 
     this.page = currentPage;
     this.three.ChangePage(currentPage);
-  }
-
-  onChangeKey(text: any) {
-    this.currentKey = text - 1;
-
-    this.datasetNew.splice(0);
-    this.ROWS_COUNT = this.rowsCount();
-    this.loadData(this.page, this.ROWS_COUNT);
-    this.grid.refreshDataAndView();
-    this.three.ChangePage(1);
   }
 
   private tableHeight(): string {

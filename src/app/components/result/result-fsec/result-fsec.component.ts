@@ -35,18 +35,9 @@ export class ResultFsecComponent implements OnInit, OnDestroy {
   private subscription: Subscription;
   private directionSubscription: Subscription;
   public KEYS: string[];
-  public TITLES: string[];
-  public height: any;
-  public panelData : any[] = [];
-  dataset: any[];
   page: number = 1;
   currentKey: any = 0;
-  dimension: number;
-  LL_flg: boolean[];
   LL_page: boolean;
-  cal: number = 0;
-
-  circleBox = new Array();
 
   private columnHeaders3D = this.result.initColumnTable(this.data.column3Ds, 80);
   private columnHeaders3D_LL = this.result.initColumnTable(this.comb.column3Ds, 80);
@@ -74,13 +65,7 @@ export class ResultFsecComponent implements OnInit, OnDestroy {
     private three_panel: ThreePanelService,
     public colorPaletteService: ColorPaletteService
   ) {
-    this.dataset = new Array();
-    this.dimension = this.helper.dimension;
     this.KEYS = this.comb.fsecKeys;
-    this.TITLES = this.comb.titles;
-    for (let i = 0; i < this.TITLES.length; i++) {
-      this.circleBox.push(i);
-    }
 
     if (this.result.case != 'basic') {
       this.result.page = 1;
@@ -93,38 +78,17 @@ export class ResultFsecComponent implements OnInit, OnDestroy {
     this.subscription = this.pagerService.pageSelected$.subscribe((text) => {
       this.onReceiveEventFromChild(text);
     });
-
-
-    this.COLUMNS_COUNT = this.load.getLoadCaseCount() * 2 + 1;
-      if (this.COLUMNS_COUNT <= 10) {
-        this.COLUMNS_COUNT = 10;
-      }
-
   }
 
   ngOnInit() {
     this.colorPaletteService.setControlShowHide(true);
-    // this.loadPage(this.result.page);
     this.ROWS_COUNT = this.rowsCount();
-    this.loadData(1, this.ROWS_COUNT);
-    setTimeout(() => {
-      const circle = document.getElementById(String(this.cal + 20));
-      if (circle !== null) {
-        circle.classList.add('active');
-      }
-    }, 10);
-
-    this.LL_flg = this.data.LL_flg;
 
   }
-  ngAfterViewInit() {
-    this.docLayout.handleMove.subscribe(data => {
-      // this.height = data - 100;
-      this.options.height = data - 60;
-      });
-  }
+
   ngOnDestroy() {
     this.subscription.unsubscribe();
+    this.directionSubscription.unsubscribe();
     this.colorPaletteService.setControlShowHide(false);
   }
 
@@ -138,14 +102,20 @@ export class ResultFsecComponent implements OnInit, OnDestroy {
     this.three.ChangePage(pageNew);
   }
 
+  onChangeKey(text: any) {
+    this.currentKey = text - 1;
+
+    this.datasetNew.splice(0);
+    this.ROWS_COUNT = this.rowsCount();
+    this.loadData(this.page, this.ROWS_COUNT);
+    this.grid.refreshDataAndView();
+    this.three.ChangePage(1);
+  }
 
    @ViewChild('grid') grid: SheetComponent;
 
   private datasetNew = [];
-  private columnHeaders =[];
-
   private ROWS_COUNT = 15;
-  private COLUMNS_COUNT = 5;
 
   private loadData(currentPage: number, row: number): void {
     this.three_panel.ClearData();
@@ -183,16 +153,6 @@ export class ResultFsecComponent implements OnInit, OnDestroy {
     // three.jsの表示を変更
     this.three.ChangePage(currentPage);
     this.three_fesc.drawGradientPanel();
-  }
-
-  onChangeKey(text: any) {
-    this.currentKey = text - 1;
-
-    this.datasetNew.splice(0);
-    this.ROWS_COUNT = this.rowsCount();
-    this.loadData(this.page, this.ROWS_COUNT);
-    this.grid.refreshDataAndView();
-    this.three.ChangePage(1);
   }
 
   private tableHeight(): string {
