@@ -215,6 +215,9 @@ export class ResultFsecService {
         const caseList: string[] = [caseNo];
         const key0: string = target_LL_Keys[0];
         const tmp_max_values = (caseNo in org_max_values) ? org_max_values[caseNo] : org_max_values[key0];
+        
+        // value_rangesの初期値を設定（最初のLL_Keyの値を使用）
+        const tmp_value_ranges = JSON.parse(JSON.stringify(org_value_ranges[key0]));
 
         for (const k of target_LL_Keys) {
           // ケースを追加
@@ -222,17 +225,45 @@ export class ResultFsecService {
 
           // max_valuesを更新
           const target_max_values = org_max_values[k];
-          //const target_value_ranges = org_value_ranges[k];
+          const target_value_ranges = org_value_ranges[k];
+          
           for (const kk of Object.keys(tmp_max_values)) {
             if (tmp_max_values[kk] < target_max_values[kk]) {
               tmp_max_values[kk] = target_max_values[kk];
+            }
+          }
+          
+          // value_rangesを更新
+          for (const axis of ['x', 'y', 'z']) {
+            // max_dの比較と更新
+            if (tmp_value_ranges[axis].max_d < target_value_ranges[axis].max_d) {
+              tmp_value_ranges[axis].max_d = target_value_ranges[axis].max_d;
+              tmp_value_ranges[axis].max_d_m = target_value_ranges[axis].max_d_m;
+            }
+            
+            // min_dの比較と更新
+            if (tmp_value_ranges[axis].min_d > target_value_ranges[axis].min_d) {
+              tmp_value_ranges[axis].min_d = target_value_ranges[axis].min_d;
+              tmp_value_ranges[axis].min_d_m = target_value_ranges[axis].min_d_m;
+            }
+            
+            // max_rの比較と更新
+            if (tmp_value_ranges[axis].max_r < target_value_ranges[axis].max_r) {
+              tmp_value_ranges[axis].max_r = target_value_ranges[axis].max_r;
+              tmp_value_ranges[axis].max_r_m = target_value_ranges[axis].max_r_m;
+            }
+            
+            // min_rの比較と更新
+            if (tmp_value_ranges[axis].min_r > target_value_ranges[axis].min_r) {
+              tmp_value_ranges[axis].min_r = target_value_ranges[axis].min_r;
+              tmp_value_ranges[axis].min_r_m = target_value_ranges[axis].min_r_m;
             }
           }
         }
         defList[caseNo] = caseList;
         combList[caseNo] = [{ caseNo, coef: 1 }];
         max_values[caseNo] = tmp_max_values;
-        //value_ranges[caseNo] = tmp_value_ranges;
+        value_ranges[caseNo] = tmp_value_ranges;
       }
     }
 
