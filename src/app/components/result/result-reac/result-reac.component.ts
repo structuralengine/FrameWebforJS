@@ -70,6 +70,7 @@ export class ResultReacComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.ROWS_COUNT = this.rowsCount();
+    this.loadData(this.page || 1, this.ROWS_COUNT);
   }
 
   ngOnDestroy() {
