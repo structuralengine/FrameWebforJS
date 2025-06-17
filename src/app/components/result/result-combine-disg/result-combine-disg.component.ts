@@ -50,26 +50,8 @@ export class ResultCombineDisgComponent implements OnInit, OnDestroy {
 
   circleBox = new Array();
 
-  private column3Ds: any[] = [
-    { title: "result.result-combine-disg.No", id: "id", format: "" },
-    { title: "result.result-combine-disg.x_movement", id: "dx", format: "#.0000" },
-    { title: "result.result-combine-disg.y_movement", id: "dy", format: "#.0000" },
-    { title: "result.result-combine-disg.z_movement", id: "dz", format: "#.0000" },
-    { title: "result.result-combine-disg.x_rotation", id: "rx", format: "#.0000" },
-    { title: "result.result-combine-disg.y_rotation", id: "ry", format: "#.0000" },
-    { title: "result.result-combine-disg.z_rotation", id: "rz", format: "#.0000" },
-    { title: "result.result-combine-disg.comb", id: "case", format: "#.0000" },
-  ];
-  private columnHeaders3D = this.result.initColumnTable(this.column3Ds, 80);
-
-  private column2Ds: any[] = [
-    { title: "result.result-combine-disg.No", id: "id", format: "" },
-    { title: "result.result-combine-disg.x_movement", id: "dx", format: "#.0000" },
-    { title: "result.result-combine-disg.y_movement", id: "dy", format: "#.0000" },
-    { title: "result.result-combine-disg.z_rotation", id: "rz", format: "#.0000" },
-    { title: "result.result-combine-disg.comb", id: "case", format: "#.0000" },
-  ];
-  private columnHeaders2D = this.result.initColumnTable(this.column2Ds, 80);
+  private columnHeaders3D = this.result.initColumnTable(this.data.column3Ds, 80);
+  private columnHeaders2D = this.result.initColumnTable(this.data.column2Ds, 80);
 
   private currentKey: any = 0;
 

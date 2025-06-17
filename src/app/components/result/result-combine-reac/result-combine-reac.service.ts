@@ -60,7 +60,26 @@ export class ResultCombineReacService {
   ];
   public reacKeys = this.reacKeys3D || this.reacKeys2D;
   public titles = this.titles3D || this.titles2D
-  
+
+  public column3Ds: any[] = [
+    { title: "result.result-combine-reac.nodeNo", id: "id" , format: "", width: -40 },
+    { title: "result.result-combine-reac.x_SupportReaction", id: "tx", format: "#.00" },
+    { title: "result.result-combine-reac.y_SupportReaction", id: "ty", format: "#.00" },
+    { title: "result.result-combine-reac.z_SupportReaction", id: "tz", format: "#.00" },
+    { title: "result.result-combine-reac.x_RotationalReaction", id: "mx", format: "#.00" },
+    { title: "result.result-combine-reac.y_RotationalReaction", id: "my", format: "#.00" },
+    { title: "result.result-combine-reac.z_RotationalReaction", id: "mz", format: "#.00" },
+    { title: "result.result-combine-reac.comb", id: "case", format: "", width: 40 },
+  ];
+
+  public column2Ds: any[] = [
+    { title: "result.result-combine-reac.nodeNo", id: "id", format: "", width: -40 },
+    { title: "result.result-combine-reac.x_SupportReaction", id: "tx", format: "#.00" },
+    { title: "result.result-combine-reac.y_SupportReaction", id: "ty", format: "#.00" },
+    { title: "result.result-combine-reac.rotationalRestraint", id: "mz", format: "#.00" },
+    { title: "result.result-combine-reac.comb", id: "case", format: "", width: 40 },
+  ];
+
   private columns: any;
 
   constructor(private pickreac: ResultPickupReacService,

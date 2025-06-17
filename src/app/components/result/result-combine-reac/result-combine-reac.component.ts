@@ -40,26 +40,8 @@ export class ResultCombineReacComponent implements OnInit, OnDestroy {
 
   circleBox = new Array();
 
-  private column3Ds: any[] = [
-    { title: "result.result-combine-reac.nodeNo", id: "id" , format: "", width: -40 },
-    { title: "result.result-combine-reac.x_SupportReaction", id: "tx", format: "#.00" },
-    { title: "result.result-combine-reac.y_SupportReaction", id: "ty", format: "#.00" },
-    { title: "result.result-combine-reac.z_SupportReaction", id: "tz", format: "#.00" },
-    { title: "result.result-combine-reac.x_RotationalReaction", id: "mx", format: "#.00" },
-    { title: "result.result-combine-reac.y_RotationalReaction", id: "my", format: "#.00" },
-    { title: "result.result-combine-reac.z_RotationalReaction", id: "mz", format: "#.00" },
-    { title: "result.result-combine-reac.comb", id: "case", format: "#.00", width: 40 },
-  ];
-  private columnHeaders3D = this.result.initColumnTable(this.column3Ds, 80);
-
-  private column2Ds: any[] = [
-    { title: "result.result-combine-reac.nodeNo", id: "m", format: "", width: -40 },
-    { title: "result.result-combine-reac.x_SupportReaction", id: "tx", format: "#.00" },
-    { title: "result.result-combine-reac.y_SupportReaction", id: "ty", format: "#.00" },
-    { title: "result.result-combine-reac.rotationalRestraint", id: "mz", format: "#.00" },
-    { title: "result.result-combine-reac.comb", id: "case", format: "#.00", width: 40 },
-  ];
-  private columnHeaders2D = this.result.initColumnTable(this.column2Ds, 80);
+  private columnHeaders3D = this.result.initColumnTable(this.data.column3Ds, 80);
+  private columnHeaders2D = this.result.initColumnTable(this.data.column2Ds, 80);
 
   private currentKey: any = 0;
 
