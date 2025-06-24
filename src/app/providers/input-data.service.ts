@@ -19,6 +19,7 @@ import { TranslateService } from "@ngx-translate/core";
 import packageJson from '../../../package.json';
 import { forEach } from "@angular-devkit/schematics";
 import { InputRigidZoneService } from "../components/input/input-rigid-zone/input-rigid-zone.service";
+import * as THREE from "three";
 
 @Injectable({
   providedIn: "root",
@@ -465,6 +466,26 @@ export class InputDataService {
     const loadKeys = Object.keys(loads);
     if (loadKeys.length <= 0) {
       return this.translate.instant("providers.input-data.load_nodata");
+    }
+
+    // パネルの平面性のチェック https://nekochem.com/determinant-meaning/2563/#toc6
+    for (const [shellkey, shell] of Object.entries(shells)) {
+      const nodes: number[] = shell["nodes"]
+      const p1 = this.node.getNodePos(nodes[0].toString())
+      const p2 = this.node.getNodePos(nodes[1].toString())
+      const p3 = this.node.getNodePos(nodes[2].toString())
+      const p4 = this.node.getNodePos(nodes[3].toString())
+      const matrix = new THREE.Matrix4();
+      matrix.set(
+        p1["x"], p1["y"], p1["z"], 1,
+        p2["x"], p2["y"], p2["z"], 1,
+        p3["x"], p3["y"], p3["z"], 1,
+        p4["x"], p4["y"], p4["z"], 1,
+      )
+      const det = matrix.determinant()
+      if (Math.abs(det) > 1e-7) {
+        return this.translate.instant("providers.input-data.unflat_panel") + shellkey
+      }
     }
 
     // 荷重ケース毎にエラーチェック
