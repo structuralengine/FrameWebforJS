@@ -85,7 +85,7 @@ export class InputMembersService {
       jsonData[key] = {
         'ni': (ni == null) ? empty : ni,
         'nj': (nj == null) ? empty : nj,
-        'e': (e == null) ? empty : e,
+        'e': e,
         'cg': (cg == null) ? empty : cg
       };
 
