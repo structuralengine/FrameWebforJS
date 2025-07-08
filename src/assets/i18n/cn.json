@@ -407,7 +407,8 @@
             "elementNo": "要件编码",
             "SupType": "支点种类",
             "SprType": "弹簧种类",
-            "SupSpr": "没有支点或弹簧。"
+            "SupSpr": "没有支点或弹簧。",
+            "unflat_panel": "有一块面板不平整。面板编码："
         }
     },
     "modal": {
