@@ -410,7 +410,8 @@
             "elementNo": "ElementNo",
             "SupType": "Support TYPE.",
             "SprType": "Spring TYPE.",
-            "SupSpr": "has neither a Support nor a Spring."
+            "SupSpr": "has neither a Support nor a Spring.",
+            "unflat_panel": "There is an unflat panel. Panel number: "
         }
     },
     "modal": {

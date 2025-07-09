@@ -225,11 +225,17 @@ export class ThreeSectionForceService {
               : key === "shearForceY" || key === "momentY"
                 ? "y"
                 : "z";
-          this.max_min._getMaxMinValue(
-            this.value_ranges[this.currentMode][this.currentIndex][key1],
-            "fsec",
-            this.currentRadio
-          );
+
+          // null/undefinedチェック
+          const curMode = this.value_ranges[this.currentMode];
+          const curIndex = curMode[this.currentIndex];
+          const curKey = curIndex[key1];
+          if (curKey) {
+            this.max_min._getMaxMinValue(curKey,
+              "fsec",
+              this.currentRadio
+            );
+          }
           this.onResize();
           this.scene.render();
         });

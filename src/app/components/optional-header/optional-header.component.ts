@@ -1,9 +1,10 @@
-import { Component, OnInit } from "@angular/core";
+import { Component, OnInit, OnDestroy } from "@angular/core";
 import { Router, NavigationEnd } from "@angular/router";
 import { filter } from "rxjs/operators";
 import { DataHelperModule } from "src/app/providers/data-helper.module";
 import { SceneService } from "../three/scene.service";
 import { ThreeLoadService } from "../three/geometry/three-load/three-load.service";
+import { Subscription } from "rxjs";
 
 const URL_INPUTS = [
   "/input-fix_nodes",
@@ -40,12 +41,13 @@ const URL_RESULT_PIC = [
   "/result-pic_disg",
 ];
 const URL_MEM = ["/input-members", "/input-rigid_zone"];
+const URL_RESULT_BASIC = ["/result-fsec", "/result-disg", "/result-reac"];
 @Component({
   selector: "app-optional-header",
   templateUrl: "./optional-header.component.html",
   styleUrls: ["./optional-header.component.scss"],
 })
-export class OptionalHeaderComponent implements OnInit {
+export class OptionalHeaderComponent implements OnInit, OnDestroy {
   showPagerComponent: boolean;
   showLoadComponent: boolean;
   showDefineComponent: boolean;
@@ -90,7 +92,9 @@ export class OptionalHeaderComponent implements OnInit {
 
   activeLoadName: boolean = true;
   activeLoadStrength: boolean = false;
-  url: string =""
+  url: string = "";
+  
+  private LL_pageSubscription: Subscription;
 
   constructor(
     private router: Router,
@@ -111,6 +115,11 @@ export class OptionalHeaderComponent implements OnInit {
           this.activeLoadName=false,
           this.activeLoadStrength= true;
         }
+        // 基本結果ページ以外に移動した場合はLL_pageをリセット
+        if (!URL_RESULT_BASIC.includes(event.url)) {
+          this.helper.LL_page = false;
+        }
+
         this.showPagerComponent = URL_INPUTS.concat(URL_RESULTS).includes(
           event.url 
         );
@@ -118,7 +127,7 @@ export class OptionalHeaderComponent implements OnInit {
         this.showLoadComponent = URL_LOAD.includes(event.url);
         this.showDefineComponent = URL_DEFINE.includes(event.url);
         this.showResultComponent = URL_RESULTS.includes(event.url);
-        this.showNotBasicComponent = URL_COMB_PIC.includes(event.url);
+        this.updateShowNotBasicComponent();
         this.showPicComponent = URL_RESULT_PIC.includes(event.url);
 
         this.showDisgComponent = this.resultDisgURL.includes(event.url);
@@ -126,10 +135,25 @@ export class OptionalHeaderComponent implements OnInit {
         this.showFsecComponent = this.resultFsecURL.includes(event.url);
         this.initSelectedValue(event.url);
       });
+
+    // LL_pageの変更を購読
+    this.LL_pageSubscription = this.helper.LL_pageChange$.subscribe((LL_page: boolean) => {
+      this.updateShowNotBasicComponent();
+    });
   }
 
   ngOnInit() {
     this.handleShow(2)
+  }
+
+  ngOnDestroy() {
+    if (this.LL_pageSubscription) {
+      this.LL_pageSubscription.unsubscribe();
+    }
+  }
+
+  private updateShowNotBasicComponent() {
+    this.showNotBasicComponent = URL_COMB_PIC.includes(this.url) || (URL_RESULT_BASIC.includes(this.url) && this.helper.LL_page);
   }
   initSelectedValue(url: string) {
     if (url === "/input-load-name") {

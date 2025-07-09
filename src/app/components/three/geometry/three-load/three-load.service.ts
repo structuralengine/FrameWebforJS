@@ -75,6 +75,17 @@ export class ThreeLoadService {
   /** アニメーションハンドラ */
   private animationHandle: number | undefined;
 
+  /** アニメーション用のクロック */
+  private animationClock: THREE.Clock;
+  /** アニメーション用の設定 */
+  private animationConfig = {
+    duration: 0.5, // 各ケース表示時間（秒）
+    isActive: false,
+    currentKeys: [] as string[],
+    currentLL_list: {} as any,
+    previousIndex: -1 // 前回のインデックスを記録
+  };
+
   // 初期化
   constructor(
     private languagesService: LanguagesService,
@@ -101,6 +112,9 @@ export class ThreeLoadService {
 
     // アニメーションハンドラ
     this.animationHandle = undefined;
+
+    // アニメーション用のクロック
+    this.animationClock = new THREE.Clock();
   }
 
   /** 荷重を再設定する */
@@ -219,22 +233,20 @@ export class ThreeLoadService {
 
     this.cancelAnimation();
 
-    this.currentCaseId = changeCase.toString();
+    // this.currentCaseId = changeCase.toString();
     if (!isLL_Load) {
-      this.visibleCaseChange(this.currentCaseId);
+      this.visibleCaseChange(changeCase.toString());
+      this.onResize();
+      this.scene.render();
     } else {
       // 連行荷重の場合
-      const LL_list = this.load.getMemberLoadJson(0, this.currentCaseId);
+      const LL_list = this.load.getMemberLoadJson(0, changeCase.toString());
       const LL_keys: string[] = Object.keys(LL_list);
       if (LL_keys.length > 0) {
-        this.animation(LL_keys, LL_list); //ループのきっかけ
-        return;
+        this.new_animation(LL_keys, LL_list); //ループのきっかけ
       }
     }
 
-    this.onResize();
-
-    this.scene.render();
   }
 
   /**
@@ -242,7 +254,7 @@ export class ThreeLoadService {
    * @param id ケース番号
    * @param isLL_Load 連行移動荷重を描画するか
    */
-  private visibleCaseChange(id: string, isLL_Load = false): void {
+  private visibleCaseChange(id: string): void {
     if (id === null) {
       // 非表示にして終わる
       for (const targetLoad of Object.values(this.AllCaseDataDict)) {
@@ -261,65 +273,133 @@ export class ThreeLoadService {
       this.addCase(id);
     }
 
-    // 荷重の表示非表示を切り替える
-    for (const [key, targetLoad] of Object.entries(this.AllCaseDataDict)) {
-      console.log("targetLoad", targetLoad);
-      const ThreeObject: THREE.Object3D = targetLoad.ThreeObject;
-      ThreeObject.visible = key === id ? true : false;
+    // 前のケースを非表示、新しいケースを表示（効率的な切り替え）
+    if (this.currentCaseId && this.currentCaseId in this.AllCaseDataDict) {
+      this.AllCaseDataDict[this.currentCaseId].ThreeObject.visible = false;
     }
 
-    // カレントデータをセット
-    if (isLL_Load == false) {
-      // 連行荷重アニメーション中は currentIndex は 親id のまま変えない
-      this.currentCaseId = id;
-    }
+    this.AllCaseDataDict[id].ThreeObject.visible = true;
+
+    // // 荷重の表示非表示を切り替える
+    // for (const [key, targetLoad] of Object.entries(this.AllCaseDataDict)) {
+    //   console.log("targetLoad", targetLoad);
+    //   const ThreeObject: THREE.Object3D = targetLoad.ThreeObject;
+    //   ThreeObject.visible = key === id ? true : false;
+    // }
+
+    // 連行荷重アニメーション中は currentIndex は 親id のまま変えない
+    this.currentCaseId = id;
   }
 
   /**
-   * 連行移動荷重のアニメーションを開始する
+   * 連行移動荷重のアニメーションを開始する（Three.js標準手法版）
    * @param keys ケース番号のリスト
-   * @param LL_list (未使用)
-   * @param i フレーム番号(0~9)
-   * @param old_j 処理中のケースの(keysの)インデックス番号
+   * @param LL_list 連行荷重データ
+   * @param duration 各ケース表示時間（秒）
    */
-  public animation(
-    keys: string[],
-    LL_list: any,
-    i: number = 0,
-    old_j: number = 0
+  public new_animation(
+    keys: string[], 
+    LL_list: any, 
+    duration: number = 0.5
   ): void {
-    // アニメーションのオブジェクトを解放
+    // 既存のアニメーションを停止
     this.cancelAnimation();
+    
+    // アニメーション設定
+    this.animationConfig.duration = duration;
+    this.animationConfig.isActive = true;
+    this.animationConfig.currentKeys = keys;
+    this.animationConfig.currentLL_list = LL_list;
+    this.animationConfig.previousIndex = -1; // 初期化
+    
+    // クロックをリセット
+    this.animationClock.start();
 
-    let j: number = Math.floor(i / 10); // 10フレームに１回位置を更新する
+    // アニメーションループを開始
+    this.animationLoop();
+  }
 
-    if (j < keys.length) {
-      i = i + 1; // 次のフレーム
-    } else {
-      i = 0;
-      j = 0;
+  /**
+   * アニメーションループ（時間ベース制御）
+   */
+  private animationLoop(): void {
+    if (!this.animationConfig.isActive) {
+      return;
+    }
+
+    // 経過時間を取得
+    const elapsedTime = this.animationClock.getElapsedTime();
+
+    // 現在表示すべきケースのインデックスを計算
+    const totalDuration = this.animationConfig.duration * this.animationConfig.currentKeys.length;
+    const normalizedTime = (elapsedTime % totalDuration) / totalDuration;
+    const currentIndex = Math.floor(normalizedTime * this.animationConfig.currentKeys.length);
+
+
+    // インデックスが変更された時のみ処理を実行
+    if (currentIndex !== this.animationConfig.previousIndex) {
+      this.animationConfig.previousIndex = currentIndex;
+
+      // 表示ケースを変更
+      const currentKey = this.animationConfig.currentKeys[currentIndex];
+
+      console.log(currentKey,
+        this.animationConfig.currentLL_list[currentKey][0].L1,
+        this.animationConfig.currentLL_list[currentKey][0].L2,
+        this.animationConfig.currentLL_list[currentKey][0].P1,
+        this.animationConfig.currentLL_list[currentKey][0].P2);
+
+      this.visibleCaseChange(currentKey);//, true);
+
+      // レンダリング
+      this.onResize();
+      this.scene.render();
     }
 
     // 次のフレームを要求
     this.animationHandle = requestAnimationFrame(() => {
-      this.animation(keys, LL_list, i, j);
+      this.animationLoop();
     });
-
-    if (j === old_j) {
-      return;
-    }
-
-    this.visibleCaseChange(keys[j], true);
-    // レンダリングする
-    this.scene.render();
   }
 
-  /** 連行移動荷重のアニメーションを終了する */
-  private cancelAnimation(): void {
-    if (this.animationHandle !== undefined) {
-      cancelAnimationFrame(this.animationHandle);
-      this.animationHandle = undefined;
-    }
+  /**
+   * 新しいアニメーションを停止する
+   */
+  public stopNewAnimation(): void {
+    this.animationConfig.isActive = false;
+    this.animationConfig.previousIndex = -1; // リセット
+    this.animationClock.stop();
+    this.cancelAnimation();
+  }
+
+  /**
+   * アニメーション設定を変更する
+   * @param duration 各ケース表示時間（秒）
+   */
+  public setAnimationDuration(duration: number): void {
+    this.animationConfig.duration = duration;
+  }
+
+  /**
+   * アニメーションの状態を取得する
+   */
+  public getAnimationStatus(): {
+    isActive: boolean;
+    elapsedTime: number;
+    currentIndex: number;
+    totalKeys: number;
+  } {
+    const elapsedTime = this.animationClock.getElapsedTime();
+    const totalDuration = this.animationConfig.duration * this.animationConfig.currentKeys.length;
+    const normalizedTime = (elapsedTime % totalDuration) / totalDuration;
+    const currentIndex = Math.floor(normalizedTime * this.animationConfig.currentKeys.length);
+    
+    return {
+      isActive: this.animationConfig.isActive,
+      elapsedTime: elapsedTime,
+      currentIndex: currentIndex,
+      totalKeys: this.animationConfig.currentKeys.length
+    };
   }
 
   /**
@@ -585,7 +665,7 @@ export class ThreeLoadService {
     }
 
     // 連行荷重の場合
-    this.animation(LL_keys, memberLoadData); //ループのきっかけ
+    this.new_animation(LL_keys, memberLoadData); //ループのきっかけ
   }
 
   /**
@@ -680,7 +760,8 @@ export class ThreeLoadService {
     const index = parseInt(this.currentCaseId, 10);
     const symbol: string = this.load.getLoadName(index, "symbol");
     if (symbol === "LL") {
-      this.change_LL_Load(this.currentCaseId);
+      const integerPart = this.currentCaseId.split('.')[0];
+      this.change_LL_Load(integerPart);
       return;
     }
 
@@ -1407,4 +1488,22 @@ export class ThreeLoadService {
 
     return this.getParent(item.parent);
   }
+
+  /** 連行移動荷重のアニメーションを終了する（新旧両対応） */
+  private cancelAnimation(): void {
+    // 従来のアニメーションを停止
+    if (this.animationHandle !== undefined) {
+      cancelAnimationFrame(this.animationHandle);
+      this.animationHandle = undefined;
+    }
+    
+    // 新しいアニメーションを停止
+    if (this.animationConfig.isActive) {
+      this.animationConfig.isActive = false;
+      this.animationConfig.previousIndex = -1;
+      this.animationClock.stop();
+    }
+  }
+
+
 }

@@ -762,51 +762,14 @@ export class InputLoadComponent implements OnInit, OnDestroy {
       },
       change: (evt, ui) => {
         console.log("UI: ", ui)
-        const symbol: string = this.data.getLoadName(this.page, "symbol");
-        if (symbol === "LL") {
-          // const modalRef = this.modalService.open(WaitDialogComponent);
-          this.three.changeData("load_values");
-          // modalRef.close();
-          return;
-        }
 
         // 入力制限
         for (const range of [...ui.addList, ...ui.updateList]) {
           range.rowData = this.fixRowData(range.rowData, this.helper.dimension);
         }
 
-        const updatedRows = [];
-        for (const range of ui.updateList) {
-          updatedRows.push(range.rowData.row);
-          // const row = range.rowIndx + 1;
-          // this.three.changeData("load_values", row);
-        }
-
+        const updatedRows = ui.updateList.map(range => range.rowData.row);
         this.three.changeDataList("load_values", { updatedRows });
-
-        for (const target of ui.addList) {
-          const no: number = target.rowIndx;
-          const newRow = target.newRow;
-          const load = this.data.getLoadColumns(this.page, no + 1);
-          // this.datasetに代入
-          load['m1'] = (newRow.m1 != undefined) ? newRow.m1 : '';
-          load['m2'] = (newRow.m2 != undefined) ? newRow.m2 : '';
-          load['direction'] = (newRow.direction != "") ? newRow.direction : '';
-          load['mark'] = (newRow.mark != undefined) ? newRow.mark : '';
-          load['L1'] = (newRow.L1 != undefined) ? newRow.L1 : '';
-          load['L2'] = (newRow.L2 != undefined) ? newRow.L2 : '';
-          load['P1'] = (newRow.P1 != undefined) ? newRow.P1 : '';
-          load['P2'] = (newRow.P2 != undefined) ? newRow.P2 : '';
-          load['n'] = (newRow.n != undefined) ? newRow.n : '';
-          load['tx'] = (newRow.tx != undefined) ? newRow.tx : '';
-          load['ty'] = (newRow.ty != undefined) ? newRow.ty : '';
-          load['tz'] = (newRow.tz != undefined) ? newRow.tz : '';
-          load['rx'] = (newRow.rx != undefined) ? newRow.rx : '';
-          load['ry'] = (newRow.ry != undefined) ? newRow.ry : '';
-          load['rz'] = (newRow.rz != undefined) ? newRow.rz : '';
-          this.dataset.splice(no, 1, load);
-          this.three.changeData("load_values", no + 1);
-        }
 
         // ハイライトの処理を再度実行する
         const row = ui.updateList[0].rowIndx + 1;

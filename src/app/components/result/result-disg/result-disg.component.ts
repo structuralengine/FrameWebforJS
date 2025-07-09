@@ -15,6 +15,7 @@ import { SheetComponent } from '../../input/sheet/sheet.component';
 import { AppComponent } from 'src/app/app.component';
 import pq from "pqgrid";
 import { TranslateService } from '@ngx-translate/core';
+import { PagerDirectionService } from '../../input/pager-direction/pager-direction.service';
 
 @Component({
   selector: "app-result-disg",
@@ -26,42 +27,19 @@ import { TranslateService } from '@ngx-translate/core';
   ],
 })
 export class ResultDisgComponent implements OnInit, OnDestroy {
+  private directionSubscription: Subscription;
   private subscription: Subscription;
   public KEYS: string[];
-  public TITLES: string[];
-  public height: any;
-  dataset: any[];
-  page: number;
-  load_name: string;
-  btnCombine: string;
-  btnPickup: string;
-  dimension: number;
+  page: number = 1;
+  private currentKey: any = 0;
 
-  LL_flg: boolean[];
   LL_page: boolean;
-  cal: number = 0;
 
-  circleBox = new Array();
-
-  private column3Ds: any[] = [
-    { title: "result.result-disg.No", id: "id", format: "" },
-    { title: "result.result-disg.x_movement", id: "dx", format:'#.0000' },
-    { title: "result.result-disg.y_movement", id: "dy", format:'#.0000' },
-    { title: "result.result-disg.z_movement", id: "dz", format:'#.0000' },
-    { title: "result.result-disg.x_rotation", id: "rx", format:'#.0000' },
-    { title: "result.result-disg.y_rotation", id: "ry", format:'#.0000' },
-    { title: "result.result-disg.z_rotation", id: "rz", format:'#.0000' },
-  ];
-  private columnHeaders3D = this.result.initColumnTable(this.column3Ds, 80);
-
-  private column2Ds: any[] = [
-    { title: "result.result-disg.No", id: "id", format:'' },
-    { title: "result.result-disg.x_movement", id: "dx", format:'#.0000' },
-    { title: "result.result-disg.y_movement", id: "dy", format:'#.0000' },
-    { title: "result.result-disg.z_rotation", id: "rz", format:'#.0000' },
-  ];
-  private columnHeaders2D = this.result.initColumnTable(this.column2Ds, 80);
+  private columnHeaders3D = this.result.initColumnTable(this.data.column3Ds, 80);
+  private columnHeaders2D = this.result.initColumnTable(this.data.column2Ds, 80);
   
+  private columnHeaders3D_LL = this.result.initColumnTable(this.comb.column3Ds, 80);
+  private columnHeaders2D_LL = this.result.initColumnTable(this.comb.column2Ds, 80);
 
   constructor(
     private app: AppComponent,
@@ -72,61 +50,36 @@ export class ResultDisgComponent implements OnInit, OnDestroy {
     private comb: ResultCombineDisgService,
     private pic: ResultPickupDisgService,
     private helper: DataHelperModule,
+    private pagerDirectionService: PagerDirectionService,
     private pagerService: PagerService,
     public docLayout: DocLayoutService,
     private translate: TranslateService,
   ) {
-    this.dataset = new Array();
-    this.dimension = this.helper.dimension;
     this.KEYS = this.comb.disgKeys;
-    this.TITLES = this.comb.titles;
-    for (let i = 0; i < this.TITLES.length; i++) {
-      this.circleBox.push(i);
-    }
 
     if (this.result.case != "basic") {
       this.result.page = 1;
       this.result.case = "basic";
     }
+    this.directionSubscription =
+    this.pagerDirectionService.pageSelected$.subscribe((text) => {
+      this.onChangeKey(text);
+    });
     this.subscription = this.pagerService.pageSelected$.subscribe((text) => {
       this.onReceiveEventFromChild(text);
     });
   }
 
   ngOnInit() {
-    // this.loadPage(this.result.page);
     this.ROWS_COUNT = this.rowsCount();
-    this.loadData(1, this.ROWS_COUNT);
-    setTimeout(() => {
-      const circle = document.getElementById(String(this.cal + 20));
-      if (circle !== null) {
-        circle.classList.add("active");
-      }
-    }, 10);
-
-    this.LL_flg = this.data.LL_flg;
-
-    // コンバインデータがあればボタンを表示する
-    if (this.comb.isCalculated === true) {
-      this.btnCombine = "btn-change";
-    } else {
-      this.btnCombine = "btn-change disabled";
-    }
-    // ピックアップデータがあればボタンを表示する
-    if (this.pic.isCalculated === true) {
-      this.btnPickup = "btn-change";
-    } else {
-      this.btnPickup = "btn-change disabled";
-    }
+    this.loadData(this.page || 1, this.ROWS_COUNT);
   }
-  ngAfterViewInit() {
-    this.docLayout.handleMove.subscribe((data) => {
-      // this.height = 400; //data - 100;
-      this.options.height = data - 60;
-    });
-  }
+
   ngOnDestroy() {
     this.subscription.unsubscribe();
+    this.directionSubscription.unsubscribe();
+    // コンポーネント破棄時にLL_pageをリセット
+    this.helper.LL_page = false;
   }
 
   //　pager.component からの通知を受け取る
@@ -140,67 +93,15 @@ export class ResultDisgComponent implements OnInit, OnDestroy {
     this.three.ChangePage(pageNew);
   }
 
-  loadPage(currentPage: number) {
-    if (currentPage !== this.result.page) {
-      this.result.page = currentPage;
-    }
+  onChangeKey(text: any) {
+    this.currentKey = text - 1;
 
-    this.load_name = this.load.getLoadName(currentPage);
-
-    if (this.result.page <= this.data.LL_flg.length) {
-      this.LL_page = this.data.LL_flg[this.result.page - 1];
-    } else {
-      this.LL_page = false;
-    }
-
-    if (this.LL_page === true) {
-      this.dataset = new Array();
-      for (const key of this.KEYS) {
-        this.dataset.push(this.data.getDisgColumns(this.result.page, key));
-      }
-    } else {
-      this.dataset = this.data.getDisgColumns(this.result.page);
-    }
-
-    this.three.ChangeMode("disg");
+    this.datasetNew.splice(0);
+    this.ROWS_COUNT = this.rowsCount();
+    const currentPage = this.page || 1;
+    this.loadData(currentPage, this.ROWS_COUNT);
+    this.grid.refreshDataAndView();
     this.three.ChangePage(currentPage);
-  }
-
-  calPage(calPage: any) {
-    const carousel = document.getElementById("carousel");
-    if (carousel != null) {
-      carousel.classList.add("add");
-    }
-    const time = this.TITLES.length;
-    let cal = this.cal;
-    setTimeout(() => {
-      this.calcal(calPage);
-    }, 100);
-    setTimeout(function () {
-      if (carousel != null) {
-        carousel.classList.remove("add");
-      }
-    }, 500);
-  }
-
-  calcal(calpage: any) {
-    if (calpage === "-1" || calpage === "1") {
-      this.cal += Number(calpage);
-      if (this.cal >= this.TITLES.length) {
-        this.cal = 0;
-      }
-      if (this.cal < 0) {
-        this.cal = this.TITLES.length - 1;
-      }
-    } else {
-      this.cal = calpage;
-    }
-    setTimeout(() => {
-      const circle = document.getElementById(String(this.cal + 20));
-      if (circle !== null) {
-        circle.classList.add("active");
-      }
-    }, 10);
   }
 
   @ViewChild("grid") grid: SheetComponent;
@@ -209,14 +110,42 @@ export class ResultDisgComponent implements OnInit, OnDestroy {
   private ROWS_COUNT = 15;
 
   private loadData(currentPage: number, row: number): void {
-    for (let i = this.datasetNew.length; i <= row; i++) {
-      const define = this.data.getDataColumns(currentPage, i);
-      this.datasetNew.push(define);
+
+    // 連行荷重`LL`か判定
+    if (currentPage <= this.data.LL_flg.length) {
+      this.LL_page = this.data.LL_flg[currentPage - 1];
+    } else {
+      this.LL_page = false;
     }
+
+    // DataHelperModuleのLL_page状態を更新
+    this.helper.LL_page = this.LL_page;
+
+    // データロード
+    if (this.LL_page === true) {
+      this.options.colModel = this.helper.dimension === 3 ? this.columnHeaders3D_LL : this.columnHeaders2D_LL;
+
+      let key = this.KEYS[this.currentKey];
+      for (let i = this.datasetNew.length; i <= row; i++) {
+        const define = this.data.getDataColumns(currentPage, i, key);
+        this.datasetNew.push(define);
+      }
+    } else {
+      this.options.colModel = this.helper.dimension === 3 ? this.columnHeaders3D : this.columnHeaders2D;
+
+      for (let i = this.datasetNew.length; i <= row; i++) {
+        const define = this.data.getDataColumns(currentPage, i);
+        this.datasetNew.push(define);
+      }
+    }
+
     this.page = currentPage;
+
+    // three.jsの表示を変更
     this.three.ChangeMode("disg");
     this.three.ChangePage(currentPage);
   }
+
 
   private tableHeight(): string {
     const containerHeight =
@@ -266,7 +195,8 @@ export class ResultDisgComponent implements OnInit, OnDestroy {
         return;
       }
       if (finalV >= dataV - 1) {
-        this.loadData(this.page, dataV + this.ROWS_COUNT);
+        const currentPage = this.page || 1;
+        this.loadData(currentPage, dataV + this.ROWS_COUNT);
         this.grid.refreshDataAndView();
       }
     },

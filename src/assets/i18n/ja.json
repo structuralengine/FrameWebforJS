@@ -410,7 +410,8 @@
             "elementNo": "要素No",
             "SupType": "支点TYPE.",
             "SprType": "バネTYPE.",
-            "SupSpr": "は、支点もバネもありません。"
+            "SupSpr": "は、支点もバネもありません。",
+            "unflat_panel": "平面ではないパネルがあります。パネル番号："
         }
     },
     "modal": {
