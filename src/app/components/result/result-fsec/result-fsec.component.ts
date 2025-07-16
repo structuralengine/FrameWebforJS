@@ -20,6 +20,7 @@ import { InputNodesService } from '../../input/input-nodes/input-nodes.service';
 import { ThreeSectionForceService } from '../../three/geometry/three-section-force/three-section-force.service';
 import { ThreePanelService } from '../../three/geometry/three-panel.service';
 import { ColorPaletteService } from '../../three/color-palette/color-palette.service';
+import { PagerDirectionService } from '../../input/pager-direction/pager-direction.service';
 
 @Component({
   selector: 'app-result-fsec',
@@ -32,44 +33,17 @@ import { ColorPaletteService } from '../../three/color-palette/color-palette.ser
 })
 export class ResultFsecComponent implements OnInit, OnDestroy {
   private subscription: Subscription;
+  private directionSubscription: Subscription;
   public KEYS: string[];
-  public TITLES: string[];
-  public height: any;
-  public panelData : any[] = [];
-  dataset: any[];
   page: number = 1;
-  load_name: string;
-  btnCombine: string;
-  btnPickup: string;
-  dimension: number;
-  LL_flg: boolean[];
+  currentKey: any = 0;
   LL_page: boolean;
-  cal: number = 0;
 
-  circleBox = new Array();
+  private columnHeaders3D = this.result.initColumnTable(this.data.column3Ds, 80);
+  private columnHeaders3D_LL = this.result.initColumnTable(this.comb.column3Ds, 80);
 
-  private column3Ds: any[] = [
-    { title: "result.result-fsec.memberNo", id: "m", format: "", width: -40 },
-    { title: "result.result-fsec.nodeNo", id: "n", format: "", width: -40 },
-    { title: "result.result-fsec.stationLocation", id: "l", format: "#.000" },
-    { title: "result.result-fsec.axialForce", id: "fx", format:'#.00' },
-    { title: "result.result-fsec.y_shear", id: "fy", format:'#.00' },
-    { title: "result.result-fsec.z_shear", id: "fz", format:'#.00' },
-    { title: "result.result-fsec.x_torsion", id: "mx", format:'#.00' },
-    { title: "result.result-fsec.y_moment", id: "my", format:'#.00' },
-    { title: "result.result-fsec.z_moment", id: "mz", format:'#.00' },
-  ];
-  private columnHeaders3D = this.result.initColumnTable(this.column3Ds, 80);
-
-  private column2Ds: any[] = [
-    { title: "result.result-fsec.memberNo", id: "m", format: "", width: -40 },
-    { title: "result.result-fsec.nodeNo", id: "n", format: "", width: -40 },
-    { title: "result.result-fsec.stationLocation", id: "l", format: "#.000" },
-    { title: "result.result-fsec.axialForce", id: "fx", format:'#.00' },
-    { title: "result.result-fsec.shear", id: "fy", format:'#.00' },
-    { title: "result.result-fsec.moment", id: "mz", format:'#.00' },
-  ];
-  private columnHeaders2D = this.result.initColumnTable(this.column2Ds, 80);
+  private columnHeaders2D = this.result.initColumnTable(this.data.column2Ds, 80);
+  private columnHeaders2D_LL = this.result.initColumnTable(this.comb.column2Ds, 80);
 
 
   constructor(
@@ -83,6 +57,7 @@ export class ResultFsecComponent implements OnInit, OnDestroy {
     private comb: ResultCombineFsecService,
     private pic: ResultPickupFsecService,
     private helper: DataHelperModule,
+    private pagerDirectionService: PagerDirectionService,
     private pagerService: PagerService,
     public docLayout: DocLayoutService,
     private translate: TranslateService  ,
@@ -90,67 +65,33 @@ export class ResultFsecComponent implements OnInit, OnDestroy {
     private three_panel: ThreePanelService,
     public colorPaletteService: ColorPaletteService
   ) {
-    this.dataset = new Array();
-    this.dimension = this.helper.dimension;
     this.KEYS = this.comb.fsecKeys;
-    this.TITLES = this.comb.titles;
-    for (let i = 0; i < this.TITLES.length; i++) {
-      this.circleBox.push(i);
-    }
 
     if (this.result.case != 'basic') {
       this.result.page = 1;
       this.result.case = 'basic';
     }
+    this.directionSubscription =
+      this.pagerDirectionService.pageSelected$.subscribe((text) => {
+        this.onChangeKey(text);
+      });
     this.subscription = this.pagerService.pageSelected$.subscribe((text) => {
       this.onReceiveEventFromChild(text);
     });
-
-    
-
-    this.COLUMNS_COUNT = this.load.getLoadCaseCount() * 2 + 1;
-      if (this.COLUMNS_COUNT <= 10) {
-        this.COLUMNS_COUNT = 10;
-      }
-      
   }
 
   ngOnInit() {
     this.colorPaletteService.setControlShowHide(true);
-    // this.loadPage(this.result.page);
     this.ROWS_COUNT = this.rowsCount();
-    this.loadData(1, this.ROWS_COUNT);
-    setTimeout(() => {
-      const circle = document.getElementById(String(this.cal + 20));
-      if (circle !== null) {
-        circle.classList.add('active');
-      }
-    }, 10);
-
-    this.LL_flg = this.data.LL_flg;
-
-    // コンバインデータがあればボタンを表示する
-    if (this.comb.isCalculated === true) {
-      this.btnCombine = 'btn-change';
-    } else {
-      this.btnCombine = 'btn-change disabled';
-    }
-    // ピックアップデータがあればボタンを表示する
-    if (this.pic.isCalculated === true) {
-      this.btnPickup = 'btn-change';
-    } else {
-      this.btnPickup = 'btn-change disabled';
-    }
+    this.loadData(this.page || 1, this.ROWS_COUNT);
   }
-  ngAfterViewInit() {
-    this.docLayout.handleMove.subscribe(data => {
-      // this.height = data - 100;
-      this.options.height = data - 60;
-      });
-  }
+
   ngOnDestroy() {
     this.subscription.unsubscribe();
+    this.directionSubscription.unsubscribe();
     this.colorPaletteService.setControlShowHide(false);
+    // コンポーネント破棄時にLL_pageをリセット
+    this.helper.LL_page = false;
   }
 
   //　pager.component からの通知を受け取る
@@ -163,86 +104,58 @@ export class ResultFsecComponent implements OnInit, OnDestroy {
     this.three.ChangePage(pageNew);
   }
 
-  loadPage(currentPage: number) {
-    if (currentPage !== this.result.page) {
-      this.result.page = currentPage;
-    }
+  onChangeKey(text: any) {
+    this.currentKey = text - 1;
 
-    this.load_name = this.load.getLoadName(currentPage);
-
-    if (this.result.page <= this.data.LL_flg.length) {
-      this.LL_page = this.data.LL_flg[this.result.page - 1];
-    } else {
-      this.LL_page = false;
-    }
-
-    if (this.LL_page === true) {
-      this.dataset = new Array();
-      for (const key of this.KEYS) {
-        this.dataset.push(this.data.getFsecColumns(this.result.page, key));
-      }
-    } else {
-      this.dataset = this.data.getFsecColumns(this.result.page);
-    }
-    this.three.ChangeMode('fsec');
+    this.datasetNew.splice(0);
+    this.ROWS_COUNT = this.rowsCount();
+    const currentPage = this.page || 1;
+    this.loadData(currentPage, this.ROWS_COUNT);
+    this.grid.refreshDataAndView();
     this.three.ChangePage(currentPage);
   }
 
-  calPage(calPage: any) {
-    const carousel = document.getElementById('carousel');
-    if (carousel != null) {
-      carousel.classList.add('add');
-    }
-    const time = this.TITLES.length;
-    let cal = this.cal;
-    setTimeout(() => {
-      this.calcal(calPage);
-    }, 100);
-    setTimeout(function () {
-      if (carousel != null) {
-        carousel.classList.remove('add');
-      }
-    }, 500);
-  }
-
-  calcal(calpage: any) {
-    if (calpage === '-1' || calpage === '1') {
-      this.cal += Number(calpage);
-      if (this.cal >= this.TITLES.length) {
-        this.cal = 0;
-      }
-      if (this.cal < 0) {
-        this.cal = this.TITLES.length - 1;
-      }
-    } else {
-      this.cal = calpage;
-    }
-    setTimeout(() => {
-      const circle = document.getElementById(String(this.cal + 20));
-      if (circle !== null) {
-        circle.classList.add('active');
-      }
-    }, 10);
-  }
-
-
-  @ViewChild('grid') grid: SheetComponent;
+   @ViewChild('grid') grid: SheetComponent;
 
   private datasetNew = [];
-  private columnHeaders =[];
-
   private ROWS_COUNT = 15;
-  private COLUMNS_COUNT = 5;
 
   private loadData(currentPage: number, row: number): void {
     this.three_panel.ClearData();
     this.three_fesc.ClearDataGradient();
-    for (let i = this.datasetNew.length; i <= row; i++) {
-      const define = this.data.getDataColumns(currentPage, i);
-      this.datasetNew.push(define);  
+
+    // 連行荷重`LL`か判定
+    if (currentPage <= this.data.LL_flg.length) {
+      this.LL_page = this.data.LL_flg[currentPage - 1];
+    } else {
+      this.LL_page = false;
     }
+
+    // DataHelperModuleのLL_page状態を更新
+    this.helper.LL_page = this.LL_page;
+
+    // データロード
+    if (this.LL_page === true) {
+      this.options.colModel = this.helper.dimension === 3 ? this.columnHeaders3D_LL : this.columnHeaders2D_LL;
+
+      let key = this.KEYS[this.currentKey];
+      for (let i = this.datasetNew.length; i <= row; i++) {
+        const define = this.data.getDataColumns(currentPage, i, key);
+        this.datasetNew.push(define);
+      }
+    } else {
+      this.options.colModel = this.helper.dimension === 3 ? this.columnHeaders3D : this.columnHeaders2D;
+
+      for (let i = this.datasetNew.length; i <= row; i++) {
+        const define = this.data.getDataColumns(currentPage, i);
+        this.datasetNew.push(define);
+      }
+    }
+
     this.page = currentPage;
-    this.three.ChangeMode('fsec');
+
+    // three.jsの表示を変更
+    this.three.ChangeMode("fsec");
     this.three.ChangePage(currentPage);
     this.three_fesc.drawGradientPanel();
   }
@@ -257,7 +170,7 @@ export class ResultFsecComponent implements OnInit, OnDestroy {
     return Math.round(containerHeight / 30);
   }
 
-  options: pq.gridT.options = {
+  public options: pq.gridT.options = {
     showTop: false,
     reactive: true,
     sortable: false,

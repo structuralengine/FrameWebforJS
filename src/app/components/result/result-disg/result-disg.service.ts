@@ -16,6 +16,22 @@ export class ResultDisgService {
   private worker4: Worker;
   private columns: any; // 表示用
 
+  public column3Ds: any[] = [
+    { title: "result.result-disg.No", id: "id", format: "" },
+    { title: "result.result-disg.x_movement", id: "dx", format:'#.0000' },
+    { title: "result.result-disg.y_movement", id: "dy", format:'#.0000' },
+    { title: "result.result-disg.z_movement", id: "dz", format:'#.0000' },
+    { title: "result.result-disg.x_rotation", id: "rx", format:'#.0000' },
+    { title: "result.result-disg.y_rotation", id: "ry", format:'#.0000' },
+    { title: "result.result-disg.z_rotation", id: "rz", format:'#.0000' },
+  ];
+  public column2Ds: any[] = [
+    { title: "result.result-disg.No", id: "id", format:'' },
+    { title: "result.result-disg.x_movement", id: "dx", format:'#.0000' },
+    { title: "result.result-disg.y_movement", id: "dy", format:'#.0000' },
+    { title: "result.result-disg.z_rotation", id: "rz", format:'#.0000' },
+  ];
+
   public LL_flg = [];
 
   constructor(
@@ -73,32 +89,39 @@ export class ResultDisgService {
     return new Array();
   }
 
-  public getDataColumns(currentPage:number, row: number):any{
+  public getDataColumns(currentPage:number, row: number, mode: string = null):any{
+
+    let result = {
+      id : "",
+      dx : "", 
+      dy : "", 
+      dz : "", 
+      rx : "", 
+      ry : "", 
+      rz : "",
+      comb: "",
+      case: ""
+    };
+
     let results: any = this.disg[currentPage];
     if(results == undefined){
-      return {
-        id : "",
-        dx : "", 
-        dy : "", 
-        dz : "", 
-        rx : "", 
-        ry : "", 
-        rz : ""
-      }
+      return result;
     };
-    let result = results[row] != undefined ? results[row] : undefined;
-    // 対象データが無かった時に処理
-    if (result === undefined) {
-      result = {
-        id : "",
-        dx : "", 
-        dy : "", 
-        dz : "", 
-        rx : "", 
-        ry : "", 
-        rz : ""
-      };
+
+    if (mode in results) {
+      let modes = results[mode] != undefined ? results[mode] : undefined;
+      if (modes != undefined) {
+        const keys = Object.keys(modes);
+        const key = keys[row];
+        if(modes[key] != undefined){
+          result = modes[key];
+          result["id"] = key;
+        }
+      }
+    } else if(results[row] != undefined) {
+      result = results[row];
     }
+
     return result;
   }
 

@@ -45,30 +45,8 @@ export class ResultCombineFsecComponent implements OnInit, OnDestroy {
 
   circleBox = new Array();
 
-  private column3Ds: any[] = [
-    { title: "result.result-combine-fsec.memberNo", id: "m" , format: "", width: -40 },
-    { title: "result.result-combine-fsec.nodeNo", id: "n" , format: "", width: -40 },
-    { title: "result.result-combine-fsec.stationLocation", id: "l", format: "#.000" },
-    { title: "result.result-combine-fsec.axialForce", id: "fx", format: "#.00" },
-    { title: "result.result-combine-fsec.y_shear", id: "fy", format: "#.00" },
-    { title: "result.result-combine-fsec.z_shear", id: "fz", format: "#.00" },
-    { title: "result.result-combine-fsec.x_torsion", id: "mx", format: "#.00" },
-    { title: "result.result-combine-fsec.y_moment", id: "my", format: "#.00" },
-    { title: "result.result-combine-fsec.z_moment", id: "mz", format: "#.00" },
-    { title: "result.result-combine-fsec.comb", id: "case", format: "#.00", width: 40 },
-  ];
-  private columnHeaders3D = this.result.initColumnTable(this.column3Ds, 80);
-
-  private column2Ds: any[] = [
-    { title: "result.result-combine-fsec.memberNo", id: "m", format: "", width: -40 },
-    { title: "result.result-combine-fsec.nodeNo", id: "n", format: "", width: -40 },
-    { title: "result.result-combine-fsec.stationLocation", id: "l", format: "#.000" },
-    { title: "result.result-combine-fsec.axialForce", id: "fx", format: "#.00" },
-    { title: "result.result-combine-fsec.shear", id: "fy", format: "#.00" },
-    { title: "result.result-combine-fsec.moment", id: "mz", format: "#.00" },
-    { title: "result.result-combine-fsec.comb", id: "case", format: "#.00", width: 40 },
-  ];
-  private columnHeaders2D = this.result.initColumnTable(this.column2Ds, 80);
+  private columnHeaders3D = this.result.initColumnTable(this.data.column3Ds, 80);
+  private columnHeaders2D = this.result.initColumnTable(this.data.column2Ds, 80);
 
   private currentKey: any = 0;
 

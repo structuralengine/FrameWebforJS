@@ -18,6 +18,28 @@ export class ResultFsecService {
   private worker4: Worker;
   private columns: any;
 
+  public column3Ds: any[] = [
+    { title: "result.result-fsec.memberNo", id: "m", format: "", width: -40 },
+    { title: "result.result-fsec.nodeNo", id: "n", format: "", width: -40 },
+    { title: "result.result-fsec.stationLocation", id: "l", format: "#.000" },
+    { title: "result.result-fsec.axialForce", id: "fx", format:'#.00' },
+    { title: "result.result-fsec.y_shear", id: "fy", format:'#.00' },
+    { title: "result.result-fsec.z_shear", id: "fz", format:'#.00' },
+    { title: "result.result-fsec.x_torsion", id: "mx", format:'#.00' },
+    { title: "result.result-fsec.y_moment", id: "my", format:'#.00' },
+    { title: "result.result-fsec.z_moment", id: "mz", format:'#.00' },
+  ];
+
+  public column2Ds: any[] = [
+    { title: "result.result-fsec.memberNo", id: "m", format: "", width: -40 },
+    { title: "result.result-fsec.nodeNo", id: "n", format: "", width: -40 },
+    { title: "result.result-fsec.stationLocation", id: "l", format: "#.000" },
+    { title: "result.result-fsec.axialForce", id: "fx", format:'#.00' },
+    { title: "result.result-fsec.shear", id: "fy", format:'#.00' },
+    { title: "result.result-fsec.moment", id: "mz", format:'#.00' },
+  ];
+
+
   public LL_flg = [];
 
   constructor(
@@ -60,58 +82,40 @@ export class ResultFsecService {
     this.fsec =  new Array();
   }
 
-public clearGradient(){
-  this.three.ClearDataGradient();
-}
-
-  public getFsecColumns(typNo: number, mode: string = null): any {
-    const key: string = typNo.toString();
-    if (!(key in this.columns)) {
-      return new Array();
-    }
-    const col = this.columns[key];
-    if (mode === null) {
-      return col;
-    } else {
-      if (mode in col) {
-        return col[mode]; // 連行荷重の時は combine のようになる
-      }
-    }
-
-    return new Array();
+  public clearGradient(){
+    this.three.ClearDataGradient();
   }
 
+  public getDataColumns(currentPage:number, row: number, mode: string = null):any{
 
-  public getDataColumns(currentPage:number, row: number):any{
+    let result = {
+      n: "",
+      m: "",
+      l:"",
+      mx: "",
+      my: "",
+      mz: "",
+      fx: "",
+      fy: "",
+      fz: "",
+      case: "",
+    };
+
     let results: any = this.fsec[currentPage];
     if(results == undefined){
-      return {
-        n: "",
-        m: "",
-        l:"",
-        mx: "",
-        my: "",
-        mz: "",
-        fx: "",
-        fy: "",
-        fz: ""
-      }
+      return result;
     };
-    let result = results[row] != undefined ? results[row] : undefined;
-    // 対象データが無かった時に処理
-    if (result === undefined) {
-      result = {
-        n: "",
-        m: "",
-        l:"",
-        mx: "",
-        my: "",
-        mz: "",
-        fx: "",
-        fy: "",
-        fz: "",
-      };
+
+    if (mode in results) {
+      let modes = results[mode] != undefined ? results[mode] : undefined;
+      if (modes != undefined) {
+        if(modes[row] != undefined)
+          result = modes[row];
+      }
+    } else if(results[row] != undefined) {
+      result = results[row];
     }
+
     return result;
   }
 
@@ -211,6 +215,9 @@ public clearGradient(){
         const caseList: string[] = [caseNo];
         const key0: string = target_LL_Keys[0];
         const tmp_max_values = (caseNo in org_max_values) ? org_max_values[caseNo] : org_max_values[key0];
+        
+        // value_rangesの初期値を設定（最初のLL_Keyの値を使用）
+        const tmp_value_ranges = JSON.parse(JSON.stringify(org_value_ranges[key0]));
 
         for (const k of target_LL_Keys) {
           // ケースを追加
@@ -218,17 +225,45 @@ public clearGradient(){
 
           // max_valuesを更新
           const target_max_values = org_max_values[k];
-          //const target_value_ranges = org_value_ranges[k];
+          const target_value_ranges = org_value_ranges[k];
+          
           for (const kk of Object.keys(tmp_max_values)) {
             if (tmp_max_values[kk] < target_max_values[kk]) {
               tmp_max_values[kk] = target_max_values[kk];
+            }
+          }
+          
+          // value_rangesを更新
+          for (const axis of ['x', 'y', 'z']) {
+            // max_dの比較と更新
+            if (tmp_value_ranges[axis].max_d < target_value_ranges[axis].max_d) {
+              tmp_value_ranges[axis].max_d = target_value_ranges[axis].max_d;
+              tmp_value_ranges[axis].max_d_m = target_value_ranges[axis].max_d_m;
+            }
+            
+            // min_dの比較と更新
+            if (tmp_value_ranges[axis].min_d > target_value_ranges[axis].min_d) {
+              tmp_value_ranges[axis].min_d = target_value_ranges[axis].min_d;
+              tmp_value_ranges[axis].min_d_m = target_value_ranges[axis].min_d_m;
+            }
+            
+            // max_rの比較と更新
+            if (tmp_value_ranges[axis].max_r < target_value_ranges[axis].max_r) {
+              tmp_value_ranges[axis].max_r = target_value_ranges[axis].max_r;
+              tmp_value_ranges[axis].max_r_m = target_value_ranges[axis].max_r_m;
+            }
+            
+            // min_rの比較と更新
+            if (tmp_value_ranges[axis].min_r > target_value_ranges[axis].min_r) {
+              tmp_value_ranges[axis].min_r = target_value_ranges[axis].min_r;
+              tmp_value_ranges[axis].min_r_m = target_value_ranges[axis].min_r_m;
             }
           }
         }
         defList[caseNo] = caseList;
         combList[caseNo] = [{ caseNo, coef: 1 }];
         max_values[caseNo] = tmp_max_values;
-        //value_ranges[caseNo] = tmp_value_ranges;
+        value_ranges[caseNo] = tmp_value_ranges;
       }
     }
 
