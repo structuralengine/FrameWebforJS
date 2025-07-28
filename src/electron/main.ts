@@ -15,6 +15,29 @@ let check = -1;
 let locale = 'ja';
 let authProvider : AuthProvider;
 autoUpdater.autoDownload = false
+
+// パッケージ化後の環境を考慮したパス解決
+const getAssetsPath = () =>
+  isDev
+    ? path.join(__dirname, '../assets/i18n')
+    : path.join(process.resourcesPath, 'app/assets/i18n');
+
+export function getLangText(locale: string, fallback: string = 'ja'): any {
+  const assetsPath = getAssetsPath();
+  const readLangFile = (loc: string) => {
+    const filePath = path.join(assetsPath, `${loc}.json`);
+    const jsonString = fs.readFileSync(filePath, 'utf-8');
+    return JSON.parse(jsonString);
+  };
+
+  try {
+    return readLangFile(locale);
+  } catch (error) {
+    console.warn(`Failed to load locale '${locale}', falling back to '${fallback}'`, error);
+    return readLangFile(fallback);
+  }
+}
+
 async function createWindow() {
   check = -1;
   const successMessage = buildSuccessMessage(locale);
@@ -31,11 +54,7 @@ async function createWindow() {
   mainWindow.on('close', function (e) {
     if (check == -1) {
       try {
-        const assetsPath = isDev 
-          ? path.join(__dirname, '../assets/i18n')
-          : path.join(process.resourcesPath, 'app/assets/i18n');
-        const langFilePath = path.join(assetsPath, `${locale}.json`);
-        const langText = JSON.parse(fs.readFileSync(langFilePath, 'utf-8'));
+        const langText = getLangText(locale)
         let choice = dialog.showMessageBoxSync(this,
           {
             type: 'question',
@@ -78,11 +97,7 @@ autoUpdater.on('download-progress', (progressObj) => {
 autoUpdater.on('update-downloaded', (info) => {
   log.info('Update-downloaded', info)
   try {
-    const assetsPath = isDev 
-      ? path.join(__dirname, '../assets/i18n')
-      : path.join(process.resourcesPath, 'app/assets/i18n');
-    const langFilePath = path.join(assetsPath, `${locale}.json`);
-    const langText = JSON.parse(fs.readFileSync(langFilePath, 'utf-8'));
+    const langText = getLangText(locale)
     let choice = dialog.showMessageBoxSync(mainWindow,
       {
         type: 'question',
@@ -236,24 +251,7 @@ ipcMain.on(IPC_MESSAGES.LOGOUT, async () => {
 });
 
 function buildSuccessMessage(locale: string): string {
-  let langText;
-  try {
-    // パッケージ化後の環境を考慮したパス解決
-    const assetsPath = isDev 
-      ? path.join(__dirname, '../assets/i18n')
-      : path.join(process.resourcesPath, 'app/assets/i18n');
-    const filePath = path.join(assetsPath, `${locale}.json`);
-    const jsonString = fs.readFileSync(filePath, 'utf-8');
-    langText = JSON.parse(jsonString);
-  } catch (error) {
-    console.warn(`Failed to load locale '${locale}', falling back to 'ja'`, error);
-    const assetsPath = isDev 
-      ? path.join(__dirname, '../assets/i18n')
-      : path.join(process.resourcesPath, 'app/assets/i18n');
-    const fallbackPath = path.join(assetsPath, 'ja.json');
-    const fallbackString = fs.readFileSync(fallbackPath, 'utf-8');
-    langText = JSON.parse(fallbackString);
-  }
+  const langText = getLangText(locale);
 
   return `
     <!DOCTYPE html>
