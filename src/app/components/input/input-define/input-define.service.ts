@@ -76,10 +76,14 @@ export class InputDefineService {
   }
 
   // 補助関数 ///////////////////////////////////////////////////////////////
-  // 有効な DEFINEケース数を調べる
+
+  /**
+   * DEFINEケース番号の最大値を返す
+   * @returns DEFINEケース番号の最大値
+   */
   public getDefineCaseCount(): number {
     const dict = this.getDefineJson();
-    return Object.keys(dict).length;
+    return Math.max(...Object.keys(dict).map(k => Number(k)));
   }
 
   
