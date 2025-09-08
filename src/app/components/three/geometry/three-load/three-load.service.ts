@@ -829,8 +829,7 @@ export class ThreeLoadService {
 
     // 荷重の最大値を調べる
     new Set(
-      ...Object.keys(nodeLoadData),
-      ...Object.keys(memberLoadData)
+      Object.keys(nodeLoadData).concat(Object.keys(memberLoadData))
     ).forEach((caseStr) => {
       this.updateMaxLoad(caseStr);
     });
