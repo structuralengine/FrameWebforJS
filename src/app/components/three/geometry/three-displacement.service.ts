@@ -300,7 +300,11 @@ export class ThreeDisplacementService {
     }
     const maxValue: number = this.max_values[targetKey2];
     if (maxValue > 0) {
-      this.targetData['scale'] = this.three_node.maxDistance * 0.1 / maxValue;
+      let s = this.three_node.maxDistance * 0.1 / maxValue;
+      if (s === Infinity) {
+        s = 1;
+      }
+      this.targetData['scale'] = s;
     }
     else {
       this.targetData['scale'] = 1;
