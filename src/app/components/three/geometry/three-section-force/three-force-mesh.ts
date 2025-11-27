@@ -239,7 +239,7 @@ export class ThreeSectionForceMeshService {
       keys.push('P1');
     }
     if(Enable2===true){
-      pos.push(points[3]);
+      pos.push(points[4]);
       vartical.push('top');
       keys.push('P2');
     }
