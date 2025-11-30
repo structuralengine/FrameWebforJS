@@ -533,60 +533,86 @@ export class ThreeSectionForceService {
     }
     const targetList = Array.from(new Set(Upper));
     targetList.push(this.max);
-    let c = [];
+    // 各表示値に関する情報を格納した4つ組(mesh, L1側とL2側のどちらか, 位置座標, 表示値の絶対値)のリストを作成する
+    const quadList: [any, 'L1' | 'L2', THREE.Vector3, number][] = [];
     for (let i = 0; i < ThreeObjects.length; i++) {
       const ThreeObject = ThreeObjects[i];
       if (ThreeObject.visible === false) {
         continue; // 非表示の ThreeObject の文字は追加しない
       }
       for (const mesh of ThreeObject.children) {
-        let f1 = false;
         if (targetList.find((v) => v === mesh["P1"]) !== undefined) {
-          f1 = true;
-          c.push(mesh);
+          quadList.push([mesh, 'L1', this.getpos(mesh, 'L1'), Math.abs(mesh['P1'])]);
         }
-        let f2 = false;
         if (targetList.find((v) => v === mesh["P2"]) !== undefined) {
-          f2 = true;
-          c.push(mesh);
+          quadList.push([mesh, 'L2', this.getpos(mesh, 'L2'), Math.abs(mesh['P2'])]);
         }
-        this.mesh.setText(mesh, f1, f2);
+        // 一旦全てを非表示に設定する
+        this.mesh.setText(mesh, false, false);
       }
     }
-    var meshView = Array.from(new Set(c));
-    var memberNo = this.getMemberNoLocation();
-    memberNo.forEach((mem) => {
-      let er = [];
-      meshView.forEach((th) => {
-        let ni = new THREE.Vector3(mem.nodei.x, mem.nodei.y, mem.nodei.z);
-        let nj = new THREE.Vector3(mem.nodej.x, mem.nodej.y, mem.nodej.z);
-        if (th.position.equals(ni) || th.position.equals(nj)) {
-          er.push(th);
+    // 位置座標が一致する場合は表示値の絶対値が最大のものを残してその他を削除する
+    const removing: number[] = [];
+    for (let m = 0; m < quadList.length; ++m) {
+      if (m in removing) {
+        continue;
+      }
+      const [meshm, llm, posm, valm]: [any, 'L1' | 'L2', THREE.Vector3, number] = quadList[m];
+      for (let n = m + 1; n < quadList.length; ++n) {
+        if (n in removing) {
+          continue;
         }
-      });
-      if (er.length > 0) {
-        let p = [];
-        er.forEach((mesh) => {
-          p.push(mesh["P1"]);
-          p.push(mesh["P2"]);
-        });
-        let max = p[0];
-        for (let i = 0; i < p.length; i++) {
-          if (p[i] > max) {
-            max = p[i];
-          }
-        }
-        for (let i = 0; i < er.length; i++) {
-          if (
-            Number(er[i]["L"].toFixed(2)) <= this.findSmallestPositiveValue(er)
-          ) {
-            if (er[i]["P1"] < er[i]["P2"]) {
-              this.mesh.setText(er[i], false, false);
-            } else this.mesh.setText(er[i], false, false);
+        const [meshn, lln, posn, valn]: [any, 'L1' | 'L2', THREE.Vector3, number] = quadList[n];
+        if (posm.equals(posn)) {
+          if (valm >= valn) {
+            removing.push(n);
+          } else {
+            removing.push(m);
+            break;
           }
         }
       }
-    });
+    }
+    for (let i of removing.sort((a, b) => b - a)) {
+      quadList.splice(i, 1);
+    }
+    // https://blog.turai.work/entry/20220924/1663962138
+    const groupBy = <T, K extends keyof any>(arr: T[], key: (i: T) => K) =>
+      arr.reduce((groups, item) => {
+        (groups[key(item)] ||= []).push(item);
+        return groups;
+      }, {} as Record<K, T[]>);
+    // meshでグループ化(meshそのものではグループ化できないのでuuidで代用する)
+    const groupedByMesh = groupBy(quadList, m => m[0]['uuid']);
+    // L1側とL2側のどちらを表示するのかを識別して表示
+    for (const qlist of Object.values(groupedByMesh)) {
+      const mesh = qlist[0][0];
+      const f1 = qlist.findIndex(x => x[1] === 'L1') >= 0;
+      const f2 = qlist.findIndex(x => x[1] === 'L2') >= 0;
+      this.mesh.setText(mesh, f1, f2);
+    }
+  }
+
+  /**
+   * 断面力描画データからL1点またはL2点の座標を求める
+   * @param mesh 断面力描画データ(THREE.Group型+α)
+   * @param ll L1点またはL2点の指定
+   * @returns L1点またはL2点の座標(THREE.Vector3型)
+   */
+  private getpos(mesh: any, ll: 'L1' | 'L2'): THREE.Vector3 {
+    const nodei: THREE.Vector3 = mesh['nodei'];
+    const nodej: THREE.Vector3 = mesh['nodej'];
+    const i2j = nodej.clone().sub(nodei).normalize();
+    switch (ll) {
+      case 'L1':
+        const L1: number = mesh['L1'];
+        return nodei.clone().add(i2j.clone().multiplyScalar(L1));
+      case 'L2':
+        const L2: number = mesh['L2'];
+        return nodej.clone().sub(i2j.clone().multiplyScalar(L2));
+      default:
+        throw new Error('invalid ll');
+    }
   }
 
   // データが変更された時に呼び出される
