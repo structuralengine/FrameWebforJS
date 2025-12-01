@@ -99,6 +99,7 @@ addEventListener('message', ({ data }) => {
           mxi = (mxi == null) ? 0 : Math.round(mxi * 100) / 100;
           myi = (myi == null) ? 0 : Math.round(myi * 100) / 100;
           mzi = (mzi == null) ? 0 : Math.round(mzi * 100) / 100;
+          const dummyi = ('dummyi' in item) && item['dummyi'];
 
           result = {
             m: memberNo,
@@ -109,7 +110,8 @@ addEventListener('message', ({ data }) => {
             fz: fzi,
             mx: mxi,
             my: myi,
-            mz: mzi
+            mz: mzi,
+            dummy: dummyi
           };
 
           row++;
@@ -144,6 +146,7 @@ addEventListener('message', ({ data }) => {
           mxj = (mxj == null) ? 0 : Math.round(mxj * 100) / 100;
           myj = (myj == null) ? 0 : Math.round(myj * 100) / 100;
           mzj = (mzj == null) ? 0 : Math.round(mzj * 100) / 100;
+          const dummyj = ('dummyj' in item) && item['dummyj'];
 
           result = {
             m: '',
@@ -154,7 +157,8 @@ addEventListener('message', ({ data }) => {
             fz: fzj,
             mx: mxj,
             my: myj,
-            mz: mzj
+            mz: mzj,
+            dummy: dummyj
           };
 
           row++;
