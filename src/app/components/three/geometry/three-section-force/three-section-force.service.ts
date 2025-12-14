@@ -411,8 +411,6 @@ export class ThreeSectionForceService {
     ];
 
     const textValues = [];
-    const textValMemNo = [];
-    const ll = [];
     for (let i = 0; i < fsecDatas.length; i++) {
       const fsecData = fsecDatas[i];
       const ThreeObject = ThreeObjects[i];
@@ -432,6 +430,7 @@ export class ThreeSectionForceService {
       let counter = 0;
       this.memSeForce = new Array();
       let cg = 0    
+      let dummy1: boolean = false;
       for (const fsec of fsecData) {
         if (fsec["m"] !== "" || fsec["n"] !== "") {
           if (!this.memSeForce.includes(fsec))
@@ -463,8 +462,10 @@ export class ThreeSectionForceService {
           ).length();
           L1 = 0;
           P1 = fsec[key1];
-          textValues.push(P1);
-          ll.push(L1);
+          dummy1 = fsec["dummy"];
+          if (dummy1 === false) {
+            textValues.push(P1);
+          }
         } else {
           let item = null;
           if (ThreeObject.children.length > counter) {
@@ -472,9 +473,11 @@ export class ThreeSectionForceService {
           }
           const LL = fsec["l"];
           P2 = fsec[key1] - 0;
-          textValues.push(P2);
+          const dummy2: boolean = fsec["dummy"];
+          if (dummy2 === false) {
+            textValues.push(P2);
+          }
           L2 = Math.round((len - LL) * 1000) / 1000;
-          ll.push(L2);
           if (item === null) {
             const mesh = this.mesh.create(
               nodei,
@@ -485,6 +488,8 @@ export class ThreeSectionForceService {
               L2,
               P1,
               P2,
+              dummy1,
+              dummy2,
               cg
             );
             ThreeObject.add(mesh);           
@@ -499,12 +504,14 @@ export class ThreeSectionForceService {
               L2,
               P1,
               P2, 
+              dummy1,
+              dummy2,
               cg
             );
           }
           P1 = P2;
           L1 = LL;
-          ll.push(L1);
+          dummy1 = dummy2;
           counter++;
         }
       }
@@ -521,13 +528,6 @@ export class ThreeSectionForceService {
     this.min = targetValues[targetValues.length - 1];
     const count = Math.floor(textValues.length * (this.textCount / 100));
     let Upper = targetValues;
-    let target = [];
-    textValMemNo.forEach((data) => {
-      target.push(data.val);
-    });
-    target.sort((a, b) => {
-      return Math.abs(a) < Math.abs(b) ? 1 : -1;
-    });
     if (count < targetValues.length) {
       Upper = targetValues.slice(1, count);
     }
@@ -541,10 +541,10 @@ export class ThreeSectionForceService {
         continue; // 非表示の ThreeObject の文字は追加しない
       }
       for (const mesh of ThreeObject.children) {
-        if (targetList.find((v) => v === mesh["P1"]) !== undefined) {
+        if (targetList.find((v) => v === mesh["P1"]) !== undefined && mesh["dummy1"] === false) {
           quadList.push([mesh, 'L1', this.getpos(mesh, 'L1'), Math.abs(mesh['P1'])]);
         }
-        if (targetList.find((v) => v === mesh["P2"]) !== undefined) {
+        if (targetList.find((v) => v === mesh["P2"]) !== undefined && mesh["dummy2"] === false) {
           quadList.push([mesh, 'L2', this.getpos(mesh, 'L2'), Math.abs(mesh['P2'])]);
         }
         // 一旦全てを非表示に設定する

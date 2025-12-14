@@ -167,43 +167,78 @@ addEventListener('message', ({ data }) => {
           counter++;
 
           // 断面力の最大最小とその部材番号を調べる
-          // fx //
-          value_range.x.max_d = Math.max(fxi, fxj, value_range.x.max_d);
-          value_range.x.min_d = Math.min(fxi, fxj, value_range.x.min_d);
-          if (value_range.x.max_d === fxi || value_range.x.max_d === fxj) value_range.x.max_d_m = m;
-          if (value_range.x.min_d === fxi || value_range.x.min_d === fxj) value_range.x.min_d_m = m;
-          // fy //
-          value_range.y.max_d = Math.max(fyi, fyj, value_range.y.max_d);
-          value_range.y.min_d = Math.min(fyi, fyj, value_range.y.min_d);
-          if (value_range.y.max_d === fyi || value_range.y.max_d === fyj) value_range.y.max_d_m = m;
-          if (value_range.y.min_d === fyi || value_range.y.min_d === fyj) value_range.y.min_d_m = m;
-          // fz //
-          value_range.z.max_d = Math.max(fzi, fzj, value_range.z.max_d);
-          value_range.z.min_d = Math.min(fzi, fzj, value_range.z.min_d);
-          if (value_range.z.max_d === fzi || value_range.z.max_d === fzj) value_range.z.max_d_m = m;
-          if (value_range.z.min_d === fzi || value_range.z.min_d === fzj) value_range.z.min_d_m = m;
-          // mx //
-          value_range.x.max_r = Math.max(mxi, mxj, value_range.x.max_r);
-          value_range.x.min_r = Math.min(mxi, mxj, value_range.x.min_r);
-          if (value_range.x.max_r === mxi || value_range.x.max_r === mxj) value_range.x.max_r_m = m;
-          if (value_range.x.min_r === mxi || value_range.x.min_r === mxj) value_range.x.min_r_m = m;
-          // my //
-          value_range.y.max_r = Math.max(myi, myj, value_range.y.max_r);
-          value_range.y.min_r = Math.min(myi, myj, value_range.y.min_r);
-          if (value_range.y.max_r === myi || value_range.y.max_r === myj) value_range.y.max_r_m = m;
-          if (value_range.y.min_r === myi || value_range.y.min_r === myj) value_range.y.min_r_m = m;
-          // mz //
-          value_range.z.max_r = Math.max(mzi, mzj, value_range.z.max_r);
-          value_range.z.min_r = Math.min(mzi, mzj, value_range.z.min_r);
-          if (value_range.z.max_r === mzi || value_range.z.max_r === mzj) value_range.z.max_r_m = m;
-          if (value_range.z.min_r === mzi || value_range.z.min_r === mzj) value_range.z.min_r_m = m;
+          if (dummyi === false) {
+            // fx //
+            value_range.x.max_d = Math.max(fxi, value_range.x.max_d);
+            value_range.x.min_d = Math.min(fxi, value_range.x.min_d);
+            if (value_range.x.max_d === fxi) value_range.x.max_d_m = m;
+            if (value_range.x.min_d === fxi) value_range.x.min_d_m = m;
+            // fy //
+            value_range.y.max_d = Math.max(fyi, value_range.y.max_d);
+            value_range.y.min_d = Math.min(fyi, value_range.y.min_d);
+            if (value_range.y.max_d === fyi) value_range.y.max_d_m = m;
+            if (value_range.y.min_d === fyi) value_range.y.min_d_m = m;
+            // fz //
+            value_range.z.max_d = Math.max(fzi, value_range.z.max_d);
+            value_range.z.min_d = Math.min(fzi, value_range.z.min_d);
+            if (value_range.z.max_d === fzi) value_range.z.max_d_m = m;
+            if (value_range.z.min_d === fzi) value_range.z.min_d_m = m;
+            // mx //
+            value_range.x.max_r = Math.max(mxi, value_range.x.max_r);
+            value_range.x.min_r = Math.min(mxi, value_range.x.min_r);
+            if (value_range.x.max_r === mxi) value_range.x.max_r_m = m;
+            if (value_range.x.min_r === mxi) value_range.x.min_r_m = m;
+            // my //
+            value_range.y.max_r = Math.max(myi, value_range.y.max_r);
+            value_range.y.min_r = Math.min(myi, value_range.y.min_r);
+            if (value_range.y.max_r === myi) value_range.y.max_r_m = m;
+            if (value_range.y.min_r === myi) value_range.y.min_r_m = m;
+            // mz //
+            value_range.z.max_r = Math.max(mzi, value_range.z.max_r);
+            value_range.z.min_r = Math.min(mzi, value_range.z.min_r);
+            if (value_range.z.max_r === mzi) value_range.z.max_r_m = m;
+            if (value_range.z.min_r === mzi) value_range.z.min_r_m = m;
+          }
+          if (dummyj === false) {
+            // fx //
+            value_range.x.max_d = Math.max(fxj, value_range.x.max_d);
+            value_range.x.min_d = Math.min(fxj, value_range.x.min_d);
+            if (value_range.x.max_d === fxj) value_range.x.max_d_m = m;
+            if (value_range.x.min_d === fxj) value_range.x.min_d_m = m;
+            // fy //
+            value_range.y.max_d = Math.max(fyj, value_range.y.max_d);
+            value_range.y.min_d = Math.min(fyj, value_range.y.min_d);
+            if (value_range.y.max_d === fyj) value_range.y.max_d_m = m;
+            if (value_range.y.min_d === fyj) value_range.y.min_d_m = m;
+            // fz //
+            value_range.z.max_d = Math.max(fzj, value_range.z.max_d);
+            value_range.z.min_d = Math.min(fzj, value_range.z.min_d);
+            if (value_range.z.max_d === fzj) value_range.z.max_d_m = m;
+            if (value_range.z.min_d === fzj) value_range.z.min_d_m = m;
+            // mx //
+            value_range.x.max_r = Math.max(mxj, value_range.x.max_r);
+            value_range.x.min_r = Math.min(mxj, value_range.x.min_r);
+            if (value_range.x.max_r === mxj) value_range.x.max_r_m = m;
+            if (value_range.x.min_r === mxj) value_range.x.min_r_m = m;
+            // my //
+            value_range.y.max_r = Math.max(myj, value_range.y.max_r);
+            value_range.y.min_r = Math.min(myj, value_range.y.min_r);
+            if (value_range.y.max_r === myj) value_range.y.max_r_m = m;
+            if (value_range.y.min_r === myj) value_range.y.min_r_m = m;
+            // mz //
+            value_range.z.max_r = Math.max(mzj, value_range.z.max_r);
+            value_range.z.min_r = Math.min(mzj, value_range.z.min_r);
+            if (value_range.z.max_r === mzj) value_range.z.max_r_m = m;
+            if (value_range.z.min_r === mzj) value_range.z.min_r_m = m;
+          }
+          // max_valueは描画スケールの計算に使用するので自動で設けた着目点も考慮する
+          max_value.fx = Math.max(Math.abs(fxi), Math.abs(fxj), max_value.fx);
+          max_value.fy = Math.max(Math.abs(fyi), Math.abs(fyj), max_value.fy);
+          max_value.fz = Math.max(Math.abs(fzi), Math.abs(fzj), max_value.fz);
+          max_value.mx = Math.max(Math.abs(mxi), Math.abs(mxj), max_value.mx);
+          max_value.my = Math.max(Math.abs(myi), Math.abs(myj), max_value.my);
+          max_value.mz = Math.max(Math.abs(mzi), Math.abs(mzj), max_value.mz);
         }
-        max_value.fx = Math.max(Math.abs(value_range.x.max_d), Math.abs(value_range.x.min_d));
-        max_value.fy = Math.max(Math.abs(value_range.y.max_d), Math.abs(value_range.y.min_d));
-        max_value.fz = Math.max(Math.abs(value_range.z.max_d), Math.abs(value_range.z.min_d));
-        max_value.mx = Math.max(Math.abs(value_range.x.max_r), Math.abs(value_range.x.min_r));
-        max_value.my = Math.max(Math.abs(value_range.y.max_r), Math.abs(value_range.y.min_r));
-        max_value.mz = Math.max(Math.abs(value_range.z.max_r), Math.abs(value_range.z.min_r));
       }
       const key = caseNo.replace('Case', '');
       fsec[key] = target;
