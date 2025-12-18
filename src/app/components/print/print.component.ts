@@ -51,6 +51,15 @@ export class PrintComponent implements OnInit, OnDestroy {
     this.a = this.max_min.visible;
     this.max_min.visible = false;
     this.PrintScreen = this.translate.instant("print.PrintScreen");
+    this.printService.printTargetValues = [
+      { value: false }, // 軸方向力
+      { value: false }, // y軸方向のせん断力
+      { value: false }, // z軸方向のせん断力
+      { value: false }, // ねじりモーメント
+      { value: false }, // y軸回りのモーメント
+      { value: false }, // z軸回りのモーメント
+      { value: false }, // 変位図
+    ];
   }
 
   ngOnDestroy(): void {
