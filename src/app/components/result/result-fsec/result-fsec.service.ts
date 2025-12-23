@@ -28,6 +28,7 @@ export class ResultFsecService {
     { title: "result.result-fsec.x_torsion", id: "mx", format:'#.00' },
     { title: "result.result-fsec.y_moment", id: "my", format:'#.00' },
     { title: "result.result-fsec.z_moment", id: "mz", format:'#.00' },
+    { title: "dummy", id: "dummy", hidden: true },
   ];
 
   public column2Ds: any[] = [
@@ -37,6 +38,7 @@ export class ResultFsecService {
     { title: "result.result-fsec.axialForce", id: "fx", format:'#.00' },
     { title: "result.result-fsec.shear", id: "fy", format:'#.00' },
     { title: "result.result-fsec.moment", id: "mz", format:'#.00' },
+    { title: "dummy", id: "dummy", hidden: true },
   ];
 
 
