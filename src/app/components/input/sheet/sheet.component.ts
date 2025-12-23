@@ -194,6 +194,13 @@ export class SheetComponent implements AfterViewInit, OnChanges {
 
   }
 
+  filter(obj: object) {
+    if (this.grid === null) {
+      return;
+    }
+    this.grid.filter(obj);
+  }
+
   loadStrengthActive = false;
   @HostListener('document:mouseover', ['$event'])
   toggleActive(event: Event) {

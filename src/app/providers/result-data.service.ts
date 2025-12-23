@@ -422,7 +422,8 @@ export class ResultDataService {
         dataIndx: dataColumn[i].id,
         sortable: false,
         width: w,
-        editable: editable 
+        editable: editable,
+        hidden: ("hidden" in dataColumn[i]) && (dataColumn[i]["hidden"] === true),
       })
     }
     return dataReturn;

@@ -49,6 +49,8 @@ export class ThreeSectionForceMeshService {
     pL2: number,
     P1: number,
     P2: number,
+    dummy1: boolean,
+    dummy2: boolean,
     cg?: number
   ): THREE.Group {
 
@@ -96,6 +98,8 @@ export class ThreeSectionForceMeshService {
     group["nodej"] = nodej;
     group["direction"] = direction;
     group["localAxis"] = localAxis;
+    group["dummy1"] = dummy1;
+    group["dummy2"] = dummy2;
 
     return group;
   }
@@ -239,7 +243,7 @@ export class ThreeSectionForceMeshService {
       keys.push('P1');
     }
     if(Enable2===true){
-      pos.push(points[3]);
+      pos.push(points[4]);
       vartical.push('top');
       keys.push('P2');
     }
@@ -325,7 +329,7 @@ export class ThreeSectionForceMeshService {
 
   public change(
     target: any, nodei: THREE.Vector3, nodej: THREE.Vector3, localAxis: any,
-    direction: string, L1: number, L2: number, P1: number, P2: number, cg?: number ): THREE.Group {
+    direction: string, L1: number, L2: number, P1: number, P2: number, dummy1: boolean, dummy2: boolean, cg?: number ): THREE.Group {
 
     // 長さを決める
     const p  = this.getPoints(
@@ -374,6 +378,8 @@ export class ThreeSectionForceMeshService {
     target["nodej"] = nodej;
     target["direction"] = direction;
     target["localAxis"] = localAxis;
+    target["dummy1"] = dummy1;
+    target["dummy2"] = dummy2;
 
     return target;
   }

@@ -210,5 +210,12 @@ export class ResultFsecComponent implements OnInit, OnDestroy {
         this.grid.refreshDataAndView();
       }
     },
+    beforeNewData: (evt, ui) => {
+      // 仮の着目点(バックエンドが追加した着目点)のデータ行を非表示にする
+      this.grid.filter({
+        oper: 'replace',
+        rule: { dataIndx: 'dummy', condition: 'equal', value: false }
+      });
+    },
   };
 }
