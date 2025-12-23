@@ -46,7 +46,7 @@ import {
   IdTokenClaims,
 } from "@azure/msal-browser";
 import { Subject } from "rxjs";
-import { takeUntil, filter } from "rxjs/operators";
+import { takeUntil, filter, take } from "rxjs/operators";
 import { environment } from "src/environments/environment";
 import { IPC_MESSAGES } from "src/electron/login/constants";
 
@@ -67,6 +67,7 @@ export class MenuComponent implements OnInit {
   isIframe = false;
   loginDisplay = false;
   private readonly _destroying$ = new Subject<void>();
+  private loginInProgress = false;
 
   constructor(
     private router: Router,
@@ -538,20 +539,30 @@ export class MenuComponent implements OnInit {
       }
 
       if (!this.loginDisplay && isConfirm) {
+        if (this.loginInProgress) {
+          return;
+        }
+        this.loginInProgress = true;
         this.msalBroadcastService.inProgress$
           .pipe(
             filter(
               (status: InteractionStatus) => status === InteractionStatus.None
-            )
+            ),
+            take(1)
           )
           .subscribe(async () => {
-            if (this.msalGuardConfig.authRequest) {
-              this.authService.loginRedirect({
-                ...this.msalGuardConfig.authRequest,
-                ...userFlowRequest,
-              } as RedirectRequest);
-            } else {
-              this.authService.loginRedirect(userFlowRequest);
+            try {
+              if (this.msalGuardConfig.authRequest) {
+                this.authService.loginRedirect({
+                  ...this.msalGuardConfig.authRequest,
+                  ...userFlowRequest,
+                } as RedirectRequest);
+              } else {
+                this.authService.loginRedirect(userFlowRequest);
+              }
+            } catch (error) {
+              this.loginInProgress = false;
+              console.error(error);
             }
           });
       }
