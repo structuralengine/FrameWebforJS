@@ -101,6 +101,7 @@ export class ResultFsecService {
       fy: "",
       fz: "",
       case: "",
+      nonDummyRowIndex: undefined,
     };
 
     let results: any = this.fsec[currentPage];
@@ -111,11 +112,12 @@ export class ResultFsecService {
     if (mode in results) {
       let modes = results[mode] != undefined ? results[mode] : undefined;
       if (modes != undefined) {
-        if(modes[row] != undefined)
-          result = modes[row];
+        results = modes;
       }
-    } else if(results[row] != undefined) {
-      result = results[row];
+    }
+    const idx = results.findIndex(m => 'nonDummyRowIndex' in m && m['nonDummyRowIndex'] === row);
+    if (idx >= 0) {
+      result = results[idx];
     }
 
     return result;
@@ -166,6 +168,12 @@ export class ResultFsecService {
           // 連行荷重の子データは除外する
           const keys = Object.keys(fsec).filter((e) => !e.includes("."));
           for (const k of keys) {
+            // 仮の着目点(バックエンドが追加した着目点)のデータ行をスキップした行インデックスをnonDummyRowIndexに設定しておく
+            let nonDummyRowIndex = 0;
+            fsec[k].forEach(r => {
+              r['nonDummyRowIndex'] = 'dummy' in r && r['dummy'] === false ? nonDummyRowIndex++ : undefined;
+            });
+
             this.fsec[k] = fsec[k];
           }
           this.worker2.postMessage({ fsec: this.fsec });
