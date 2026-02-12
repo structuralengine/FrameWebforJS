@@ -241,7 +241,7 @@ export class InputDataService {
     } else if (empty === 0) {
       jsonData["rigid"] = [];
     }
-    const joint: {} = this.joint.getJointJson(empty);
+    const joint: {} = this.joint.getJointJson(empty === 0 ? 1 : empty); // 結合データの空欄は1を意味する
     if (Object.keys(joint).length > 0) {
       jsonData["joint"] = joint;
     }
