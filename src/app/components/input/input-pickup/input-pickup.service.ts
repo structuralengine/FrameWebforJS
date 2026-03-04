@@ -122,4 +122,25 @@ export class InputPickupService {
     return Object.keys(dict).length;
   }
 
+  /**
+   * 無効な情報を取り除いたPICKUP情報を返す
+   * @param pickup PICKUP情報
+   * @param keys 基本荷重ケース番号またはCOMBINE番号のリスト
+   * @returns 無効な情報を取り除いたPICKUP情報、ただし、PICKUP情報が有効な情報を含まない場合はnull
+   */
+  public validate(pickup: { [key: string]: number | string }, keys: string[]): { [key: string]: number | string } | null {
+    const result: { [key: string]: number | string } = {};
+    let cnt = 0;
+    for (const [key, value] of Object.entries(pickup)) {
+      if (key.charAt(0) === 'C') {
+        if (Number.isInteger(value) && keys.includes(value.toString())) {
+          result[key] = value;
+          cnt++;
+        }
+      } else {
+        result[key] = value;
+      }
+    }
+    return cnt > 0 ? result : null;
+  }
 }
