@@ -100,12 +100,49 @@ export class ResultDataService {
     const combine = this.combine.getCombineJson();
     const pickup = this.pickup.getPickUpJson();
 
+    // DEFINEに入力があるかどうか(入力の有効/無効は考慮しない)
+    const isEmptyDefine = Object.keys(define).length === 0;
+    // COMBINEに入力があるかどうか(入力の有効/無効は考慮しない)
+    const isEmptyCombine = Object.keys(combine).length === 0;
+
+    // 有効なDEFINEの抽出
+    const validDefine = {};
+    for (const defNo of Object.keys(define)) {
+      const d = define[defNo];
+      const validated = this.define.validate(d, Object.keys(load));
+      if (validated !== null) {
+        validDefine[defNo] = validated;
+      }
+    }
+
+    // 有効なCOMBINEの抽出
+    const validCombine = {};
+    const defineKeys = Object.keys(isEmptyDefine ? load : validDefine);
+    for (const combNo of Object.keys(combine)) {
+      const c = combine[combNo];
+      const validated = this.combine.validate(c, defineKeys);
+      if (validated !== null) {
+        validCombine[combNo] = validated;
+      }
+    }
+
+    // 有効なPICKUPの抽出
+    const validPickup = {};
+    const combineKeys = Object.keys(isEmptyCombine ? load : validCombine);
+    for (const pickNo of Object.keys(pickup)) {
+      const p = pickup[pickNo];
+      const validated = this.pickup.validate(p, combineKeys);
+      if (validated !== null) {
+        validPickup[pickNo] = validated;
+      }
+    }
+
     // define を集計
     this.defList = {};
-    if (Object.keys(define).length > 0) {
+    if (!isEmptyDefine) {
       // define データが あるとき
-      for (const defNo of Object.keys(define)) {
-        const d: object = define[defNo];
+      for (const defNo of Object.keys(validDefine)) {
+        const d: object = validDefine[defNo];
         const defines = new Array();
         for (const dKey of Object.keys(d)) {
           if (dKey === "row") {
@@ -154,8 +191,8 @@ export class ResultDataService {
 
     // combine を集計
     this.combList = {};
-    for (const combNo of Object.keys(combine)) {
-      const c: object = combine[combNo];
+    for (const combNo of Object.keys(validCombine)) {
+      const c: object = validCombine[combNo];
       const defines = new Array();
       for (const cKey of Object.keys(c)) {
         if (cKey === "row") {
@@ -177,8 +214,8 @@ export class ResultDataService {
 
     // pickup を集計
     this.pickList = {};
-    for (const pickNo of Object.keys(pickup)) {
-      const p: object = pickup[pickNo];
+    for (const pickNo of Object.keys(validPickup)) {
+      const p: object = validPickup[pickNo];
       const combines = new Array();
       for (const pKey of Object.keys(p)) {
         const caseNo: string = pKey.replace("C", "").replace("D", "");
@@ -232,7 +269,7 @@ export class ResultDataService {
           if (mm != null) {
             mNo = maxFsec.m;
           } else {
-            console.log(mm);
+            // console.log(mm);
           }
 
           // 着目点名を設定する
@@ -310,8 +347,8 @@ export class ResultDataService {
     result += ",最小Md,最小Vd,最小Nd";
     result += "\n";
 
-    for (let No = 1; No <= Object.keys(p).length; No++) {
-      const c = p[No.toString()];
+    for (const No of Object.keys(p)) {
+      const c = p[No];
       const rows: number = Object.keys(c["fx_max"]).length;
 
       const key = ["M", "S", "N"];
@@ -338,7 +375,7 @@ export class ResultDataService {
           if (mm != null) {
             mNo = maxFsec.m;
           } else {
-            console.log(mm);
+            // console.log(mm);
           }
 
           // 着目点名を設定する
@@ -356,7 +393,7 @@ export class ResultDataService {
             point_counter += 1;
           }
 
-          result += this.spacePadding(No.toString(), 5);
+          result += this.spacePadding(No, 5);
           result += this.spacePadding(key[i], 5);
           result += this.spacePadding(mNo, 5);
           result += this.spacePadding(maxFsec.comb, 5);
