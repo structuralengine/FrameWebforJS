@@ -86,5 +86,27 @@ export class InputDefineService {
     return Math.max(...Object.keys(dict).map(k => Number(k)));
   }
 
+  /**
+   * 無効な情報を取り除いたDEFINE情報を返す
+   * @param define DEFINE情報
+   * @param keys 基本荷重ケース番号のリスト
+   * @returns 無効な情報を取り除いたDEFINE情報、ただし、DEFINE情報が有効な情報を含まない場合はnull
+   */
+  public validate(define: { [key: string]: number | string }, keys: string[]): { [key: string]: number | string } | null {
+    const result: { [key: string]: number | string } = {};
+    let cnt: number = 0;
+    for (const [key, value] of Object.entries(define)) {
+      if (key.charAt(0) === 'C') {
+        // 有効な基本荷重ケース番号と'0'だけを残してその他は破棄('0'は荷重載荷なしを意味する)
+        if (Number.isInteger(value) && (keys.includes(value.toString()) || value === 0)) {
+          result[key] = value;
+          cnt++;
+        }
+      } else {
+        result[key] = value;
+      }
+    }
+    return cnt > 0 ? result : null;
+  }
   
 }

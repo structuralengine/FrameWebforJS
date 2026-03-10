@@ -145,4 +145,27 @@ export class InputCombineService {
     }
     return result;
   }
+
+  /**
+   * 無効な情報を取り除いたCOMBINE情報を返す
+   * @param combine COMBINE情報
+   * @param keys 基本荷重ケース番号またはDEFINE番号のリスト
+   * @returns 無効な情報を取り除いたCOMBINE情報、ただし、COMBINE情報が有効な情報を含まない場合はnull
+   */
+  public validate(combine: { [key: string]: string }, keys: string[]): { [key: string]: string } | null {
+    const result: { [key: string]: string } = {};
+    let cnt: number = 0;
+    for (const [key, value] of Object.entries(combine)) {
+      if (key.charAt(0) === 'C') {
+        const caseNo = key.substring(1);
+        if (keys.includes(caseNo) && this.helper.toNumber(value) !== null) {
+          result[key] = value;
+          cnt++;
+        }
+      } else {
+        result[key] = value;
+      }
+    }
+    return cnt > 0 ? result : null;
+  }
 }
