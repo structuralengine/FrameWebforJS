@@ -731,6 +731,8 @@ export class ThreeService {
       screenArea.style.width = this.canvasWidth;
       screenArea.style.height = this.canvasHeight;
 
+      this.currentIndex = -1;
+
       if (captureCase.length === 0 && this.mode !== "print_load") {
         // 印刷パネルで
         // 画面印刷
