@@ -532,7 +532,7 @@ export class ThreeService {
       this.fixMember.visibleChange(false);
       this.joint.visibleChange(false);
       this.points.visibleChange(false);
-      this.panel.visibleChange(false);
+      this.panel.visibleChange(true, 0.3);
       this.load.visibleChange(false, false);
       this.disg.visibleChange(false);
       this.reac.visibleChange(true);
