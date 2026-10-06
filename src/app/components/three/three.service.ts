@@ -949,7 +949,7 @@ export class ThreeService {
   }
 
   // 印刷するケース数を返す
-  private getCaptureCase(): any {
+  private getCaptureCase(mode: string = this.mode): any {
     let result: string[] = new Array();
     let title1: string = "";
     let title2: string = "";
@@ -960,7 +960,7 @@ export class ThreeService {
 
     this.printService.setprintDocument();
 
-    switch (this.mode) {
+    switch (mode) {
       case "fix_member":
         if ("fix_member" in this.printService.inputJson) {
           result = Object.keys(this.printService.inputJson.fix_member);
@@ -1158,7 +1158,7 @@ export class ThreeService {
 
   public getTotalCaptureImage(mode: string): any {
       let counter = 0;
-      const captureInfo = this.getCaptureCase();
+      const captureInfo = this.getCaptureCase(mode);
       const captureCase: string[] = captureInfo.captureCase;
 
       if (captureCase.length === 0 && mode !== "print_load") {
