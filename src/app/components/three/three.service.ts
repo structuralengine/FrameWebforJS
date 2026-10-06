@@ -1156,14 +1156,14 @@ export class ThreeService {
   //   this.fsec.createPanel1(arr, vertexlist, key);
   // }
 
-  public getTotalCaptureImage(): any {
+  public getTotalCaptureImage(mode: string): any {
       let counter = 0;
       const captureInfo = this.getCaptureCase();
       const captureCase: string[] = captureInfo.captureCase;
 
-      if (captureCase.length === 0 && this.mode !== "print_load") {
+      if (captureCase.length === 0 && mode !== "print_load") {
      
-      } else if (this.mode === "print_load") {
+      } else if (mode === "print_load") {
         const ary = [...Array(this.inputLoadData.load_name.length)].map((_, i) => i + 1);
           for (const [index, i] of ary.entries()) {
             const columnItem = this.inputLoadData.getLoadNameColumns(i);
@@ -1172,7 +1172,7 @@ export class ThreeService {
               counter++;
             }
           }
-      } else if (this.mode === "disg") {
+      } else if (mode === "disg") {
         const ary = [...Array(this.inputLoadData.load_name.length)].map((_, i) => i + 1);
 
           for (const [index, i] of ary.entries()) {
@@ -1183,9 +1183,9 @@ export class ThreeService {
             }
           }
       } else if (
-        this.mode === "fsec" ||
-        this.mode === "comb_fsec" ||
-        this.mode === "pick_fsec"
+        mode === "fsec" ||
+        mode === "comb_fsec" ||
+        mode === "pick_fsec"
       ) {
         let totalTrue = this.customThree.threeEditable.filter(x => x === true).length;
         counter = captureCase.length * totalTrue;

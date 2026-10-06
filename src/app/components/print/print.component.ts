@@ -123,8 +123,6 @@ export class PrintComponent implements OnInit, OnDestroy {
 
     this.three.ChangeMode(mode);
 
-    this.three.mode = mode;
-
     // 印刷対象を取得して、セッ�
     if (
       (this.printService.flg === 14 && this.helper.dimension === 3) ||
@@ -536,8 +534,7 @@ export class PrintComponent implements OnInit, OnDestroy {
                 if(mode==="PrintLoad"){
                   dataMode="print_load"
                 }
-                this.three.mode = dataMode
-                count += this.three.getTotalCaptureImage()
+                count += this.three.getTotalCaptureImage(dataMode);
               });
               if(count < 120){
                 setTimeout(() => {
@@ -547,7 +544,6 @@ export class PrintComponent implements OnInit, OnDestroy {
                                 dataMode="print_load"
                               }
                               this.three.ChangeMode(dataMode);
-                              this.three.mode = dataMode
                               return this.three.getCaptureImage().then((print_target) => {
                                 console.log("getCaptureImage.then start: " + this.check_ts() + " msec");
                                 print_target["mode"] = dataMode;
@@ -575,7 +571,6 @@ export class PrintComponent implements OnInit, OnDestroy {
                         dataMode="print_load"
                       }
                       this.three.ChangeMode(dataMode);
-                      this.three.mode = dataMode
                       return this.three.getCaptureImage().then((print_target) => {
                         console.log("getCaptureImage.then start: " + this.check_ts() + " msec");
                         print_target["mode"] = dataMode;
