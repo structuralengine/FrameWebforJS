@@ -84,10 +84,6 @@ export class ResultFsecService {
     this.fsec =  new Array();
   }
 
-  public clearGradient(){
-    this.three.ClearDataGradient();
-  }
-
   public getDataColumns(currentPage:number, row: number, mode: string = null):any{
 
     let result = {
