@@ -121,7 +121,6 @@ export class ResultFsecComponent implements OnInit, OnDestroy {
   private ROWS_COUNT = 15;
 
   private loadData(currentPage: number, row: number): void {
-    this.three_panel.ClearData();
     this.three_fesc.ClearDataGradient();
 
     // 連行荷重`LL`か判定
