@@ -741,6 +741,7 @@ export class ThreeService {
           result.push({
             title: title2,
             src: canvas.toDataURL(),
+            index: 0,
           });
 
           resolve({ result, title1 });
@@ -780,9 +781,11 @@ export class ThreeService {
                 result.push({
                   title: `Case${i} ${symbol} ${loadName}`,
                   src: canvas.toDataURL(),
+                  index: i,
                 });
                 counter++;
                 if (counter === ary.length) {
+                  result.sort((a, b) => a.index - b.index);
                   resolve({ result, title1 });
                 }
               });
@@ -839,9 +842,11 @@ export class ThreeService {
                   disgSubInfo1: maxMinObj?.max ?? '',
                   disgSubInfo2: maxMinObj?.min ?? '',
                   src: canvas.toDataURL(),
+                  index: i,
                 });
                 counter++;
                 if (counter === ary.length) {
+                  result.sort((a, b) => a.index - b.index);
                   resolve({ result, title1 });
                 }
               });
@@ -898,10 +903,12 @@ export class ThreeService {
                   src: canvas.toDataURL(),
                   max_three: max_three,
                   min_three: min_three,
+                  index: i * this.customThree.threeEditable.length + j,
                 });
                 counter++;
 
                 if (counter === captureCase.length * this.selectedNumber) {
+                  result.sort((a, b) => a.index - b.index);
                   resolve({ result, title1 });
                 }
               });
@@ -933,10 +940,12 @@ export class ThreeService {
             result.push({
               title: title2 + name,
               src: canvas.toDataURL(),
+              index: i,
             });
             counter++;
 
             if (counter === captureCase.length) {
+              result.sort((a, b) => a.index - b.index);
               resolve({ result, title1 });
             }
           });
